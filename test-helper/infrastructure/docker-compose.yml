@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  ganache:
+    build:
+      context: ./ganache-cli
+    environment:
+      - WEB3_FORK_URL=${WEB3_FORK_URL}
+    ports:
+      - "8545:8545"
