@@ -23,9 +23,10 @@ pub enum ConnectorWrapper {
 impl ConnectorWrapper {
     pub fn new_from_env() -> ConnectorWrapper {
         match std::env::var("CONNECTION")
-            .unwrap_or_else(|_| String::from("http"))
+            .unwrap_or_else(|_| String::from("ganache")) // @TODO
             .as_str()
         {
+            "ganache" => Self::Http(ConnectorNodeBundle::ganache()),
             "http" => Self::Http(ConnectorNodeBundle::http()),
             "ws" => Self::Websocket(ConnectorNodeBundle::ws()),
             #[cfg(target_family = "unix")]
@@ -105,6 +106,14 @@ impl ConnectorNodeBundle<Http> {
     pub fn http() -> Self {
         let process = NodeProcess::new_http("0");
         let connector = Connector::http(&format!("http://{}", process.address), None).unwrap();
+        ConnectorNodeBundle { connector, process }
+    }
+}
+
+impl ConnectorNodeBundle<Http> {
+    pub fn ganache() -> Self {
+        let process = NodeProcess::new_http("8900");
+        let connector = Connector::http("http://localhost:8545", None).unwrap();
         ConnectorNodeBundle { connector, process }
     }
 }
