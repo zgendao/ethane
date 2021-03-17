@@ -6,6 +6,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 use test_helper::*;
+use ethereum_types::H160;
 
 #[test]
 fn test_eth_protocol_version() {
@@ -70,9 +71,9 @@ fn test_eth_get_balance() {
 fn test_eth_send_transaction_to_address() {
     let mut client = ConnectorWrapper::new_from_env();
     let transaction = TransactionRequest {
-        from: create_account(&mut client).1,
-        to: Some(create_account(&mut client).1),
-        value: Some(U256::zero()),
+        from: H160::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
+        to: Some(H160::from_str("0x1A4C0439ba035DAcf0D573394107597CEEBF9FF8").unwrap()),
+        value: Some(U256::from(1000000000000000000 as u64)),
         ..Default::default()
     };
     rpc_call_test_some(&mut client, rpc::eth_send_transaction(transaction));

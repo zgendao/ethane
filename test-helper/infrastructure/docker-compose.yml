@@ -1,6 +1,12 @@
 version: '3'
 
 services:
+  explorer:
+    image: alethio/ethereum-lite-explorer
+    environment:
+      - APP_NODE_URL=http://localhost:8545
+    ports:
+      - 8080:80
   ganache:
     build:
       context: ./ganache-cli

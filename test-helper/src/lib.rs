@@ -107,6 +107,7 @@ pub fn deploy_contract(
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
+        to: Some(H160::from_str("0x0000000000000000000000000000000000000000").unwrap()),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
@@ -146,7 +147,7 @@ pub fn rpc_call_test_expected<T: DeserializeOwned + Debug + PartialEq>(
             println!("{:?}", res);
             assert_eq!(res, expected);
         }
-        Err(err) => panic!("{}", err),
+        Err(err) => panic!("{:?}", err),
     }
 }
 
@@ -158,6 +159,6 @@ pub fn rpc_call_test_some<T: DeserializeOwned + Debug + PartialEq>(
         Ok(res) => {
             println!("{:?}", res);
         }
-        Err(err) => panic!("{}", err),
+        Err(err) => panic!("{:?}", err),
     }
 }
