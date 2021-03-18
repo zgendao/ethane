@@ -8,6 +8,10 @@ use std::str::FromStr;
 use test_helper::*;
 use ethereum_types::H160;
 
+const ADDRESS1: &str = "0x95eDA452256C1190947f9ba1fD19422f0120858a";
+const ADDRESS2: &str = "0x1A4C0439ba035DAcf0D573394107597CEEBF9FF8";
+const ADDRESS3: &str = "";
+
 #[test]
 fn test_eth_protocol_version() {
     let mut client = ConnectorWrapper::new_from_env();
@@ -71,12 +75,20 @@ fn test_eth_get_balance() {
 fn test_eth_send_transaction_to_address() {
     let mut client = ConnectorWrapper::new_from_env();
     let transaction = TransactionRequest {
-        from: H160::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
-        to: Some(H160::from_str("0x1A4C0439ba035DAcf0D573394107597CEEBF9FF8").unwrap()),
+        from: H160::from_str(ADDRESS1).unwrap(),
+        to: Some(H160::from_str(ADDRESS2).unwrap()),
         value: Some(U256::from(1000000000000000000 as u64)),
         ..Default::default()
     };
-    rpc_call_test_some(&mut client, rpc::eth_send_transaction(transaction));
+    let tx_hash = rpc_call_with_return(&mut client, rpc::eth_send_transaction(transaction));
+    wait_for_transaction(&mut client, tx_hash);
+
+    let tx_receipt = rpc_call_with_return(&mut client, rpc::eth_get_transaction_receipt(tx_hash)).unwrap();
+    let tx = rpc_call_with_return(&mut client, rpc::eth_get_transaction_by_hash(tx_hash));
+    assert_eq!(tx.value, U256::from(1000000000000000000 as u64));
+    assert_eq!(tx_receipt.status, U64::from(1 as i64));
+    assert_eq!(tx_receipt.cumulative_gas_used, U256::from(21000 as i32));
+    assert_eq!(tx_receipt.gas_used, U256::from(21000 as i32));
 }
 
 #[test]

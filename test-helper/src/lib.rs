@@ -162,3 +162,15 @@ pub fn rpc_call_test_some<T: DeserializeOwned + Debug + PartialEq>(
         Err(err) => panic!("{:?}", err),
     }
 }
+
+pub fn rpc_call_with_return<T: DeserializeOwned + Debug + PartialEq>(
+    client: &mut ConnectorWrapper,
+    rpc: Rpc<T>,
+) -> T {
+    match client.call(rpc) {
+        Ok(res) => {
+           res
+        }
+        Err(err) => panic!("{:?}", err),
+    }
+}
