@@ -15,14 +15,16 @@ pub fn personal_list_accounts() -> Rpc<Vec<H160>> {
 pub fn personal_unlock_account(
     address: H160,
     password: String,
-    duration: Option<u32>,
+    wrapped_duration: Option<u32>,
 ) -> Rpc<bool> {
     let mut rpc = Rpc::new("personal_unlockAccount");
     rpc.add_param(address);
     rpc.add_param(password);
-    if let Some(duration) = duration {
-        rpc.add_param(duration);
-    }
+    let duration = match wrapped_duration {
+        Some(duration) => duration,
+        None => 0,
+    };
+    rpc.add_param(duration);
     rpc
 }
 

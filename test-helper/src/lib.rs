@@ -1,5 +1,5 @@
 use ethane::rpc::{self, Rpc};
-use ethane::types::{Bytes, PrivateKey, TransactionRequest, H160, H256, U256, ContractCall};
+use ethane::types::{Bytes, PrivateKey, TransactionRequest, H160, H256, U256};
 
 use rand::Rng;
 use serde::de::DeserializeOwned;
@@ -42,9 +42,11 @@ pub fn create_secret() -> H256 {
 }
 
 pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> H160 {
+    println!("{:?}", secret);
+
     client
         .call(rpc::personal_import_raw_key(
-            PrivateKey::NonPrefixed(secret),
+            PrivateKey::ZeroXPrefixed(secret),
             String::from(ACCOUNTS_PASSWORD),
         ))
         .unwrap()
@@ -103,11 +105,9 @@ pub fn deploy_contract(
     let bin = bin(raw_contract.clone());
     let abi = abi(raw_contract);
     let contract_bytes = Bytes::from_str(&bin).unwrap();
-    let address = address;
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
-        to: Some(H160::from_str("0x0000000000000000000000000000000000000000").unwrap()),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
@@ -115,8 +115,8 @@ pub fn deploy_contract(
 
     let receipt = client
         .call(rpc::eth_get_transaction_receipt(transaction_hash))
-        .unwrap();
-    let contract_address = receipt.unwrap().contract_address.unwrap();
+        .unwrap().unwrap();
+    let contract_address = receipt.contract_address.unwrap();
     (contract_address, abi)
 }
 
