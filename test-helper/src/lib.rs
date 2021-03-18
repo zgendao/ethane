@@ -144,7 +144,6 @@ pub fn rpc_call_test_expected<T: DeserializeOwned + Debug + PartialEq>(
 ) {
     match client.call(rpc) {
         Ok(res) => {
-            println!("{:?}", res);
             assert_eq!(res, expected);
         }
         Err(err) => panic!("{:?}", err),
