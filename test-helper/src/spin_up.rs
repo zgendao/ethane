@@ -21,11 +21,14 @@ pub enum ConnectorWrapper {
 }
 
 impl ConnectorWrapper {
-    pub fn new_from_env() -> ConnectorWrapper {
-        match std::env::var("CONNECTION")
-            .unwrap_or_else(|_| String::from("ganache")) // @TODO
-            .as_str()
-        {
+    pub fn new_from_env(conn_type: Option<&str>) -> ConnectorWrapper {
+        let conn = match conn_type {
+            Some(conn) => String::from(conn),
+            None => String::from(std::env::var("CONNECTION")
+                .unwrap_or_else(|_| String::from("ganache")) // @TODO
+                .as_str())
+        };
+        match &conn[..] {
             "ganache" => Self::Http(ConnectorNodeBundle::ganache()),
             "http" => Self::Http(ConnectorNodeBundle::http()),
             "ws" => Self::Websocket(ConnectorNodeBundle::ws()),

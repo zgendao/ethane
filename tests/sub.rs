@@ -12,7 +12,7 @@ use test_helper::*;
 
 #[test]
 fn test_eth_subscribe_new_heads() {
-    let mut client = ConnectorWrapper::new_from_env();
+    let mut client = ConnectorWrapper::new_from_env(None);
     let mut subscription = client.subscribe(eth_subscribe_new_heads()).unwrap();
     let mut blocks = Vec::<BlockHeader>::new();
     loop {
@@ -33,7 +33,7 @@ fn test_eth_subscribe_new_heads() {
 
 #[test]
 fn test_eth_subscribe_new_pending_transactions() {
-    let mut client = ConnectorWrapper::new_from_env();
+    let mut client = ConnectorWrapper::new_from_env(None);
     let mut subscription = client
         .subscribe(eth_subscribe_new_pending_transactions())
         .unwrap();
@@ -56,7 +56,7 @@ fn test_eth_subscribe_new_pending_transactions() {
 
 #[test]
 fn test_eth_subscribe_logs() {
-    let mut client = ConnectorWrapper::new_from_env();
+    let mut client = ConnectorWrapper::new_from_env(None);
     let address = create_account(&mut client).1;
     let (contract_address, _) = deploy_contract(
         &mut client,
@@ -95,7 +95,7 @@ fn test_eth_subscribe_logs() {
 #[test]
 #[ignore]
 fn test_eth_subscribe_syncing() {
-    let mut client = ConnectorWrapper::new_from_env();
+    let mut client = ConnectorWrapper::new_from_env(None);
     let mut subscription = client.subscribe(eth_subscribe_syncing()).unwrap();
     let _sync_info_sub = subscription.next_item().unwrap();
     assert!(true);
