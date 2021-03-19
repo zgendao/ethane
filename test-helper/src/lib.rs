@@ -42,8 +42,6 @@ pub fn create_secret() -> H256 {
 }
 
 pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> H160 {
-    println!("{:?}", secret);
-
     client
         .call(rpc::personal_import_raw_key(
             PrivateKey::ZeroXPrefixed(secret),
@@ -108,6 +106,7 @@ pub fn deploy_contract(
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
+        gas: Some(U256::from(1000000 as u64)),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
@@ -120,12 +119,23 @@ pub fn deploy_contract(
     (contract_address, abi)
 }
 
+pub fn simulate_transaction(client: &mut ConnectorWrapper, from: H160, to: &str, value: U256) -> H256 {
+    let transaction = TransactionRequest {
+        from: from,
+        to: Some(to.parse().unwrap()),
+        value: Some(value),
+        ..Default::default()
+    };
+    let tx_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
+    wait_for_transaction(client, tx_hash);
+    tx_hash
+}
+
 pub fn bin(contract_input: Value) -> String {
     contract_input["bin"].as_str().unwrap().to_string()
 }
 
 pub fn abi(contract_input: Value) -> Value {
-    println!("{}", contract_input);
     contract_input["abi"].clone()
 }
 
