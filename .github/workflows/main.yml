@@ -8,6 +8,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Setup Dependencies
+        run: |
+          apt-get update
+          apt-get install -y build-essential
+      - uses: actions-rs/toolchain@v1
+        with:
+          # profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      ganache:
+        image: trufflesuite/ganache-cli
+        ports:
+          - 8545:8545
+        options: >-
+          -h 0.0.0.0
+          --fork 
+          --account "0x31c354f57fc542eba2c56699286723e94f7bd02a4891a0a7f68566c2a2df6795,1000000000000000000000"
+          --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2df6795,1000000000000000000000"
+          --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2d56795,1000000000000000000000"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Setup Dependencies
+        run: |
+          apt-get update
+          apt-get install -y build-essential
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -15,30 +48,5 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: check
-
-  # test:
-  #   runs-on: ubuntu-latest
-  #   services:
-  #     ganache:
-  #       image: trufflesuite/ganache-cli
-  #       ports:
-  #         - 8545:8545
-  #       options: >-
-  #         -h 0.0.0.0
-  #         --fork 
-  #         --account "0x31c354f57fc542eba2c56699286723e94f7bd02a4891a0a7f68566c2a2df6795,1000000000000000000000"
-  #         --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2df6795,1000000000000000000000"
-  #         --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2d56795,1000000000000000000000"
-  #   steps:
-  #     - name: Check out code
-  #       uses: actions/checkout@v2
-  #     - uses: actions-rs/toolchain@v1
-  #       with:
-  #         profile: minimal
-  #         toolchain: stable
-  #         override: true
-  #     - uses: actions-rs/cargo@v1
-  #       with:
-  #         command: test
+          command: test
       

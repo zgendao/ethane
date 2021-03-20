@@ -24,8 +24,6 @@ thiserror = "1"
 hex = "0.4"
 ureq = "2"
 funty = "~1.1.0"
-ethabi = "13.0.0"
-anyhow = "1.0.38"
 
 [dev-dependencies]
 test-helper = { path = "./test-helper"}
