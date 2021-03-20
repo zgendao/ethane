@@ -3,37 +3,39 @@ on: [push, pull_request]
 name: Ethane Rust
 
 jobs:
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup Dependencies
-        run: |
-          apt-get update
-          apt-get install -y build-essential
-      - uses: actions-rs/toolchain@v1
-        with:
-          # profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
+  # check:
+  #   name: Check
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Setup Dependencies
+  #       run: |
+  #         apt-get update
+  #         apt-get install -y build-essential
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         # profile: minimal
+  #         toolchain: stable
+  #         override: true
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: check
 
   test:
     runs-on: ubuntu-latest
     services:
       ganache:
-        image: trufflesuite/ganache-cli
+        image: pumpkinseed/ganache-fix
         ports:
           - 8545:8545
-        options: >-
-          -h 0.0.0.0
-          --fork 
-          --account "0x31c354f57fc542eba2c56699286723e94f7bd02a4891a0a7f68566c2a2df6795,1000000000000000000000"
-          --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2df6795,1000000000000000000000"
-          --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2d56795,1000000000000000000000"
+        env:
+          WEB3_FORK_URL: https://mainnet.infura.io/v3/08419f2adb9241e886638a517b751ba4
+        # options: >-
+        #   -h 0.0.0.0
+        #   --fork https://mainnet.infura.io/v3/08419f2adb9241e886638a517b751ba4
+        #   --account "0x31c354f57fc542eba2c56699286723e94f7bd02a4891a0a7f68566c2a2df6795,1000000000000000000000"
+        #   --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2df6795,1000000000000000000000"
+        #   --account "0x31c354f57fc342eba2c56699286723e94f7bd12a4891a0a7f68566c2a2d56795,1000000000000000000000"
     steps:
       - name: Check out code
         uses: actions/checkout@v2
