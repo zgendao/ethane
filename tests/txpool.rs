@@ -4,12 +4,14 @@ use ethane::types::{TransactionRequest, U256};
 use test_helper::*;
 
 #[test]
+#[ignore] // @TODO not supported
 fn test_txpool_status() {
     let mut client = ConnectorWrapper::new_from_env(None);
     rpc_call_test_some(&mut client, rpc::txpool_status())
 }
 
 #[test]
+#[ignore] // @TODO not supported
 fn test_txpool_content() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let transaction = TransactionRequest {
@@ -27,6 +29,7 @@ fn test_txpool_content() {
 }
 
 #[test]
+#[ignore] // @TODO not supported
 fn test_txpool_inspect() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let transaction = TransactionRequest {

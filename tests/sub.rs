@@ -11,6 +11,7 @@ use std::path::Path;
 use test_helper::*;
 
 #[test]
+#[ignore] // @TODO not supported
 fn test_eth_subscribe_new_heads() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let mut subscription = client.subscribe(eth_subscribe_new_heads()).unwrap();
@@ -32,6 +33,7 @@ fn test_eth_subscribe_new_heads() {
 }
 
 #[test]
+#[ignore] // @TODO not supported
 fn test_eth_subscribe_new_pending_transactions() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let mut subscription = client
@@ -55,6 +57,7 @@ fn test_eth_subscribe_new_pending_transactions() {
 }
 
 #[test]
+#[ignore] // @TODO not supported
 fn test_eth_subscribe_logs() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let address = create_account(&mut client).1;

@@ -29,7 +29,7 @@ jobs:
         ports:
           - 8545:8545
         env:
-          WEB3_FORK_URL: https://mainnet.infura.io/v3/08419f2adb9241e886638a517b751ba4
+          WEB3_FORK_URL: https://mainnet.infura.io/v3/3b7abf15a83f4c37a0745dca3a1b400b
         # options: >-
         #   -h 0.0.0.0
         #   --fork https://mainnet.infura.io/v3/08419f2adb9241e886638a517b751ba4

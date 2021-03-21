@@ -17,7 +17,7 @@
 //! # Examples
 //!
 //! ## Request over http
-//! ```
+//! ```no_run
 //! use ethane::Connector;
 //! use ethane::rpc::eth_get_balance;
 //! use ethane::types::H160;
@@ -34,7 +34,7 @@
 //! ```
 //!
 //! ## Starting a subscription over websocket
-//! ```
+//! ```no_run
 //! use ethane::Connector;
 //! use ethane::rpc::sub::eth_subscribe_new_pending_transactions;
 //! # use test_helper::NodeProcess;
