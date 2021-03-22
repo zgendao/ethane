@@ -122,7 +122,7 @@ fn test_eth_send_transaction_contract_creation() {
     // assert_eq!(tx_receipt.cumulative_gas_used, U256::from(117799 as i32));
     // assert_eq!(tx_receipt.gas_used, U256::from(117799 as i32));
     assert_ne!(tx_receipt.contract_address, None);
-    if tx.input.0.len() < 240 {
+    if tx.input.0.len() < 200 {
         panic!("Invalid input length: {}", tx.input.0.len());
     }
 }
