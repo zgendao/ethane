@@ -25,7 +25,7 @@ jobs:
         ports:
           - 8545:8545
         env:
-          WEB3_FORK_URL: https://mainnet.infura.io/v3/3b7abf15a83f4c37a0745dca3a1b400b
+          WEB3_FORK_URL: ${{ secrets.INFURA_LINK }}
     steps:
       - name: Check out code
         uses: actions/checkout@v2
