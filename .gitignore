@@ -3,3 +3,4 @@ Cargo.lock
 .idea/
 /test-helper/target
 /test-helper/Cargo.lock
+.env

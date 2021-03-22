@@ -44,7 +44,7 @@ pub fn create_secret() -> H256 {
 pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> H160 {
     client
         .call(rpc::personal_import_raw_key(
-            PrivateKey::NonPrefixed(secret),
+            PrivateKey::ZeroXPrefixed(secret),
             String::from(ACCOUNTS_PASSWORD),
         ))
         .unwrap()
@@ -103,10 +103,10 @@ pub fn deploy_contract(
     let bin = bin(raw_contract.clone());
     let abi = abi(raw_contract);
     let contract_bytes = Bytes::from_str(&bin).unwrap();
-    let address = address;
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
+        gas: Some(U256::from(1000000 as u64)),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
@@ -114,9 +114,21 @@ pub fn deploy_contract(
 
     let receipt = client
         .call(rpc::eth_get_transaction_receipt(transaction_hash))
-        .unwrap();
-    let contract_address = receipt.unwrap().contract_address.unwrap();
+        .unwrap().unwrap();
+    let contract_address = receipt.contract_address.unwrap();
     (contract_address, abi)
+}
+
+pub fn simulate_transaction(client: &mut ConnectorWrapper, from: H160, to: &str, value: U256) -> H256 {
+    let transaction = TransactionRequest {
+        from: from,
+        to: Some(to.parse().unwrap()),
+        value: Some(value),
+        ..Default::default()
+    };
+    let tx_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
+    wait_for_transaction(client, tx_hash);
+    tx_hash
 }
 
 pub fn bin(contract_input: Value) -> String {
@@ -142,10 +154,9 @@ pub fn rpc_call_test_expected<T: DeserializeOwned + Debug + PartialEq>(
 ) {
     match client.call(rpc) {
         Ok(res) => {
-            println!("{:?}", res);
             assert_eq!(res, expected);
         }
-        Err(err) => panic!("{}", err),
+        Err(err) => panic!("{:?}", err),
     }
 }
 
@@ -157,6 +168,18 @@ pub fn rpc_call_test_some<T: DeserializeOwned + Debug + PartialEq>(
         Ok(res) => {
             println!("{:?}", res);
         }
-        Err(err) => panic!("{}", err),
+        Err(err) => panic!("{:?}", err),
+    }
+}
+
+pub fn rpc_call_with_return<T: DeserializeOwned + Debug + PartialEq>(
+    client: &mut ConnectorWrapper,
+    rpc: Rpc<T>,
+) -> T {
+    match client.call(rpc) {
+        Ok(res) => {
+           res
+        }
+        Err(err) => panic!("{:?}", err),
     }
 }
