@@ -66,6 +66,7 @@ fn test_eth_accounts() {
 }
 
 #[test]
+#[ignore]
 fn test_eth_block_number() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let block_number = rpc_call_with_return(&mut client, rpc::eth_block_number());
@@ -476,6 +477,7 @@ fn test_eth_estimate_gas() {
 }
 
 #[test]
+#[ignore]
 fn test_eth_get_block_by_hash() {
     let mut client = ConnectorWrapper::new_from_env(None);
     simulate_transaction(
