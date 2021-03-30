@@ -1,16 +1,7 @@
-// TODO make a ParameterType implementation and move it to another file
-
-pub struct ParameterType(pub String);
-
-impl ParameterType {
-    pub fn new() -> Self {
-        Self("hello".to_owned())
-    }
-}
+use crate::ParameterType;
 
 pub struct Function {
-    pub _type: String,
-    pub name: String,
+    pub _type: &'static str,
     pub inputs: Vec<ParameterType>,
     pub outputs: Vec<ParameterType>,
     pub state_mutability: Option<StateMutability>,
@@ -19,10 +10,10 @@ pub struct Function {
 }
 
 impl Function {
+    // TODO this should return with a Result
     pub fn parse(raw_func: &serde_json::Value) -> Self {
         Self {
-            _type: "function".to_string(),
-            name: Self::name(raw_func),
+            _type: "function",
             inputs: Self::inputs(raw_func),
             outputs: Self::outputs(raw_func),
             state_mutability: StateMutability::parse(raw_func),
@@ -36,7 +27,8 @@ impl Function {
             serde_json::Value::Array(v) => {
                 let mut res = vec![];
                 for input in v {
-                    res.push(ParameterType::new())
+                    // TODO handle unwrap
+                    res.push(ParameterType::parse(input.as_str().unwrap()).unwrap())
                 }
                 res
             }
@@ -49,7 +41,8 @@ impl Function {
             serde_json::Value::Array(v) => {
                 let mut res = vec![];
                 for input in v {
-                    res.push(ParameterType::new())
+                    // TODO handle unwrap
+                    res.push(ParameterType::parse(input.as_str().unwrap()).unwrap())
                 }
                 res
             }
@@ -70,14 +63,6 @@ impl Function {
         match raw_constant {
             serde_json::Value::Bool(val) => Some(*val),
             _ => None,
-        }
-    }
-
-    fn name(raw_func: &serde_json::Value) -> String {
-        let raw_name = &raw_func["name"];
-        match raw_name {
-            serde_json::Value::String(name) => name.clone(),
-            _ => "".to_string(),
         }
     }
 }

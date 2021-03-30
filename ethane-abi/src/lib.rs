@@ -33,10 +33,8 @@ impl Abi {
         while functions[i] != serde_json::Value::Null {
             if functions[i]["type"] == "function" && functions[i]["name"] != serde_json::Value::Null
             {
-                self.functions.insert(
-                    functions[i]["name"].as_str().unwrap().to_owned(),
-                    Function::parse(&functions[i]),
-                );
+                let name = functions[i]["name"].as_str().unwrap().to_owned();
+                self.functions.insert(name, Function::parse(&functions[i]));
             } else {
                 return Err(String::from("Function name is missing from ABI."));
             }

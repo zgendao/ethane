@@ -9,7 +9,7 @@ pub enum ParameterType {
 }
 
 impl ParameterType {
-    fn parse(parsed_str: &str) -> Result<Self, String> {
+    pub fn parse(parsed_str: &str) -> Result<Self, String> {
         let result = match parsed_str {
             "address" => Self::Address,
             "bool" => Self::Bool,
