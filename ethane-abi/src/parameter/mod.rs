@@ -1,3 +1,5 @@
+pub mod parameter_type;
+
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};
 use serde_json::Value;
