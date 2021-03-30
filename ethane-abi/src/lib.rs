@@ -1,8 +1,10 @@
 mod function;
 mod parameter;
+mod parameter_type;
 
 pub use function::{Function, StateMutability};
 pub use parameter::Parameter;
+pub use parameter_type::ParameterType;
 
 use std::collections::HashMap;
 use std::fs::File;
