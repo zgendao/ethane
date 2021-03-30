@@ -11,6 +11,8 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
+use thiserror::Error;
+
 pub struct Abi {
     pub functions: HashMap<String, Function>,
 }
@@ -23,11 +25,11 @@ impl Abi {
         }
     }
 
-    pub fn parse(&mut self, path_to_abi: &Path) -> Result<(), String> {
-        let file = File::open(path_to_abi).map_err(|e| format!("Couldn't open file: {}", e))?;
+    pub fn parse(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
+        let file = File::open(path_to_abi)?;//.map_err(|e| format!("Couldn't open file: {}", e))?;
         let reader = BufReader::new(file);
         let functions: serde_json::Value =
-            serde_json::from_reader(reader).map_err(|e| format!("Couldn't parse json: {}", e))?;
+            serde_json::from_reader(reader)?;//.map_err(|e| format!("Couldn't parse json: {}", e))?;
 
         let mut i: usize = 0;
         while functions[i] != serde_json::Value::Null {
@@ -36,7 +38,7 @@ impl Abi {
                 let name = functions[i]["name"].as_str().unwrap().to_owned();
                 self.functions.insert(name, Function::parse(&functions[i]));
             } else {
-                return Err(String::from("Function name is missing from ABI."));
+                return Err(AbiParserError::MissingData(String::from("Function name is missing from ABI.")));
             }
             i += 1;
         }
@@ -44,6 +46,20 @@ impl Abi {
         Ok(())
     }
 }
+
+#[derive(Error, Debug)]
+pub enum AbiParserError {
+    #[error("Couldn't open ABI file: {0}")]
+    FileIOError(#[from] std::io::Error),
+    #[error("De-/Serialization error: {0}")]
+    Serde(#[from] serde_json::Error),
+    #[error("Missing data error: {0}")]
+    MissingData(String),
+    #[error("Invalid ABI encoding error: {0}")]
+    InvalidAbiEncoding(String),
+}
+
+
 
 //#[cfg(test)]
 //mod tests {

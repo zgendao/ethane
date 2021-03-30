@@ -1,3 +1,5 @@
+use crate::AbiParserError;
+
 pub enum ParameterType {
     Address,
     Bool,
@@ -9,7 +11,7 @@ pub enum ParameterType {
 }
 
 impl ParameterType {
-    pub fn parse(parsed_str: &str) -> Result<Self, String> {
+    pub fn parse(parsed_str: &str) -> Result<Self, AbiParserError> {
         let result = match parsed_str {
             "address" => Self::Address,
             "bool" => Self::Bool,
@@ -17,20 +19,20 @@ impl ParameterType {
             "string" => Self::String,
             param_type if param_type.starts_with("int") => {
                 let len = usize::from_str_radix(&param_type[3..], 10)
-                    .map_err(|e| format!("Failed to parse type: {}", e))?;
+                    .map_err(|e| AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e)))?;
                 Self::Int(len)
             }
             param_type if param_type.starts_with("uint") => {
                 let len = usize::from_str_radix(&param_type[4..], 10)
-                    .map_err(|e| format!("Failed to parse numeric data of type: {}", e))?;
+                    .map_err(|e| AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e)))?;
                 Self::Uint(len)
             }
             param_type if param_type.starts_with("bytes") => {
                 let len = usize::from_str_radix(&param_type[5..], 10)
-                    .map_err(|e| format!("Failed to parse numeric data of type: {}", e))?;
+                    .map_err(|e| AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e)))?;
                 Self::FixedBytes(len)
             }
-            _ => return Err(format!("Invalid ABI type {}", parsed_str)),
+            _ => return Err(AbiParserError::InvalidAbiEncoding(format!("{}", parsed_str.to_owned()))),
         };
 
         Ok(result)
@@ -39,7 +41,7 @@ impl ParameterType {
 
 #[cfg(test)]
 mod test {
-    use super::ParameterType;
+    use super::*;
     use std::mem::discriminant;
 
     #[test]
@@ -88,26 +90,34 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "Failed to parse numeric data of type")]
     fn invalid_abi_uint() {
-        ParameterType::parse("uint2i6").unwrap();
+        match ParameterType::parse("uint2i6") {
+            Err(AbiParserError::InvalidAbiEncoding(e)) => assert!(e.starts_with("uint2i6: invalid digit")),
+            _ => panic!("This test failed!"),
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Failed to parse numeric data of type")]
     fn invalid_abi_int() {
-        ParameterType::parse("uint2i6").unwrap();
+        match ParameterType::parse("int2i6") {
+            Err(AbiParserError::InvalidAbiEncoding(e)) => assert!(e.starts_with("int2i6: invalid digit")),
+            _ => panic!("This test failed!"),
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Failed to parse numeric data of type")]
     fn invalid_abi_bytes() {
-        ParameterType::parse("bytes32x").unwrap();
+        match ParameterType::parse("bytes32x") {
+            Err(AbiParserError::InvalidAbiEncoding(e)) => assert!(e.starts_with("bytes32x: invalid digit")),
+            _ => panic!("This test failed!"),
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Invalid ABI type")]
     fn invalid_abi_type() {
-        ParameterType::parse("invalid_stuff").unwrap();
+        match ParameterType::parse("invalid_type") {
+            Err(AbiParserError::InvalidAbiEncoding(e)) => assert!(e.starts_with("invalid_type")),
+            _ => panic!("This test failed!"),
+        }
     }
 }
