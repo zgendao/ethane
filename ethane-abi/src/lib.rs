@@ -1,1 +1,1 @@
-mod parameter_type;
+mod parameter;
