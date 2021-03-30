@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"ethane",
+	"ethane-abi",
 	"ethane-helper",
 ]
 
