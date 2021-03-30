@@ -1,10 +1,11 @@
 use crate::AbiParserError;
 use crate::ParameterType;
 
+// NOTE or TODO by storing only ParameterTypes, we don't store the type names.
 pub struct Function {
     pub _type: &'static str,
-    pub inputs: Vec<ParameterType>,
-    pub outputs: Vec<ParameterType>,
+    pub input_types: Vec<ParameterType>,
+    pub output_types: Vec<ParameterType>,
     pub state_mutability: Option<StateMutability>,
     pub payable: Option<bool>,
     pub constant: Option<bool>,
@@ -12,19 +13,19 @@ pub struct Function {
 
 impl Function {
     pub fn parse(raw_func: &serde_json::Value) -> Result<Self, AbiParserError> {
-        let inputs = Self::inputs(raw_func)?;
-        let outputs = Self::inputs(raw_func)?;
+        let input_types = Self::parse_inputs(raw_func)?;
+        let output_types = Self::parse_outputs(raw_func)?;
         Ok(Self {
             _type: "function",
-            inputs,
-            outputs,
+            input_types,
+            output_types,
             state_mutability: StateMutability::parse(raw_func),
             payable: raw_func["payable"].as_bool(),
             constant: raw_func["constant"].as_bool(),
         })
     }
 
-    fn inputs(raw_func: &serde_json::Value) -> Result<Vec<ParameterType>, AbiParserError> {
+    fn parse_inputs(raw_func: &serde_json::Value) -> Result<Vec<ParameterType>, AbiParserError> {
         match &raw_func["inputs"] {
             serde_json::Value::Array(inputs) => {
                 let mut result = Vec::new();
@@ -45,7 +46,7 @@ impl Function {
         }
     }
 
-    fn outputs(raw_func: &serde_json::Value) -> Result<Vec<ParameterType>, AbiParserError> {
+    fn parse_outputs(raw_func: &serde_json::Value) -> Result<Vec<ParameterType>, AbiParserError> {
         match &raw_func["outputs"] {
             serde_json::Value::Array(outputs) => {
                 let mut result = Vec::new();

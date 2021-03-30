@@ -2,13 +2,14 @@ mod function;
 mod parameter;
 
 pub use function::{Function, StateMutability};
-pub use parameter::{Parameter, parameter_type::ParameterType};
+pub use parameter::{parameter_type::ParameterType, Parameter};
 
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
+use sha3::{Digest, Keccak256};
 use thiserror::Error;
 
 pub struct Abi {
@@ -26,8 +27,7 @@ impl Abi {
     pub fn parse(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
         let file = File::open(path_to_abi)?;
         let reader = BufReader::new(file);
-        let functions: serde_json::Value =
-            serde_json::from_reader(reader)?;
+        let functions: serde_json::Value = serde_json::from_reader(reader)?;
 
         let mut i: usize = 0;
         while functions[i] != serde_json::Value::Null {
@@ -36,12 +36,44 @@ impl Abi {
                 let name = functions[i]["name"].as_str().unwrap().to_owned();
                 self.functions.insert(name, Function::parse(&functions[i])?);
             } else {
-                return Err(AbiParserError::MissingData("Function name is missing from ABI.".to_owned()));
+                return Err(AbiParserError::MissingData(
+                    "Function name is missing from ABI.".to_owned(),
+                ));
             }
             i += 1;
         }
 
         Ok(())
+    }
+
+    pub fn keccak_hash(
+        &self,
+        function_name: &str,
+        parameters: Vec<Parameter>,
+    ) -> Result<Vec<u8>, AbiParserError> {
+        if let Some(function) = self.functions.get(function_name) {
+            let input_type_str = function
+                .input_types
+                .iter()
+                .map(|input_type| input_type.as_string())
+                .collect::<Vec<String>>()
+                .join(",");
+            let signature = format!("{}({})", function_name, input_type_str);
+            let mut keccak = Keccak256::new();
+            keccak.update(signature);
+
+            let mut hash = keccak.finalize()[0..4].to_vec();
+            for parameter in parameters {
+                // TODO check whether input parameter matches the required function types
+                hash.append(&mut parameter.encode());
+            }
+
+            Ok(hash)
+        } else {
+            Err(AbiParserError::MissingData(
+                "Function name not found in ABI".to_owned(),
+            ))
+        }
     }
 }
 
@@ -56,8 +88,6 @@ pub enum AbiParserError {
     #[error("Invalid ABI encoding error: {0}")]
     InvalidAbiEncoding(String),
 }
-
-
 
 //#[cfg(test)]
 //mod tests {

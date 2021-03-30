@@ -2,7 +2,6 @@ pub mod parameter_type;
 
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};
-use serde_json::Value;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -31,50 +30,42 @@ pub enum Parameter {
 
 #[allow(dead_code)]
 impl Parameter {
-    pub fn encode(&self) -> Value {
+    pub fn encode(&self) -> Vec<u8> {
         match self {
-            Parameter::Address(address) => Value::from(address.as_bytes()),
-            Parameter::Uint8(val) | Parameter::Int8(val) => {
-                Value::from(left_pad_to_32_bytes(val).to_vec())
-            }
-            Parameter::Uint16(val) | Parameter::Int16(val) => {
-                Value::from(left_pad_to_32_bytes(val).to_vec())
-            }
-            Parameter::Uint32(val) | Parameter::Int32(val) => {
-                Value::from(left_pad_to_32_bytes(val).to_vec())
-            }
+            Parameter::Address(address) => address.as_bytes().to_vec(),
+            Parameter::Uint8(val) | Parameter::Int8(val) => left_pad_to_32_bytes(val).to_vec(),
+            Parameter::Uint16(val) | Parameter::Int16(val) => left_pad_to_32_bytes(val).to_vec(),
+            Parameter::Uint32(val) | Parameter::Int32(val) => left_pad_to_32_bytes(val).to_vec(),
             Parameter::Uint64(val) | Parameter::Int64(val) => {
                 let mut padded: [u8; 8] = [0u8; 8];
                 val.to_big_endian(&mut padded);
-                let padded = left_pad_to_32_bytes(&padded);
-                Value::from(padded.to_vec())
+                left_pad_to_32_bytes(&padded).to_vec()
             }
             Parameter::Uint128(val) | Parameter::Int128(val) => {
                 let mut padded: [u8; 16] = [0u8; 16];
                 val.to_big_endian(&mut padded);
-                let padded = left_pad_to_32_bytes(&padded);
-                Value::from(padded.to_vec())
+                left_pad_to_32_bytes(&padded).to_vec()
             }
             Parameter::Uint256(val) | Parameter::Int256(val) => {
                 let mut padded: [u8; 32] = [0u8; 32];
                 val.to_big_endian(&mut padded);
-                Value::from(padded.to_vec())
+                padded.to_vec()
             }
             Parameter::Bool(val) => {
                 let mut padded: [u8; 32] = [0u8; 32];
                 if *val {
                     padded[31] = 1;
                 }
-                Value::from(padded.to_vec())
+                padded.to_vec()
             }
-            Parameter::FixedBytes(val) => Value::from(right_pad_to_32_bytes(val).to_vec()),
+            Parameter::FixedBytes(val) => right_pad_to_32_bytes(val).to_vec(),
             Parameter::Bytes(bytes) => {
                 let mut res: Vec<u8> = vec![];
                 // number of bytes is encoded as a uint256
                 let length: [u8; 32] = left_pad_to_32_bytes(&bytes.len().to_be_bytes());
                 res.extend_from_slice(&length);
                 res.extend_from_slice(right_pad_bytes(&bytes).as_slice());
-                Value::from(res)
+                res
             }
             Parameter::String(val) => Parameter::Bytes(Vec::from(val.as_bytes())).encode(),
         }
@@ -236,7 +227,7 @@ mod test {
         );
         let encoded = address.encode();
         let hex_val = hex!("95eDA452256C1190947f9ba1fD19422f0120858a");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -245,7 +236,7 @@ mod test {
         let uint8 = Parameter::from_u8(11);
         let encoded = uint8.encode();
         let hex_val = hex!("000000000000000000000000000000000000000000000000000000000000000B");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -254,7 +245,7 @@ mod test {
         let uint16 = Parameter::from_u16(123);
         let encoded = uint16.encode();
         let hex_val = hex!("000000000000000000000000000000000000000000000000000000000000007B");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -263,7 +254,7 @@ mod test {
         let uint32 = Parameter::from_u16(65535);
         let encoded = uint32.encode();
         let hex_val = hex!("000000000000000000000000000000000000000000000000000000000000FFFF");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -272,7 +263,7 @@ mod test {
         let uint64 = Parameter::from_u64(18_446_744_073_709_551_615);
         let encoded = uint64.encode();
         let hex_val = hex!("000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFF");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -281,7 +272,7 @@ mod test {
         let uint256 = Parameter::Uint128(U128::from_str("1555").unwrap());
         let encoded = uint256.encode();
         let hex_val = hex!("0000000000000000000000000000000000000000000000000000000000001555");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -290,7 +281,7 @@ mod test {
         let uint256 = Parameter::Uint256(U256::from_str("1555").unwrap());
         let encoded = uint256.encode();
         let hex_val = hex!("0000000000000000000000000000000000000000000000000000000000001555");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -299,7 +290,7 @@ mod test {
         let int8 = Parameter::from_i8(11);
         let encoded = int8.encode();
         let hex_val = hex!("000000000000000000000000000000000000000000000000000000000000000B");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -308,7 +299,7 @@ mod test {
         let int16 = Parameter::from_i16(123);
         let encoded = int16.encode();
         let hex_val = hex!("000000000000000000000000000000000000000000000000000000000000007B");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -317,7 +308,7 @@ mod test {
         let int32 = Parameter::from_i16(32767);
         let encoded = int32.encode();
         let hex_val = hex!("0000000000000000000000000000000000000000000000000000000000007FFF");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -326,7 +317,7 @@ mod test {
         let int64 = Parameter::from_i64(9_223_372_036_854_775_807);
         let encoded = int64.encode();
         let hex_val = hex!("0000000000000000000000000000000000000000000000007FFFFFFFFFFFFFFF");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -335,7 +326,7 @@ mod test {
         let int256 = Parameter::Uint128(U128::from_str("1555").unwrap());
         let encoded = int256.encode();
         let hex_val = hex!("0000000000000000000000000000000000000000000000000000000000001555");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -344,7 +335,7 @@ mod test {
         let int256 = Parameter::Uint256(U256::from_str("1555").unwrap());
         let encoded = int256.encode();
         let hex_val = hex!("0000000000000000000000000000000000000000000000000000000000001555");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
 
@@ -352,10 +343,10 @@ mod test {
     fn test_encode_string() {
         let str = Parameter::String(String::from("AAAA"));
         let encoded = str.encode();
-        println!("{:?}",encoded);
+        println!("{:?}", encoded);
 
         let hex_val = hex!("00000000000000000000000000000000000000000000000000000000000000044141414100000000000000000000000000000000000000000000000000000000");
-        let expected = Value::from(hex_val.to_vec());
+        let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
     //
