@@ -75,7 +75,7 @@ impl Parameter {
                 Value::from(res)
             }
             Parameter::String(val) => {
-                Value::from(val.as_bytes())
+                Parameter::Bytes(val.as_bytes().to_vec()).encode()
             }
         }
     }
