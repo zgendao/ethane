@@ -52,19 +52,35 @@ impl Abi {
         parameters: Vec<Parameter>,
     ) -> Result<Vec<u8>, AbiParserError> {
         if let Some(function) = self.functions.get(function_name) {
+            if parameters.len() != function.input_types.len() {
+                return Err(AbiParserError::MissingData(format!(
+                    "Wrong number of parameters were provided. Expected {}, found {}",
+                    parameters.len(),
+                    function.input_types.len()
+                )));
+            }
+
             let input_type_str = function
                 .input_types
                 .iter()
-                .map(|input_type| input_type.as_string())
+                .map(|input_type| input_type.as_abi_string())
                 .collect::<Vec<String>>()
                 .join(",");
+
             let signature = format!("{}({})", function_name, input_type_str);
             let mut keccak = Keccak256::new();
             keccak.update(signature);
 
             let mut hash = keccak.finalize()[0..4].to_vec();
-            for parameter in parameters {
-                // TODO check whether input parameter matches the required function types
+
+            for (parameter, parameter_type) in parameters.iter().zip(function.input_types.iter()) {
+                if parameter.get_type() != *parameter_type {
+                    return Err(AbiParserError::InvalidAbiEncoding(format!(
+                        "Invalid parameter type supplied. Expected {:?}, found {:?}",
+                        parameter_type,
+                        parameter.get_type()
+                    )));
+                }
                 hash.append(&mut parameter.encode());
             }
 

@@ -47,7 +47,7 @@ impl ParameterType {
         Ok(result)
     }
 
-    pub fn as_string(&self) -> String {
+    pub fn as_abi_string(&self) -> String {
         match self {
             Self::Address => "address".to_owned(),
             Self::Bool => "bool".to_owned(),
@@ -112,13 +112,13 @@ mod test {
 
     #[test]
     fn parameter_type_as_string() {
-        assert_eq!(&ParameterType::Address.as_string(), "address");
-        assert_eq!(&ParameterType::Bool.as_string(), "bool");
-        assert_eq!(&ParameterType::Bytes.as_string(), "bytes");
-        assert_eq!(&ParameterType::String.as_string(), "string");
-        assert_eq!(&ParameterType::FixedBytes(32).as_string(), "bytes32");
-        assert_eq!(&ParameterType::Uint(256).as_string(), "uint256");
-        assert_eq!(&ParameterType::Int(128).as_string(), "int128");
+        assert_eq!(&ParameterType::Address.as_abi_string(), "address");
+        assert_eq!(&ParameterType::Bool.as_abi_string(), "bool");
+        assert_eq!(&ParameterType::Bytes.as_abi_string(), "bytes");
+        assert_eq!(&ParameterType::String.as_abi_string(), "string");
+        assert_eq!(&ParameterType::FixedBytes(32).as_abi_string(), "bytes32");
+        assert_eq!(&ParameterType::Uint(256).as_abi_string(), "uint256");
+        assert_eq!(&ParameterType::Int(128).as_abi_string(), "int128");
     }
 
     #[test]
