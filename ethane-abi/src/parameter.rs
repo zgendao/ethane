@@ -72,10 +72,9 @@ impl Parameter {
                 let length: [u8; 32] = left_pad_to_32_bytes(&bytes.len().to_be_bytes());
                 res.extend_from_slice(&length);
                 res.extend_from_slice(right_pad_bytes(&bytes).as_slice());
-
                 Value::from(res)
             }
-            Parameter::String(val) => Parameter::Bytes(val.as_bytes().to_vec()).encode(),
+            Parameter::String(val) => Parameter::Bytes(Vec::from(val.as_bytes())).encode(),
         }
     }
 
@@ -343,6 +342,17 @@ mod test {
         let int256 = Parameter::Uint256(U256::from_str("1555").unwrap());
         let encoded = int256.encode();
         let hex_val = hex!("0000000000000000000000000000000000000000000000000000000000001555");
+        let expected = Value::from(hex_val.to_vec());
+        assert_eq!(encoded, expected);
+    }
+
+    #[test]
+    fn test_encode_string() {
+        let str = Parameter::String(String::from("AAAA"));
+        let encoded = str.encode();
+        println!("{:?}",encoded);
+
+        let hex_val = hex!("00000000000000000000000000000000000000000000000000000000000000044141414100000000000000000000000000000000000000000000000000000000");
         let expected = Value::from(hex_val.to_vec());
         assert_eq!(encoded, expected);
     }
