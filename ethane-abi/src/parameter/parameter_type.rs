@@ -1,5 +1,6 @@
 use crate::AbiParserError;
 
+#[derive(Debug, PartialEq)]
 pub enum ParameterType {
     Address,
     Bool,

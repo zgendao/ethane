@@ -1,4 +1,5 @@
-pub mod parameter_type;
+mod parameter_type;
+pub use parameter_type::ParameterType;
 
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};
@@ -28,7 +29,6 @@ pub enum Parameter {
     String(String),
 }
 
-#[allow(dead_code)]
 impl Parameter {
     pub fn encode(&self) -> Vec<u8> {
         match self {
@@ -166,6 +166,28 @@ impl Parameter {
     //         ParameterType::Uint128(_) => ParameterType::Uint128(U128::from_big_endian(remove_padding_bytes(16,&raw))),
     //     }
     // }
+
+    pub fn get_type(&self) -> ParameterType {
+        match self {
+            Self::Address(_) => ParameterType::Address,
+            Self::Bool(_) => ParameterType::Bool,
+            Self::Bytes(_) => ParameterType::Bytes,
+            Self::FixedBytes(data) => ParameterType::FixedBytes(data.len()),
+            Self::String(_) => ParameterType::String,
+            Self::Uint8(_) => ParameterType::Uint(8),
+            Self::Uint16(_) => ParameterType::Uint(16),
+            Self::Uint32(_) => ParameterType::Uint(32),
+            Self::Uint64(_) => ParameterType::Uint(64),
+            Self::Uint128(_) => ParameterType::Uint(128),
+            Self::Uint256(_) => ParameterType::Uint(256),
+            Self::Int8(_) => ParameterType::Int(8),
+            Self::Int16(_) => ParameterType::Int(16),
+            Self::Int32(_) => ParameterType::Int(32),
+            Self::Int64(_) => ParameterType::Int(64),
+            Self::Int128(_) => ParameterType::Int(128),
+            Self::Int256(_) => ParameterType::Int(256),
+        }
+    }
 }
 
 pub fn left_pad_to_32_bytes(value: &[u8]) -> [u8; 32] {
@@ -362,4 +384,70 @@ mod test {
     // }
     #[test]
     fn decode_u128() {}
+
+    #[test]
+    fn correct_parameter_types() {
+        assert_eq!(
+            Parameter::Address(Address::zero()).get_type(),
+            ParameterType::Address
+        );
+        assert_eq!(Parameter::Bool(true).get_type(), ParameterType::Bool);
+        assert_eq!(
+            Parameter::Bytes(Vec::new()).get_type(),
+            ParameterType::Bytes
+        );
+        assert_eq!(
+            Parameter::FixedBytes(vec![0; 32]).get_type(),
+            ParameterType::FixedBytes(32)
+        );
+        assert_eq!(
+            Parameter::String("hello".to_owned()).get_type(),
+            ParameterType::String
+        );
+        assert_eq!(
+            Parameter::Uint8([0u8; 1]).get_type(),
+            ParameterType::Uint(8)
+        );
+        assert_eq!(
+            Parameter::Uint16([0u8; 2]).get_type(),
+            ParameterType::Uint(16)
+        );
+        assert_eq!(
+            Parameter::Uint32([0u8; 4]).get_type(),
+            ParameterType::Uint(32)
+        );
+        assert_eq!(
+            Parameter::Uint64(U64::zero()).get_type(),
+            ParameterType::Uint(64)
+        );
+        assert_eq!(
+            Parameter::Uint128(U128::zero()).get_type(),
+            ParameterType::Uint(128)
+        );
+        assert_eq!(
+            Parameter::Uint256(U256::zero()).get_type(),
+            ParameterType::Uint(256)
+        );
+        assert_eq!(Parameter::Int8([0u8; 1]).get_type(), ParameterType::Int(8));
+        assert_eq!(
+            Parameter::Int16([0u8; 2]).get_type(),
+            ParameterType::Int(16)
+        );
+        assert_eq!(
+            Parameter::Int32([0u8; 4]).get_type(),
+            ParameterType::Int(32)
+        );
+        assert_eq!(
+            Parameter::Int64(U64::zero()).get_type(),
+            ParameterType::Int(64)
+        );
+        assert_eq!(
+            Parameter::Int128(U128::zero()).get_type(),
+            ParameterType::Int(128)
+        );
+        assert_eq!(
+            Parameter::Int256(U256::zero()).get_type(),
+            ParameterType::Int(256)
+        );
+    }
 }
