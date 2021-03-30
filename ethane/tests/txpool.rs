@@ -1,7 +1,7 @@
 use ethane::rpc;
 use ethane::types::{TransactionRequest, U256};
 
-use test_helper::*;
+use ethane_helper::*;
 
 #[test]
 #[ignore] // @TODO not supported
