@@ -1,7 +1,8 @@
 use crate::AbiParserError;
 use crate::ParameterType;
 
-// NOTE or TODO by storing only ParameterTypes, we don't store the type names.
+// NOTE or TODO by storing only ParameterTypes, we don't store the type names. Is that a problem?
+// NOTE the function name is available as key to the respective function in the HashMap
 pub struct Function {
     pub _type: &'static str,
     pub input_types: Vec<ParameterType>,
@@ -20,8 +21,8 @@ impl Function {
             input_types,
             output_types,
             state_mutability: StateMutability::parse(raw_func),
-            payable: raw_func["payable"].as_bool(),
-            constant: raw_func["constant"].as_bool(),
+            payable: raw_func["payable"].as_bool(), // as_bool() automatically returns an Option<bool>
+            constant: raw_func["constant"].as_bool(), // as_bool() automatically returns an Option<bool>
         })
     }
 
@@ -78,16 +79,12 @@ pub enum StateMutability {
 
 impl StateMutability {
     pub fn parse(raw_func: &serde_json::Value) -> Option<Self> {
-        if let Some(state_mutability) = raw_func["stateMutability"].as_str() {
-            match state_mutability {
-                "pure" => Some(StateMutability::Pure),
-                "view" => Some(StateMutability::View),
-                "nonpayable" => Some(StateMutability::NonPayable),
-                "payable" => Some(StateMutability::Payable),
-                _ => None,
-            }
-        } else {
-            None
+        match raw_func["stateMutability"].as_str() {
+            Some("pure") => Some(StateMutability::Pure),
+            Some("view") => Some(StateMutability::View),
+            Some("nonpayable") => Some(StateMutability::NonPayable),
+            Some("payable") => Some(StateMutability::Payable),
+            _ => None,
         }
     }
 }
