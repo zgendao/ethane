@@ -26,19 +26,19 @@ impl Abi {
     }
 
     pub fn parse(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
-        let file = File::open(path_to_abi)?;//.map_err(|e| format!("Couldn't open file: {}", e))?;
+        let file = File::open(path_to_abi)?;
         let reader = BufReader::new(file);
         let functions: serde_json::Value =
-            serde_json::from_reader(reader)?;//.map_err(|e| format!("Couldn't parse json: {}", e))?;
+            serde_json::from_reader(reader)?;
 
         let mut i: usize = 0;
         while functions[i] != serde_json::Value::Null {
             if functions[i]["type"] == "function" && functions[i]["name"] != serde_json::Value::Null
             {
                 let name = functions[i]["name"].as_str().unwrap().to_owned();
-                self.functions.insert(name, Function::parse(&functions[i]));
+                self.functions.insert(name, Function::parse(&functions[i])?);
             } else {
-                return Err(AbiParserError::MissingData(String::from("Function name is missing from ABI.")));
+                return Err(AbiParserError::MissingData("Function name is missing from ABI.".to_owned()));
             }
             i += 1;
         }
