@@ -1,4 +1,4 @@
-use crate::{Parameter, ParameterType};
+use super::{Parameter, ParameterType};
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::Address;
 use std::convert::TryInto;
@@ -112,11 +112,9 @@ pub fn get_right_padding_length(mut length: usize) -> usize {
 
 #[cfg(test)]
 mod test {
-    use std::str::FromStr;
-
-    use hex_literal::hex;
-
     use super::*;
+    use hex_literal::hex;
+    use std::str::FromStr;
 
     #[test]
     fn test_decode_address() {
@@ -140,5 +138,17 @@ mod test {
         let expected = Parameter::from_i8(0);
         assert_eq!(decoded.0, expected);
         assert_eq!(decoded.1, 32);
+    }
+
+    // TODO finish tests.
+    #[test]
+    #[ignore]
+    fn decode_u128() {
+        //let uint256 = Parameter::Uint128(U128::from_str("1555").unwrap());
+        //let encoded = uint256.encode();
+        //let hex_val = hex!("0000000000000000000000000000000000000000000000000000000000001555");
+        //let expected = hex_val.to_vec();
+
+        //let p = Parameter::decode(hex_val.to_vec(), ParameterType::Uint128(U128::zero()));
     }
 }
