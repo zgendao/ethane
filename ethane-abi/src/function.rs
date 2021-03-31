@@ -1,7 +1,11 @@
 use crate::AbiParserError;
 use crate::ParameterType;
 
-// NOTE the function name is available as key to the respective function in the HashMap
+/// An ABI function instance.
+///
+/// Contains the fields of a properly encoded ABI function. The function name
+/// is available as the key to the respective function in the `HashMap` of the
+/// [`crate::Abi`] parser.
 pub struct Function {
     pub _type: &'static str,
     pub inputs: Vec<FunctionParameter>,
@@ -12,6 +16,7 @@ pub struct Function {
 }
 
 impl Function {
+    /// Tries to parse a `.json` file into a [`Function`].
     pub fn parse(raw_func: &serde_json::Value) -> Result<Self, AbiParserError> {
         let inputs = Self::parse_parameters(&raw_func["inputs"])?;
         let outputs = Self::parse_parameters(&raw_func["outputs"])?;
@@ -25,6 +30,11 @@ impl Function {
         })
     }
 
+    /// Tries to parse a `.json` string  into an array of ABI function
+    /// parameters.
+    ///
+    /// If the ABI file is properly formatted, both the function inputs and
+    /// outputs can be parsed using this function.
     fn parse_parameters(
         raw_func: &serde_json::Value,
     ) -> Result<Vec<FunctionParameter>, AbiParserError> {
@@ -53,11 +63,16 @@ impl Function {
     }
 }
 
+/// ABI function parameter type.
+///
+/// Contains the name of the parameter (which can be an empty string) and the
+/// type of the parameter as a [`ParameterType`].
 pub struct FunctionParameter {
     pub name: String,
     pub parameter_type: ParameterType,
 }
 
+/// Possible variants of an ABI function's respective state mutability flags.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum StateMutability {
     Pure,
@@ -67,6 +82,8 @@ pub enum StateMutability {
 }
 
 impl StateMutability {
+    /// Attempts to parse a `.json` string into an optional [`StateMutability`]
+    /// flag.
     pub fn parse(raw_func: &serde_json::Value) -> Option<Self> {
         match raw_func["stateMutability"].as_str() {
             Some("pure") => Some(StateMutability::Pure),

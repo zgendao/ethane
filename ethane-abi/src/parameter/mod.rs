@@ -6,6 +6,9 @@ pub use parameter_type::ParameterType;
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};
 
+/// ABI function input/output parameter.
+///
+/// It wraps the actual value as a slice of bytes.
 #[derive(Debug, PartialEq)]
 pub enum Parameter {
     Address(Address),
@@ -31,7 +34,6 @@ pub enum Parameter {
 }
 
 impl Parameter {
-    // NOTE this should return a Vec instead of a serde_json::Value.
     pub fn encode(&self) -> Vec<u8> {
         match self {
             Parameter::Address(address) => address.as_bytes().to_vec(),

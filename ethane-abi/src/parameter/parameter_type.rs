@@ -1,5 +1,6 @@
 use crate::AbiParserError;
 
+/// ABI function input/output parameter type.
 #[derive(Debug, PartialEq)]
 pub enum ParameterType {
     Address,

@@ -12,6 +12,10 @@ pub use parameter::{Parameter, ParameterType};
 mod function;
 mod parameter;
 
+/// Parses a `.json` file containing ABI encoded Solidity functions.
+///
+/// It stores the functions in a `HashMap` with the function name being the key
+/// and the parsed function the value.
 pub struct Abi {
     pub functions: HashMap<String, Function>,
 }
@@ -23,6 +27,7 @@ impl Default for Abi {
 }
 
 impl Abi {
+    /// Creates a new `Abi` instance with an empty `HashMap` within.
     #[inline]
     pub fn new() -> Self {
         Self {
@@ -30,6 +35,7 @@ impl Abi {
         }
     }
 
+    /// Parses an ABI `.json` file into the `Abi` instance.
     pub fn parse(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
         let file = File::open(path_to_abi)?;
         let reader = BufReader::new(file);
@@ -53,6 +59,12 @@ impl Abi {
         Ok(())
     }
 
+    /// Encodes a given [`AbiCall`] into a vector of bytes.
+    ///
+    /// The result's first 4 bytes are generated via a `Keccak256` hash of the
+    /// function signature. Check [Solidity's
+    /// documentation](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html)
+    /// for more info.
     pub fn encode(&self, abi_call: &AbiCall) -> Result<Vec<u8>, AbiParserError> {
         if let Some(function) = self.functions.get(abi_call.function_name) {
             // Check whether the correct number of parameters were provided
@@ -97,6 +109,10 @@ impl Abi {
         }
     }
 
+    /// Decodes a hash into a [`Parameter`] vector.
+    ///
+    /// Based on the given ABI function name, the `Abi` parser iterates over that
+    /// function's input parameter types and decodes the input hash accordingly.
     pub fn decode(
         &self,
         function_name: &str,
@@ -120,6 +136,7 @@ impl Abi {
     }
 }
 
+/// An ABI call containing the called function's name and its input parameters.
 pub struct AbiCall<'a> {
     pub function_name: &'a str,
     pub parameters: Vec<Parameter>,
