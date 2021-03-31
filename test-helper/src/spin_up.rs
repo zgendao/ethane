@@ -78,7 +78,7 @@ impl<T: DeserializeOwned + Debug, U: Subscribe + Request> DynSubscription<T>
 #[allow(dead_code)]
 pub struct ConnectorNodeBundle<T> {
     connector: Connector<T>,
-    process: NodeProcess,
+    process: Option<NodeProcess>,
 }
 
 impl<T: Request> ConnectorNodeBundle<T> {
@@ -101,7 +101,10 @@ impl ConnectorNodeBundle<WebSocket> {
     pub fn ws() -> Self {
         let process = NodeProcess::new_ws("0");
         let connector = Connector::websocket(&format!("ws://{}", process.address), None).unwrap();
-        ConnectorNodeBundle { connector, process }
+        ConnectorNodeBundle{
+            connector: connector,
+            process: Some(process),
+        }
     }
 }
 
@@ -109,15 +112,20 @@ impl ConnectorNodeBundle<Http> {
     pub fn http() -> Self {
         let process = NodeProcess::new_http("0");
         let connector = Connector::http(&format!("http://{}", process.address), None).unwrap();
-        ConnectorNodeBundle { connector, process }
+        ConnectorNodeBundle{
+            connector: connector,
+            process: Some(process),
+        }
     }
 }
 
 impl ConnectorNodeBundle<Http> {
     pub fn ganache() -> Self {
-        let process = NodeProcess::new_http("8900");
         let connector = Connector::http("http://localhost:8545", None).unwrap();
-        ConnectorNodeBundle { connector, process }
+        ConnectorNodeBundle{
+            connector: connector,
+            process: None,
+        }
     }
 }
 
@@ -126,7 +134,10 @@ impl ConnectorNodeBundle<Uds> {
     pub fn uds() -> Self {
         let process = NodeProcess::new_uds(None);
         let connector = Connector::unix_domain_socket(&process.address).unwrap();
-        ConnectorNodeBundle { connector, process }
+        ConnectorNodeBundle{
+            connector: connector,
+            process: Some(process),
+        }
     }
 }
 

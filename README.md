@@ -1,5 +1,7 @@
 # Ethane 
 
+Package originally created by [thojest](https://github.com/thojest) and later maintained by ZGen DAO. This repository considerd as the development line of the project, and the mainline hosted under [ethane](https://github.com/thojest/ethane).
+
 Ethane is an alternative web3 implementation with the aim of being slim and simple.
 It does not depend on futures or any executors. It currently supports http and
 websockets (both plain and TLS) and inter process communication via Unix domain sockets (Unix only). For

@@ -9,6 +9,7 @@ fn test_net_version() {
 }
 
 #[test]
+#[ignore]
 fn test_net_peer_count() {
     let mut client = ConnectorWrapper::new_from_env(None);
     rpc_call_test_some(&mut client, rpc::net_peer_count());
