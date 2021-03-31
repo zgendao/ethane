@@ -5,9 +5,9 @@ use byteorder::{BigEndian, ByteOrder};
 use std::str;
 
 impl Parameter {
-    pub fn decode(param_type: ParameterType, raw_bytes: &[u8]) -> (Self,usize) {
+    pub fn decode(param_type: &ParameterType, raw_bytes: &[u8]) -> (Self,usize) {
         // TODO validate raw_bytes length
-        match param_type {
+        match *param_type {
             ParameterType::Address => (Self::Address(Address::from_slice(remove_left_padding_bytes(12,&raw_bytes[..32]))),32),
             ParameterType::Bool => (Self::Bool(raw_bytes[31] == 1),32),
             ParameterType::Int(length) => {
@@ -73,11 +73,21 @@ mod test {
     #[test]
     fn test_decode_address() {
         let encoded_address =  hex!("00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a1234");
-        let decoded = Parameter::decode(ParameterType::Address, &encoded_address);
+        let decoded = Parameter::decode(&ParameterType::Address, &encoded_address);
 
         let expected = Parameter::Address(
             Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
         );
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_u8() {
+        let encoded_address =  hex!("0000000000000000000000000000000000000000000000000000000000000000");
+        let decoded = Parameter::decode(&ParameterType::Uint(8), &encoded_address);
+
+        let expected = Parameter::from_i8(0);
         assert_eq!(decoded.0, expected);
         assert_eq!(decoded.1, 32);
     }
