@@ -13,24 +13,24 @@ impl Parameter {
             ParameterType::Int(length) => {
                 let cleaned = remove_left_padding_bytes(32 - (length / 8),&raw_bytes[..32]);
                 match length {
-                    8 => (Self::Uint8(cleaned.try_into().expect("input with incorrect length")),32),
-                    16 => (Self::Uint16(cleaned.try_into().expect("input with incorrect length")),32),
-                    32 => (Self::Uint32(cleaned.try_into().expect("input with incorrect length")),32),
-                    64 => (Self::Uint64(cleaned.try_into().expect("input with incorrect length")),32),
-                    128 => (Self::Uint128(cleaned.try_into().expect("input with incorrect length")),32),
-                    256 => (Self::Uint256(cleaned.try_into().expect("input with incorrect length")),32),
-                    _ => unimplemented!()
-                }
-            }
-            ParameterType::Uint(length) => {
-                let cleaned = remove_left_padding_bytes(32 - (length / 8),&raw_bytes[..32]);
-                match length {
                     8 => (Self::Int8(cleaned.try_into().expect("input with incorrect length")),32),
                     16 => (Self::Int16(cleaned.try_into().expect("input with incorrect length")),32),
                     32 => (Self::Int32(cleaned.try_into().expect("input with incorrect length")),32),
                     64 => (Self::Int64(cleaned.try_into().expect("input with incorrect length")),32),
                     128 => (Self::Int128(cleaned.try_into().expect("input with incorrect length")),32),
                     256 => (Self::Int256(cleaned.try_into().expect("input with incorrect length")),32),
+                    _ => unimplemented!()
+                }
+            }
+            ParameterType::Uint(length) => {
+                let cleaned = remove_left_padding_bytes(32 - (length / 8),&raw_bytes[..32]);
+                match length {
+                    8 => (Self::Uint8(cleaned.try_into().expect("input with incorrect length")),32),
+                    16 => (Self::Uint16(cleaned.try_into().expect("input with incorrect length")),32),
+                    32 => (Self::Uint32(cleaned.try_into().expect("input with incorrect length")),32),
+                    64 => (Self::Uint64(cleaned.try_into().expect("input with incorrect length")),32),
+                    128 => (Self::Uint128(cleaned.try_into().expect("input with incorrect length")),32),
+                    256 => (Self::Uint256(cleaned.try_into().expect("input with incorrect length")),32),
                     _ => unimplemented!()
                 }
             }
@@ -84,10 +84,80 @@ mod test {
 
     #[test]
     fn test_decode_u8() {
-        let encoded_address =  hex!("0000000000000000000000000000000000000000000000000000000000000000");
-        let decoded = Parameter::decode(&ParameterType::Uint(8), &encoded_address);
+        let encoded =  hex!("000000000000000000000000000000000000000000000000000000000000007F");
+        let decoded = Parameter::decode(&ParameterType::Uint(8), &encoded);
 
-        let expected = Parameter::from_i8(0);
+        let expected = Parameter::from_u8(127);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_u16() {
+        let encoded =  hex!("00000000000000000000000000000000000000000000000000000000000000FF");
+        let decoded = Parameter::decode(&ParameterType::Uint(16), &encoded);
+
+        let expected = Parameter::from_u16(255);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_u32() {
+        let encoded =  hex!("00000000000000000000000000000000000000000000000000000000000001FF");
+        let decoded = Parameter::decode(&ParameterType::Uint(32), &encoded);
+
+        let expected = Parameter::from_u32(511);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_u64() {
+        let encoded =  hex!("00000000000000000000000000000000000000000000000000000000000001FF");
+        let decoded = Parameter::decode(&ParameterType::Uint(64), &encoded);
+
+        let expected = Parameter::from_u64(511);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_i8() {
+        let encoded =  hex!("000000000000000000000000000000000000000000000000000000000000007F");
+        let decoded = Parameter::decode(&ParameterType::Int(8), &encoded);
+
+        let expected = Parameter::from_i8(127);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_i16() {
+        let encoded =  hex!("00000000000000000000000000000000000000000000000000000000000000FF");
+        let decoded = Parameter::decode(&ParameterType::Int(16), &encoded);
+
+        let expected = Parameter::from_i16(255);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_i32() {
+        let encoded =  hex!("00000000000000000000000000000000000000000000000000000000000001FF");
+        let decoded = Parameter::decode(&ParameterType::Int(32), &encoded);
+
+        let expected = Parameter::from_i32(511);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_i64() {
+        let encoded =  hex!("00000000000000000000000000000000000000000000000000000000000001FF");
+        let decoded = Parameter::decode(&ParameterType::Int(64), &encoded);
+
+        let expected = Parameter::from_i64(511);
         assert_eq!(decoded.0, expected);
         assert_eq!(decoded.1, 32);
     }
