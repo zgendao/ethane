@@ -118,21 +118,75 @@ pub enum AbiParserError {
 mod tests {
     use std::str::FromStr;
 
-    use ethereum_types::Address;
+    use ethereum_types::{Address, U256};
     use hex_literal::hex;
 
     use super::*;
 
     #[test]
-    fn test_new() {
-        // let path = Path::new("src/abi/abi.json");
+    fn test_encode_bar() {
         let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
 
         let mut abi = Abi::new();
         abi.parse(path).expect("unable to parse abi");
         let addr = Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap();
         let hash = abi.keccak_hash("bar", vec![Parameter::Address(addr)]);
-        let expected = hex!("646ea56d00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a");
+        let expected =
+            hex!("646ea56d00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a");
+        assert_eq!(hash.unwrap(), expected);
+    }
+
+    #[test]
+    fn test_encode_approve() {
+        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
+
+        let mut abi = Abi::new();
+        abi.parse(path).expect("unable to parse abi");
+        let hash = abi.keccak_hash(
+            "approve",
+            vec![
+                Parameter::Address(
+                    Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
+                ),
+                Parameter::Uint256(U256::from_str("613").unwrap()),
+            ],
+        );
+        let expected =
+            hex!("095ea7b300000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a0000000000000000000000000000000000000000000000000000000000000613");
+        assert_eq!(hash.unwrap(), expected);
+    }
+
+    #[test]
+    fn test_encode_total_supply() {
+        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
+
+        let mut abi = Abi::new();
+        abi.parse(path).expect("unable to parse abi");
+        let hash = abi.keccak_hash("totalSupply", vec![]);
+        let expected = hex!("18160DDD");
+        assert_eq!(hash.unwrap(), expected);
+    }
+
+    #[test]
+    fn test_encode_transfer_from() {
+        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
+
+        let mut abi = Abi::new();
+        abi.parse(path).expect("unable to parse abi");
+        let hash = abi.keccak_hash(
+            "transferFrom",
+            vec![
+                Parameter::Address(
+                    Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
+                ),
+                Parameter::Address(
+                    Address::from_str("0x1A4C0439ba035DAcf0D573394107597CEEBF9FF8").unwrap(),
+                ),
+                Parameter::Uint256(U256::from_str("14DDD").unwrap()),
+            ],
+        );
+        let expected =
+            hex!("23b872dd00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a0000000000000000000000001a4c0439ba035dacf0d573394107597ceebf9ff80000000000000000000000000000000000000000000000000000000000014ddd");
         assert_eq!(hash.unwrap(), expected);
     }
 
