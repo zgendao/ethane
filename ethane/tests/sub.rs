@@ -8,7 +8,7 @@ use ethane::types::{
 };
 use std::path::Path;
 
-use ethane_helper::*;
+use test_helper::*;
 
 #[test]
 #[ignore] // @TODO not supported

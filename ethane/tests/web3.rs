@@ -2,7 +2,7 @@ use ethane::rpc;
 use ethane::types::{Bytes, H256};
 use std::str::FromStr;
 
-use ethane_helper::*;
+use test_helper::*;
 
 #[test]
 fn test_web3_client_version() {

@@ -2,7 +2,7 @@ use ethane::rpc;
 use ethane::types::{Bytes, PrivateKey, TransactionRequest, H160, H256};
 use std::str::FromStr;
 
-use ethane_helper::*;
+use test_helper::*;
 
 #[test]
 fn test_personal_list_accounts() {

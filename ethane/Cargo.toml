@@ -26,4 +26,4 @@ ureq = "2"
 funty = "~1.1.0"
 
 [dev-dependencies]
-ethane-helper = { path = "../ethane-helper"}
+test-helper = { path = "./test-helper"}

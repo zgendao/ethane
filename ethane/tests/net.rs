@@ -1,6 +1,6 @@
 use ethane::rpc;
 
-use ethane_helper::*;
+use test_helper::*;
 
 #[test]
 fn test_net_version() {

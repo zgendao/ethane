@@ -6,7 +6,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 use ethereum_types::H160;
-use ethane_helper::*;
+use test_helper::*;
 
 const ADDRESS1: &str = "0x95eDA452256C1190947f9ba1fD19422f0120858a";
 const ADDRESS2: &str = "0x1A4C0439ba035DAcf0D573394107597CEEBF9FF8";

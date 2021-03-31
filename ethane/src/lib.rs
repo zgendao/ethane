@@ -21,7 +21,7 @@
 //! use ethane::Connector;
 //! use ethane::rpc::eth_get_balance;
 //! use ethane::types::H160;
-//! # use ethane_helper::NodeProcess;
+//! # use test_helper::NodeProcess;
 //! # let node = NodeProcess::new_http("8545");
 //!
 //! // Start up connector
@@ -37,7 +37,7 @@
 //! ```no_run
 //! use ethane::Connector;
 //! use ethane::rpc::sub::eth_subscribe_new_pending_transactions;
-//! # use ethane_helper::NodeProcess;
+//! # use test_helper::NodeProcess;
 //! # use ethane::rpc::{eth_send_transaction, eth_coinbase};
 //! # use ethane::types::{TransactionRequest, H160, U256};
 //!
