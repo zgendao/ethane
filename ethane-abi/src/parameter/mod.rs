@@ -33,7 +33,7 @@ impl Parameter {
     // NOTE this should return a Vec instead of a serde_json::Value.
     pub fn encode(&self) -> Vec<u8> {
         match self {
-            Parameter::Address(address) => address.as_bytes().to_vec(),
+            Parameter::Address(address) => left_pad_to_32_bytes(address.as_bytes()).to_vec(),
             Parameter::Uint8(val) | Parameter::Int8(val) => left_pad_to_32_bytes(val).to_vec(),
             Parameter::Uint16(val) | Parameter::Int16(val) => left_pad_to_32_bytes(val).to_vec(),
             Parameter::Uint32(val) | Parameter::Int32(val) => left_pad_to_32_bytes(val).to_vec(),

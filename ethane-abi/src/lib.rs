@@ -1,9 +1,3 @@
-mod function;
-mod parameter;
-
-pub use function::{Function, StateMutability};
-pub use parameter::{Parameter, ParameterType};
-
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
@@ -11,6 +5,12 @@ use std::path::Path;
 
 use sha3::{Digest, Keccak256};
 use thiserror::Error;
+
+pub use function::{Function, StateMutability};
+pub use parameter::{Parameter, ParameterType};
+
+mod function;
+mod parameter;
 
 pub struct Abi {
     pub functions: HashMap<String, Function>,
@@ -37,14 +37,15 @@ impl Abi {
 
         let mut i: usize = 0;
         while functions[i] != serde_json::Value::Null {
-            if functions[i]["type"] == "function" && functions[i]["name"] != serde_json::Value::Null
-            {
-                let name = functions[i]["name"].as_str().unwrap().to_owned();
-                self.functions.insert(name, Function::parse(&functions[i])?);
-            } else {
-                return Err(AbiParserError::MissingData(
-                    "Function name is missing from ABI.".to_owned(),
-                ));
+            if functions[i]["type"] == "function" {
+                if functions[i]["name"] != serde_json::Value::Null {
+                    let name = functions[i]["name"].as_str().unwrap().to_owned();
+                    self.functions.insert(name, Function::parse(&functions[i])?);
+                } else {
+                    return Err(AbiParserError::MissingData(
+                        "Function name is missing from ABI.".to_owned(),
+                    ));
+                }
             }
             i += 1;
         }
@@ -113,22 +114,40 @@ pub enum AbiParserError {
     InvalidAbiEncoding(String),
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//
-//    #[test]
-//    fn test_new() {
-//        // let path = Path::new("src/abi/abi.json");
-//        let path = Path::new("test-helper/src/fixtures/TestABI.json");
-//
-//
-//        let mut abi = Abi::new();
-//        println!("{:?}", abi);
-//        let f = abi.parse(path).expect("unable to parse abi");
-//        println!("{:?}",f);
-//        println!("{:?}",f[0].outputs[0].to_string());
-//
-//        abi.encode("WETH",vec![]);
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use ethereum_types::Address;
+    use hex_literal::hex;
+
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        // let path = Path::new("src/abi/abi.json");
+        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
+
+        let mut abi = Abi::new();
+        abi.parse(path).expect("unable to parse abi");
+        let addr = Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap();
+        let hash = abi.keccak_hash("bar", vec![Parameter::Address(addr)]);
+        let expected = hex!("646ea56d00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a");
+        assert_eq!(hash.unwrap(), expected);
+    }
+
+    // #[test]
+    // fn test_new() {
+    //     // let path = Path::new("src/abi/abi.json");
+    //     let path = Path::new("test-helper/src/fixtures/TestABI.json");
+    //
+    //
+    //     let mut abi = Abi::new();
+    //     println!("{:?}", abi);
+    //     let f = abi.parse(path).expect("unable to parse abi");
+    //     println!("{:?}",f);
+    //     println!("{:?}",f[0].outputs[0].to_string());
+    //
+    //     abi.encode("WETH",vec![]);
+    // }
+}
