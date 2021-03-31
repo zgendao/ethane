@@ -1,11 +1,12 @@
 mod parameter_type;
+mod decode;
+
 pub use parameter_type::ParameterType;
 
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};
 
-#[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum Parameter {
     Address(Address),
     Uint8([u8; 1]),
@@ -160,14 +161,6 @@ impl Parameter {
         }
     }
 
-    // pub fn decode(raw: Vec<u8>,p: ParameterType) -> Self {
-    //     match p {
-    //         ParameterType::Address(_) => ParameterType::Address(Address::from_slice(remove_padding_bytes(12,&raw))),
-    //         ParameterType::Uint256(_) => ParameterType::Uint256(U256::from_big_endian(remove_padding_bytes(0,&raw))),
-    //         ParameterType::Uint128(_) => ParameterType::Uint128(U128::from_big_endian(remove_padding_bytes(16,&raw))),
-    //     }
-    // }
-
     pub fn get_type(&self) -> ParameterType {
         match self {
             Self::Address(_) => ParameterType::Address,
@@ -228,11 +221,6 @@ pub fn right_pad_bytes(value: &[u8]) -> Vec<u8> {
     let diff = length - value.len();
     padded[..(length - diff)].copy_from_slice(value);
     padded
-}
-
-#[allow(dead_code)]
-pub fn remove_padding_bytes(pad_length: usize, value: &[u8]) -> &[u8] {
-    &value[pad_length..]
 }
 
 #[cfg(test)]
