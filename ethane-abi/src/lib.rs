@@ -97,7 +97,11 @@ impl Abi {
         }
     }
 
-    pub fn decode(&self, function_name: &str, hash: &[u8]) -> Result<Vec<Parameter>, AbiParserError> {
+    pub fn decode(
+        &self,
+        function_name: &str,
+        hash: &[u8],
+    ) -> Result<Vec<Parameter>, AbiParserError> {
         if let Some(function) = self.functions.get(function_name) {
             let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
             let mut parameters = Vec::<Parameter>::with_capacity(function.inputs.len());
@@ -107,9 +111,11 @@ impl Abi {
                 parameters.push(parameter);
             }
 
-            return Ok(parameters)
+            return Ok(parameters);
         } else {
-            return Err(AbiParserError::MissingData("Function name not found in ABI".to_owned()))
+            return Err(AbiParserError::MissingData(
+                "Function name not found in ABI".to_owned(),
+            ));
         }
     }
 }

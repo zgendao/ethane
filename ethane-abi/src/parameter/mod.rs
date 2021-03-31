@@ -1,12 +1,12 @@
-mod parameter_type;
 mod decode;
+mod parameter_type;
 
 pub use parameter_type::ParameterType;
 
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Parameter {
     Address(Address),
     Uint8([u8; 1]),
