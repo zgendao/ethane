@@ -97,11 +97,13 @@ impl Parameter {
     }
 }
 
-pub fn remove_left_padding_bytes(pad_length: usize, value: &[u8]) -> &[u8] {
+#[inline]
+fn remove_left_padding_bytes(pad_length: usize, value: &[u8]) -> &[u8] {
     &value[pad_length..]
 }
 
-pub fn get_right_padding_length(mut length: usize) -> usize {
+#[inline]
+fn get_right_padding_length(mut length: usize) -> usize {
     let mut res: usize = 0;
     while length % 32 != 0 {
         length += 1;

@@ -42,7 +42,7 @@ impl Parameter {
     }
 }
 
-pub fn left_pad_to_32_bytes(value: &[u8]) -> [u8; 32] {
+fn left_pad_to_32_bytes(value: &[u8]) -> [u8; 32] {
     assert!(
         value.len() <= 32,
         format!(
@@ -56,7 +56,7 @@ pub fn left_pad_to_32_bytes(value: &[u8]) -> [u8; 32] {
     padded
 }
 
-pub fn right_pad_to_32_bytes(value: &[u8]) -> [u8; 32] {
+fn right_pad_to_32_bytes(value: &[u8]) -> [u8; 32] {
     assert!(
         value.len() <= 32,
         format!(
@@ -70,7 +70,7 @@ pub fn right_pad_to_32_bytes(value: &[u8]) -> [u8; 32] {
     padded
 }
 
-pub fn right_pad_bytes(value: &[u8]) -> Vec<u8> {
+fn right_pad_bytes(value: &[u8]) -> Vec<u8> {
     let mut length = value.len();
     while length % 32 != 0 {
         length += 1;
