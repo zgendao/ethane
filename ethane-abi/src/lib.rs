@@ -98,10 +98,10 @@ impl Abi {
     }
 
     pub fn decode(&self, types: Vec<ParameterType>, hash: &[u8]) -> Vec<Parameter> {
-        let start_index = 4_usize; // starting from 5th byte, since the first four is reserved
+        let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
         let mut parameters = Vec::<Parameter>::with_capacity(types.len());
         for parameter_type in types {
-            let (parameter, i) = Parameter::decode(&parameter_type, &hash[start_index..]);
+            let (parameter, i) = Parameter::decode(parameter_type, &hash[start_index..]);
             start_index += i;
             parameters.push(parameter);
         }
