@@ -1,6 +1,8 @@
 use crate::{Parameter, ParameterType};
 use ethereum_types::Address;
 use std::convert::TryInto;
+use byteorder::{BigEndian, ByteOrder};
+use std::str;
 
 impl Parameter {
     pub fn decode(param_type: ParameterType, raw_bytes: &[u8]) -> (Self,usize) {
@@ -32,17 +34,32 @@ impl Parameter {
                     _ => unimplemented!()
                 }
             }
-            _ => unimplemented!(),
-            // ParameterType::Bytes => {}
-            // ParameterType::FixedBytes(_) => {}
-
-            // ParameterType::String => {}
+            ParameterType::Bytes => {
+                let length = BigEndian::read_u64(&raw_bytes[..32]) as usize;
+                (Self::Bytes(raw_bytes[12..length].to_vec()),32+length + get_right_padding_length(length))
+            }
+            ParameterType::String => {
+                let length = BigEndian::read_u64(&raw_bytes[..32]) as usize;
+                (Self::String(str::from_utf8(&raw_bytes[12..length]).unwrap().to_string()),32+length + get_right_padding_length(length))
+            }
+            ParameterType::FixedBytes(length) => {
+                (Self::FixedBytes(raw_bytes[..length].to_vec()),32)
+            }
         }
     }
 }
 
 pub fn remove_left_padding_bytes(pad_length: usize, value: &[u8]) -> &[u8] {
     &value[pad_length..]
+}
+
+pub fn get_right_padding_length(mut length: usize) -> usize {
+    let mut res: usize = 0;
+    while length % 32 != 0 {
+        length += 1;
+        res += 1;
+    }
+    res
 }
 
 #[cfg(test)]
