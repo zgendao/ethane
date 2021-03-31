@@ -53,18 +53,14 @@ impl Abi {
         Ok(())
     }
 
-    pub fn keccak_hash(
-        &self,
-        function_name: &str,
-        parameters: Vec<Parameter>,
-    ) -> Result<Vec<u8>, AbiParserError> {
-        if let Some(function) = self.functions.get(function_name) {
+    pub fn encode(&self, abi_call: &AbiCall) -> Result<Vec<u8>, AbiParserError> {
+        if let Some(function) = self.functions.get(abi_call.function_name) {
             // Check whether the correct number of parameters were provided
-            if parameters.len() != function.inputs.len() {
+            if abi_call.parameters.len() != function.inputs.len() {
                 return Err(AbiParserError::MissingData(format!(
                     "Wrong number of parameters were provided. Expected {}, found {}",
                     function.inputs.len(),
-                    parameters.len(),
+                    abi_call.parameters.len(),
                 )));
             }
 
@@ -76,13 +72,13 @@ impl Abi {
                 .collect::<Vec<String>>()
                 .join(",");
 
-            let signature = format!("{}({})", function_name, input_type_str);
+            let signature = format!("{}({})", abi_call.function_name, input_type_str);
             let mut keccak = Keccak256::new();
             keccak.update(signature);
             // Take first 4 bytes of the Keccak hash
             let mut hash = keccak.finalize()[0..4].to_vec();
             // Append the encoded parameters to the hash
-            for (parameter, input) in parameters.iter().zip(function.inputs.iter()) {
+            for (parameter, input) in abi_call.parameters.iter().zip(function.inputs.iter()) {
                 if parameter.get_type() != input.parameter_type {
                     return Err(AbiParserError::InvalidAbiEncoding(format!(
                         "Invalid parameter type supplied. Expected {:?}, found {:?}",
@@ -100,6 +96,18 @@ impl Abi {
             ))
         }
     }
+
+    pub fn decode(&self) -> Result<AbiCall, AbiParserError> {
+        Ok(AbiCall {
+            function_name: "hello",
+            parameters: Vec::new(),
+        })
+    }
+}
+
+pub struct AbiCall<'a> {
+    pub function_name: &'a str,
+    pub parameters: Vec<Parameter>,
 }
 
 #[derive(Error, Debug)]
@@ -130,7 +138,10 @@ mod tests {
         let mut abi = Abi::new();
         abi.parse(path).expect("unable to parse abi");
         let addr = Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap();
-        let hash = abi.keccak_hash("bar", vec![Parameter::Address(addr)]);
+        let hash = abi.encode(&AbiCall {
+            function_name: "bar",
+            parameters: vec![Parameter::Address(addr)],
+        });
         let expected =
             hex!("646ea56d00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a");
         assert_eq!(hash.unwrap(), expected);
@@ -142,15 +153,15 @@ mod tests {
 
         let mut abi = Abi::new();
         abi.parse(path).expect("unable to parse abi");
-        let hash = abi.keccak_hash(
-            "approve",
-            vec![
+        let hash = abi.encode(&AbiCall {
+            function_name: "approve",
+            parameters: vec![
                 Parameter::Address(
                     Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
                 ),
                 Parameter::Uint256(U256::from_str("613").unwrap()),
             ],
-        );
+        });
         let expected =
             hex!("095ea7b300000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a0000000000000000000000000000000000000000000000000000000000000613");
         assert_eq!(hash.unwrap(), expected);
@@ -162,7 +173,10 @@ mod tests {
 
         let mut abi = Abi::new();
         abi.parse(path).expect("unable to parse abi");
-        let hash = abi.keccak_hash("totalSupply", vec![]);
+        let hash = abi.encode(&AbiCall {
+            function_name: "totalSupply",
+            parameters: vec![],
+        });
         let expected = hex!("18160DDD");
         assert_eq!(hash.unwrap(), expected);
     }
@@ -173,9 +187,9 @@ mod tests {
 
         let mut abi = Abi::new();
         abi.parse(path).expect("unable to parse abi");
-        let hash = abi.keccak_hash(
-            "transferFrom",
-            vec![
+        let hash = abi.encode(&AbiCall {
+            function_name: "transferFrom",
+            parameters: vec![
                 Parameter::Address(
                     Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
                 ),
@@ -184,24 +198,9 @@ mod tests {
                 ),
                 Parameter::Uint256(U256::from_str("14DDD").unwrap()),
             ],
-        );
+        });
         let expected =
             hex!("23b872dd00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a0000000000000000000000001a4c0439ba035dacf0d573394107597ceebf9ff80000000000000000000000000000000000000000000000000000000000014ddd");
         assert_eq!(hash.unwrap(), expected);
     }
-
-    // #[test]
-    // fn test_new() {
-    //     // let path = Path::new("src/abi/abi.json");
-    //     let path = Path::new("test-helper/src/fixtures/TestABI.json");
-    //
-    //
-    //     let mut abi = Abi::new();
-    //     println!("{:?}", abi);
-    //     let f = abi.parse(path).expect("unable to parse abi");
-    //     println!("{:?}",f);
-    //     println!("{:?}",f[0].outputs[0].to_string());
-    //
-    //     abi.encode("WETH",vec![]);
-    // }
 }
