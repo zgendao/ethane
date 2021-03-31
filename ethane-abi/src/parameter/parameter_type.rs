@@ -36,12 +36,7 @@ impl ParameterType {
                 })?;
                 Self::FixedBytes(len)
             }
-            _ => {
-                return Err(AbiParserError::InvalidAbiEncoding(format!(
-                    "{}",
-                    parsed_str.to_owned()
-                )))
-            }
+            _ => return Err(AbiParserError::InvalidAbiEncoding(parsed_str.to_string())),
         };
 
         Ok(result)

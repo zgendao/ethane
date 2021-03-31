@@ -16,10 +16,16 @@ pub struct Abi {
     pub functions: HashMap<String, Function>,
 }
 
+impl Default for Abi {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Abi {
     #[inline]
     pub fn new() -> Self {
-        Abi {
+        Self {
             functions: HashMap::new(),
         }
     }

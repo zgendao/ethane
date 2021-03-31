@@ -32,16 +32,12 @@ impl Function {
             serde_json::Value::Array(parameters) => {
                 let mut result = Vec::new();
                 for parameter in parameters {
-                    let p_type = parameter["type"]
-                        .as_str()
-                        .ok_or(AbiParserError::MissingData(
-                            "Missing parameter type".to_owned(),
-                        ))?;
-                    let p_name = parameter["name"]
-                        .as_str()
-                        .ok_or(AbiParserError::MissingData(
-                            "Missing parameter name".to_owned(),
-                        ))?;
+                    let p_type = parameter["type"].as_str().ok_or_else(|| {
+                        AbiParserError::MissingData("Missing parameter type".to_owned())
+                    })?;
+                    let p_name = parameter["name"].as_str().ok_or_else(|| {
+                        AbiParserError::MissingData("Missing parameter name".to_owned())
+                    })?;
                     let parameter_type = ParameterType::parse(p_type)?;
                     result.push(FunctionParameter {
                         name: p_name.to_owned(),
@@ -97,6 +93,10 @@ mod test {
                 {
                     "name": "_spender",
                     "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "bytes64"
                 }
             ],
             "outputs": [],
@@ -108,9 +108,14 @@ mod test {
         .unwrap();
 
         let function = Function::parse(&json).unwrap();
-        assert_eq!(function.inputs.len(), 1);
+        assert_eq!(function.inputs.len(), 2);
         assert_eq!(function.inputs[0].parameter_type, ParameterType::Address);
         assert_eq!(function.inputs[0].name, "_spender");
+        assert_eq!(
+            function.inputs[1].parameter_type,
+            ParameterType::FixedBytes(64)
+        );
+        assert!(function.inputs[1].name.is_empty());
         assert!(function.outputs.is_empty());
         assert_eq!(function.constant, Some(true));
         assert_eq!(function.payable, Some(false));
