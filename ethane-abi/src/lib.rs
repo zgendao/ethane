@@ -111,11 +111,11 @@ impl Abi {
                 parameters.push(parameter);
             }
 
-            return Ok(parameters);
+            Ok(parameters)
         } else {
-            return Err(AbiParserError::MissingData(
+            Err(AbiParserError::MissingData(
                 "Function name not found in ABI".to_owned(),
-            ));
+            ))
         }
     }
 }
