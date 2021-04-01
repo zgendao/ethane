@@ -122,7 +122,8 @@ impl Abi {
             let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
             let mut parameters = Vec::<Parameter>::with_capacity(function.inputs.len());
             for input in &function.inputs {
-                let (parameter, i) = Parameter::decode(&input.parameter_type, &hash[start_index..]);
+                let (parameter, i) =
+                    Parameter::decode(&input.parameter_type, &hash[start_index..])?;
                 start_index += i;
                 parameters.push(parameter);
             }

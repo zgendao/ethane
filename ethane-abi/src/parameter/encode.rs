@@ -1,5 +1,8 @@
 use super::Parameter;
 impl Parameter {
+    /// Encodes the given [`Parameter`] according to the Ethereum
+    /// [contract ABI
+    /// specification](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html).
     pub fn encode(&self) -> Vec<u8> {
         match self {
             Parameter::Address(address) => address.as_bytes().to_vec(),

@@ -1,97 +1,154 @@
-use super::{Parameter, ParameterType};
+use crate::{AbiParserError, Parameter, ParameterType};
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::Address;
 use std::convert::TryInto;
 use std::str;
 
 impl Parameter {
-    pub fn decode(param_type: &ParameterType, raw_bytes: &[u8]) -> (Self, usize) {
+    /// Attempts to decode a [`Parameter`] based on the supplied
+    /// [`ParameterType`] and a raw slice of bytes representing the decoded
+    /// value.
+    ///
+    /// If it succeeds, it returns the decoded [`Parameter`] along with the
+    /// number of bytes that encoded its value.
+    pub fn decode(
+        param_type: &ParameterType,
+        raw_bytes: &[u8],
+    ) -> Result<(Self, usize), AbiParserError> {
         // TODO validate raw_bytes length
         match *param_type {
-            ParameterType::Address => (
+            ParameterType::Address => Ok((
                 Self::Address(Address::from_slice(remove_left_padding_bytes(
                     12,
                     &raw_bytes[..32],
                 ))),
                 32,
-            ),
-            ParameterType::Bool => (Self::Bool(raw_bytes[31] == 1), 32),
+            )),
+            ParameterType::Bool => Ok((Self::Bool(raw_bytes[31] == 1), 32)),
             ParameterType::Uint(length) => {
                 let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
                 match length {
-                    8 => (
-                        Self::Uint8(cleaned.try_into().expect("input with incorrect length")),
+                    8 => Ok((
+                        Self::Uint8(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    16 => (
-                        Self::Uint16(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    16 => Ok((
+                        Self::Uint16(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    32 => (
-                        Self::Uint32(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    32 => Ok((
+                        Self::Uint32(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    64 => (
-                        Self::Uint64(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    64 => Ok((
+                        Self::Uint64(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    128 => (
-                        Self::Uint128(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    128 => Ok((
+                        Self::Uint128(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    256 => (
-                        Self::Uint256(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    256 => Ok((
+                        Self::Uint256(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
+                    )),
                     _ => unimplemented!(),
                 }
             }
             ParameterType::Int(length) => {
                 let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
                 match length {
-                    8 => (
-                        Self::Int8(cleaned.try_into().expect("input with incorrect length")),
+                    8 => Ok((
+                        Self::Int8(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    16 => (
-                        Self::Int16(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    16 => Ok((
+                        Self::Int16(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    32 => (
-                        Self::Int32(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    32 => Ok((
+                        Self::Int32(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    64 => (
-                        Self::Int64(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    64 => Ok((
+                        Self::Int64(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    128 => (
-                        Self::Int128(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    128 => Ok((
+                        Self::Int128(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
-                    256 => (
-                        Self::Int256(cleaned.try_into().expect("input with incorrect length")),
+                    )),
+                    256 => Ok((
+                        Self::Int256(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
                         32,
-                    ),
+                    )),
                     _ => unimplemented!(),
                 }
             }
             ParameterType::Bytes => {
                 let length = BigEndian::read_u64(&raw_bytes[..32]) as usize;
-                (
+                Ok((
                     Self::Bytes(raw_bytes[12..length].to_vec()),
                     32 + length + get_right_padding_length(length),
-                )
+                ))
             }
             ParameterType::String => {
                 let length = BigEndian::read_u64(&raw_bytes[..32]) as usize;
-                (
+                Ok((
                     Self::String(str::from_utf8(&raw_bytes[12..length]).unwrap().to_string()),
                     32 + length + get_right_padding_length(length),
-                )
+                ))
             }
             ParameterType::FixedBytes(length) => {
-                (Self::FixedBytes(raw_bytes[..length].to_vec()), 32)
+                Ok((Self::FixedBytes(raw_bytes[..length].to_vec()), 32))
             }
         }
     }
@@ -122,7 +179,7 @@ mod test {
     fn test_decode_address() {
         let encoded_address =
             hex!("00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a1234");
-        let decoded = Parameter::decode(&ParameterType::Address, &encoded_address);
+        let decoded = Parameter::decode(&ParameterType::Address, &encoded_address).unwrap();
 
         let expected = Parameter::Address(
             Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
@@ -135,7 +192,7 @@ mod test {
     fn test_decode_u8() {
         let encoded_address =
             hex!("000000000000000000000000000000000000000000000000000000000000007F");
-        let decoded = Parameter::decode(&ParameterType::Uint(8), &encoded_address);
+        let decoded = Parameter::decode(&ParameterType::Uint(8), &encoded_address).unwrap();
         let expected = Parameter::from_u8(127);
         assert_eq!(decoded.0, expected);
         assert_eq!(decoded.1, 32);
@@ -144,7 +201,7 @@ mod test {
     #[test]
     fn test_decode_u16() {
         let encoded = hex!("00000000000000000000000000000000000000000000000000000000000000FF");
-        let decoded = Parameter::decode(&ParameterType::Uint(16), &encoded);
+        let decoded = Parameter::decode(&ParameterType::Uint(16), &encoded).unwrap();
 
         let expected = Parameter::from_u16(255);
         assert_eq!(decoded.0, expected);
@@ -154,7 +211,7 @@ mod test {
     #[test]
     fn test_decode_u32() {
         let encoded = hex!("00000000000000000000000000000000000000000000000000000000000001FF");
-        let decoded = Parameter::decode(&ParameterType::Uint(32), &encoded);
+        let decoded = Parameter::decode(&ParameterType::Uint(32), &encoded).unwrap();
 
         let expected = Parameter::from_u32(511);
         assert_eq!(decoded.0, expected);
@@ -164,7 +221,7 @@ mod test {
     #[test]
     fn test_decode_u64() {
         let encoded = hex!("00000000000000000000000000000000000000000000000000000000000001FF");
-        let decoded = Parameter::decode(&ParameterType::Uint(64), &encoded);
+        let decoded = Parameter::decode(&ParameterType::Uint(64), &encoded).unwrap();
 
         let expected = Parameter::from_u64(511);
         assert_eq!(decoded.0, expected);
@@ -174,7 +231,7 @@ mod test {
     #[test]
     fn test_decode_i8() {
         let encoded = hex!("000000000000000000000000000000000000000000000000000000000000007F");
-        let decoded = Parameter::decode(&ParameterType::Int(8), &encoded);
+        let decoded = Parameter::decode(&ParameterType::Int(8), &encoded).unwrap();
 
         let expected = Parameter::from_i8(127);
         assert_eq!(decoded.0, expected);
@@ -184,7 +241,7 @@ mod test {
     #[test]
     fn test_decode_i16() {
         let encoded = hex!("00000000000000000000000000000000000000000000000000000000000000FF");
-        let decoded = Parameter::decode(&ParameterType::Int(16), &encoded);
+        let decoded = Parameter::decode(&ParameterType::Int(16), &encoded).unwrap();
 
         let expected = Parameter::from_i16(255);
         assert_eq!(decoded.0, expected);
@@ -194,7 +251,7 @@ mod test {
     #[test]
     fn test_decode_i32() {
         let encoded = hex!("00000000000000000000000000000000000000000000000000000000000001FF");
-        let decoded = Parameter::decode(&ParameterType::Int(32), &encoded);
+        let decoded = Parameter::decode(&ParameterType::Int(32), &encoded).unwrap();
 
         let expected = Parameter::from_i32(511);
         assert_eq!(decoded.0, expected);
@@ -204,7 +261,7 @@ mod test {
     #[test]
     fn test_decode_i64() {
         let encoded = hex!("00000000000000000000000000000000000000000000000000000000000001FF");
-        let decoded = Parameter::decode(&ParameterType::Int(64), &encoded);
+        let decoded = Parameter::decode(&ParameterType::Int(64), &encoded).unwrap();
         let expected = Parameter::from_i64(511);
         assert_eq!(decoded.0, expected);
         assert_eq!(decoded.1, 32);
