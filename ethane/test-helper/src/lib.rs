@@ -106,7 +106,7 @@ pub fn deploy_contract(
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
-        gas: Some(U256::from(1000000 as u64)),
+        gas: Some(U256::from(10000000 as u64)),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
