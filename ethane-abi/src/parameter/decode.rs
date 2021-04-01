@@ -134,9 +134,9 @@ mod test {
     #[test]
     fn test_decode_u8() {
         let encoded_address =
-            hex!("0000000000000000000000000000000000000000000000000000000000000000");
+            hex!("000000000000000000000000000000000000000000000000000000000000007F");
         let decoded = Parameter::decode(&ParameterType::Uint(8), &encoded_address);
-        let expected = Parameter::from_u8(0);
+        let expected = Parameter::from_u8(127);
         assert_eq!(decoded.0, expected);
         assert_eq!(decoded.1, 32);
     }
