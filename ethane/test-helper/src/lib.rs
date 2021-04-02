@@ -106,7 +106,7 @@ pub fn deploy_contract(
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
-        gas: Some(U256::from(1000000 as u64)),
+        gas: Some(U256::from(10000000 as u64)),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
@@ -114,12 +114,18 @@ pub fn deploy_contract(
 
     let receipt = client
         .call(rpc::eth_get_transaction_receipt(transaction_hash))
-        .unwrap().unwrap();
+        .unwrap()
+        .unwrap();
     let contract_address = receipt.contract_address.unwrap();
     (contract_address, abi)
 }
 
-pub fn simulate_transaction(client: &mut ConnectorWrapper, from: H160, to: &str, value: U256) -> H256 {
+pub fn simulate_transaction(
+    client: &mut ConnectorWrapper,
+    from: H160,
+    to: &str,
+    value: U256,
+) -> H256 {
     let transaction = TransactionRequest {
         from: from,
         to: Some(to.parse().unwrap()),
@@ -177,9 +183,7 @@ pub fn rpc_call_with_return<T: DeserializeOwned + Debug + PartialEq>(
     rpc: Rpc<T>,
 ) -> T {
     match client.call(rpc) {
-        Ok(res) => {
-           res
-        }
+        Ok(res) => res,
         Err(err) => panic!("{:?}", err),
     }
 }
