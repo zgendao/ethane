@@ -1,5 +1,5 @@
 use ethane::rpc;
-use ethane::types::{U64};
+use ethane::types::U64;
 
 use test_helper::*;
 

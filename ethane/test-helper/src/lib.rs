@@ -14,8 +14,8 @@ mod spin_up;
 pub use spin_up::{ConnectorNodeBundle, ConnectorWrapper, NodeProcess};
 
 mod fixtures;
-pub use fixtures::*;
 use ethane::ConnectorError;
+pub use fixtures::*;
 
 pub fn wait_for_transaction(client: &mut ConnectorWrapper, tx_hash: H256) {
     loop {
@@ -43,11 +43,10 @@ pub fn create_secret() -> H256 {
 }
 
 pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> Result<H160, ConnectorError> {
-    client
-        .call(rpc::personal_import_raw_key(
-            PrivateKey::NonPrefixed(secret),
-            String::from(ACCOUNTS_PASSWORD),
-        ))
+    client.call(rpc::personal_import_raw_key(
+        PrivateKey::NonPrefixed(secret),
+        String::from(ACCOUNTS_PASSWORD),
+    ))
 }
 
 pub fn unlock_account(client: &mut ConnectorWrapper, address: H160) -> bool {
