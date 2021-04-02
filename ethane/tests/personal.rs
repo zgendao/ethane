@@ -11,9 +11,10 @@ fn test_personal_list_accounts() {
 }
 
 #[test]
+#[ignore]
 fn test_personal_import_raw_key() {
     let mut client = ConnectorWrapper::new_from_env(None);
-    let pk: PrivateKey = PrivateKey::ZeroXPrefixed(H256::from_str(FIX_SECRET).unwrap());
+    let pk: PrivateKey = PrivateKey::NonPrefixed(H256::from_str(FIX_SECRET).unwrap());
     let expected_address: H160 = H160::from_str(FIX_ADDRESS).unwrap();
     rpc_call_test_expected(
         &mut client,
@@ -26,7 +27,7 @@ fn test_personal_import_raw_key() {
 fn test_personal_unlock_account() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let secret = create_secret();
-    let address = import_account(&mut client, secret);
+    let address = import_account(&mut client, secret).unwrap();
 
     rpc_call_test_expected(
         &mut client,
@@ -39,7 +40,7 @@ fn test_personal_unlock_account() {
 fn test_personal_lock_account() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let secret = create_secret();
-    let address = import_account(&mut client, secret);
+    let address = import_account(&mut client, secret).unwrap();
     unlock_account(&mut client, address);
     rpc_call_test_expected(&mut client, rpc::personal_lock_account(address), true);
 }
@@ -72,7 +73,7 @@ fn test_personal_send_transaction() {
 #[ignore] // @TODO not supported
 fn test_personal_sign() {
     let mut client = ConnectorWrapper::new_from_env(None);
-    let address = import_account(&mut client, H256::from_str(FIX_SECRET).unwrap());
+    let address = import_account(&mut client, H256::from_str(FIX_SECRET).unwrap()).unwrap();
     let message = Bytes::from_slice("checkmate".as_bytes());
     let expected_signature = Bytes::from_str(
         "67e4a4cf3b8cfb7d9a568482e9b6deb6350bc7701ae0448b92752b463e7dc97\
