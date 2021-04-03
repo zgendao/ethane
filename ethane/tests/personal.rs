@@ -11,15 +11,13 @@ fn test_personal_list_accounts() {
 }
 
 #[test]
-#[ignore]
 fn test_personal_import_raw_key() {
     let mut client = ConnectorWrapper::new_from_env(None);
-    let pk: PrivateKey = PrivateKey::NonPrefixed(H256::from_str(FIX_SECRET).unwrap());
-    let expected_address: H160 = H160::from_str(FIX_ADDRESS).unwrap();
-    rpc_call_test_expected(
+    let secret = create_secret();
+    let pk: PrivateKey = PrivateKey::NonPrefixed(secret);
+    rpc_call_test_some(
         &mut client,
-        rpc::personal_import_raw_key(pk, String::from(ACCOUNTS_PASSWORD)),
-        expected_address,
+        rpc::personal_import_raw_key(pk, String::from("")),
     )
 }
 
@@ -70,7 +68,6 @@ fn test_personal_send_transaction() {
 }
 
 #[test]
-#[ignore] // @TODO not supported
 fn test_personal_sign() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let address = import_account(&mut client, H256::from_str(FIX_SECRET).unwrap()).unwrap();
@@ -89,7 +86,6 @@ fn test_personal_sign() {
 }
 
 #[test]
-#[ignore] // @TODO Not supported
 fn test_personal_ec_recover() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let message = Bytes::from_slice("checkmate".as_bytes());

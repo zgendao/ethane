@@ -1,10 +1,10 @@
-name: Ethane Rust
+name: Ethane Rust runs against Geth 1.9.25
 
 # you can save compilation hours on Github if you only run this on pull
 # requests or when directly pushing to main branch
 on:
-#  push:
-#    branches: [main]
+  push:
+    branches: [abi-parse-work]
   pull_request:
 
 jobs:
@@ -31,11 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     services:
       ganache:
-        image: pumpkinseed/ganache-fix
+        image: docker.pkg.github.com/zgendao/ethereum-local-dev/geth:0.2.0
         ports:
           - 8545:8545
-        env:
-          WEB3_FORK_URL: ${{ secrets.INFURA_LINK }}
+        options: --datadir=~/.ethereum/devchain --dev --nodiscover --http --http.api "personal,eth,net,web3,txpool" --http.addr "0.0.0.0" --http.corsdomain="*" --allow-insecure-unlock --nousb
     steps:
       - name: Check out code
         uses: actions/checkout@v2
