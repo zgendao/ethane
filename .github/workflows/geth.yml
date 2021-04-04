@@ -31,10 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       ganache:
-        image: zgen/geth:v0.3.1
+        image: zgen/geth:v0.3.2
         ports:
           - 8545:8545
-        options: --datadir=~/.ethereum/devchain --dev --nodiscover --http --http.api "personal,eth,net,web3,txpool" --http.addr "0.0.0.0" --http.corsdomain="*" --allow-insecure-unlock --nousb
     steps:
       - name: Check out code
         uses: actions/checkout@v2
