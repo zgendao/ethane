@@ -4,7 +4,7 @@ name: Ethane Rust runs against Geth 1.9.25
 # requests or when directly pushing to main branch
 on:
   push:
-    branches: [abi-parse-work]
+    branches: [main]
   pull_request:
 
 jobs:
