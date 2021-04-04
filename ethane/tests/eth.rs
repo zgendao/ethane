@@ -511,7 +511,7 @@ fn test_eth_get_block_by_hash() {
     .unwrap();
     assert_eq!(block.gas_limit.gt(&U256::from(10000)), true);
     // assert_eq!(block.gas_used, U256::from(21000));
-    assert_eq!(block.size.gt(&U256::from(708)), true);
+    assert_eq!(block.size.gt(&U256::from(400)), true);
 }
 
 #[test]
