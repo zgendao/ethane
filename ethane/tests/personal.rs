@@ -70,7 +70,10 @@ fn test_personal_send_transaction() {
 #[test]
 fn test_personal_sign() {
     let mut client = ConnectorWrapper::new_from_env(None);
-    let address = import_account(&mut client, H256::from_str(FIX_SECRET).unwrap()).unwrap();
+    let address = match import_account(&mut client, H256::from_str(FIX_SECRET).unwrap()) {
+        Ok(a) => a,
+        Err(_) => H160::from_str("0xdc677f7c5060b0b441d30f361d0c8529ac04e099").unwrap(),
+    };
     let message = Bytes::from_slice("checkmate".as_bytes());
     let expected_signature = Bytes::from_str(
         "67e4a4cf3b8cfb7d9a568482e9b6deb6350bc7701ae0448b92752b463e7dc97\
