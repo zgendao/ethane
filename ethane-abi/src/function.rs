@@ -7,7 +7,8 @@ use crate::ParameterType;
 /// is available as the key to the respective function in the `HashMap` of the
 /// [`crate::Abi`] parser.
 pub struct Function {
-    pub _type: &'static str,
+    // TODO do we even need this field?
+    pub _type: &'static str, // once read, this is allocated until the program finishes
     pub inputs: Vec<FunctionParameter>,
     pub outputs: Vec<FunctionParameter>,
     pub state_mutability: Option<StateMutability>,

@@ -112,7 +112,7 @@ impl Abi {
     /// Decodes a hash into a [`Parameter`] vector.
     ///
     /// Based on the given ABI function name, the `Abi` parser iterates over that
-    /// function's input parameter types and decodes the input hash accordingly.
+    /// function's output parameter types and decodes the output hash accordingly.
     pub fn decode(
         &self,
         function_name: &str,
@@ -120,10 +120,10 @@ impl Abi {
     ) -> Result<Vec<Parameter>, AbiParserError> {
         if let Some(function) = self.functions.get(function_name) {
             let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
-            let mut parameters = Vec::<Parameter>::with_capacity(function.inputs.len());
-            for input in &function.inputs {
+            let mut parameters = Vec::<Parameter>::with_capacity(function.outputs.len());
+            for output in &function.outputs {
                 let (parameter, i) =
-                    Parameter::decode(&input.parameter_type, &hash[start_index..])?;
+                    Parameter::decode(&output.parameter_type, &hash[start_index..]);
                 start_index += i;
                 parameters.push(parameter);
             }
