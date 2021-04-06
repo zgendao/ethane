@@ -5,11 +5,13 @@ use std::path::Path;
 use std::str::FromStr;
 use test_helper::{deploy_contract, ConnectorWrapper, TEST_ERC20_NAME, TEST_ERC20_PATH};
 
+const ADDRESS1: &str = "0x007ccffb7916f37f7aeef05e8096ecfbe55afc2f";
+
 #[test]
 fn test_eth_call_contract() {
     // deploy contract
     let mut client = ConnectorWrapper::new_from_env(None);
-    let address = H160::from_str("0x007ccffb7916f37f7aeef05e8096ecfbe55afc2f").unwrap();
+    let address = H160::from_str(ADDRESS1).unwrap();
     let (contract_address, _) = deploy_contract(
         &mut client,
         address,

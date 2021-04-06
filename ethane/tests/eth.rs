@@ -189,6 +189,8 @@ fn test_eth_get_transaction_receipt() {
 fn test_eth_get_storage_at() {
     // @TODO rewrite with ERC-20 and put data into the storage
     let mut client = ConnectorWrapper::new_from_env(None);
+    unlock_account(&mut client, ADDRESS2.parse().unwrap());
+    prefund_account(&mut client, ADDRESS2.parse().unwrap());
     let address = H160::from_str(ADDRESS2).unwrap();
     let (contract_address, _) = deploy_contract(
         &mut client,
