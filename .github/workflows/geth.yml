@@ -1,8 +1,8 @@
-name: Ethane Rust
+name: Ethane Rust runs against Geth 1.9.25
 
 # you can save compilation hours on Github if you only run this on pull
 # requests or when directly pushing to main branch
-on: 
+on:
   push:
     branches: [main]
   pull_request:
@@ -31,11 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       ganache:
-        image: pumpkinseed/ganache-fix
+        image: zgen/geth:v0.3.2
         ports:
           - 8545:8545
-        env:
-          WEB3_FORK_URL: ${{ secrets.INFURA_LINK }}
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -52,4 +50,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-      
+

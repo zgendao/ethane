@@ -14,6 +14,7 @@ mod spin_up;
 pub use spin_up::{ConnectorNodeBundle, ConnectorWrapper, NodeProcess};
 
 mod fixtures;
+use ethane::ConnectorError;
 pub use fixtures::*;
 
 pub fn wait_for_transaction(client: &mut ConnectorWrapper, tx_hash: H256) {
@@ -41,13 +42,11 @@ pub fn create_secret() -> H256 {
     H256::from_str(&secret).unwrap()
 }
 
-pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> H160 {
-    client
-        .call(rpc::personal_import_raw_key(
-            PrivateKey::ZeroXPrefixed(secret),
-            String::from(ACCOUNTS_PASSWORD),
-        ))
-        .unwrap()
+pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> Result<H160, ConnectorError> {
+    client.call(rpc::personal_import_raw_key(
+        PrivateKey::NonPrefixed(secret),
+        String::from(ACCOUNTS_PASSWORD),
+    ))
 }
 
 pub fn unlock_account(client: &mut ConnectorWrapper, address: H160) -> bool {
@@ -75,7 +74,7 @@ pub fn prefund_account(client: &mut ConnectorWrapper, address: H160) -> H256 {
 
 pub fn create_account(client: &mut ConnectorWrapper) -> (H256, H160) {
     let secret = create_secret();
-    let address = import_account(client, secret);
+    let address = import_account(client, secret).unwrap();
     unlock_account(client, address);
     prefund_account(client, address);
     (secret, address)
@@ -106,7 +105,7 @@ pub fn deploy_contract(
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
-        gas: Some(U256::from(10000000 as u64)),
+        gas: Some(U256::from(1000000 as u64)),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
@@ -127,7 +126,7 @@ pub fn simulate_transaction(
     value: U256,
 ) -> H256 {
     let transaction = TransactionRequest {
-        from: from,
+        from,
         to: Some(to.parse().unwrap()),
         value: Some(value),
         ..Default::default()
