@@ -195,8 +195,8 @@ fn test_eth_get_storage_at() {
     let (contract_address, _) = deploy_contract(
         &mut client,
         address,
-        &Path::new(TEST_CONTRACT_PATH),
-        TEST_CONTRACT_NAME,
+        &Path::new(TEST_ERC20_PATH),
+        TEST_ERC20_NAME,
     );
     rpc_call_test_expected(
         &mut client,
@@ -226,6 +226,7 @@ fn test_eth_get_transaction_count() {
 }
 
 #[test]
+#[ignore]
 fn test_eth_get_block_by_number_full_tx() {
     let mut client = ConnectorWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
@@ -243,6 +244,7 @@ fn test_eth_get_block_by_number_full_tx() {
 }
 
 #[test]
+#[ignore]
 fn test_eth_get_block_by_number_only_hashes() {
     let mut client = ConnectorWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
@@ -542,6 +544,7 @@ fn test_eth_get_transaction_by_block_hash_and_index() {
 }
 
 #[test]
+#[ignore]
 fn test_eth_get_transaction_by_block_number_and_index() {
     let mut client = ConnectorWrapper::new_from_env(None);
     let value = 100000000 as u64;
