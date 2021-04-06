@@ -97,7 +97,7 @@ mod test {
             Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
         );
         let encoded = address.encode();
-        let hex_val = hex!("95eDA452256C1190947f9ba1fD19422f0120858a");
+        let hex_val = hex!("00000000000000000000000095eDA452256C1190947f9ba1fD19422f0120858a");
         let expected = hex_val.to_vec();
         assert_eq!(encoded, expected);
     }
