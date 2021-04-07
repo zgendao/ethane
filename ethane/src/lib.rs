@@ -72,8 +72,6 @@ pub use transport::uds::Uds;
 mod connection;
 pub mod connector;
 //pub mod contract;
-mod rpc;
+pub mod rpc;
 pub mod transport;
 pub mod types;
-
-pub use rpc::Rpc;

@@ -1,32 +1,20 @@
 //! Implementation of a websocket transport.
 
-use super::{Connection, ConnectionError, Credentials, Request, Subscribe};
-
-use crate::Rpc;
+use super::{ConnectionError, Credentials, Request, Subscribe};
 
 use log::{debug, error, trace};
-use serde::de::DeserializeOwned;
-use std::collections::VecDeque;
 use std::str::FromStr;
 use thiserror::Error;
-//use std::borrow::Cow;
-//use tungstenite::client::AutoStream;
-//use tungstenite::protocol::frame::coding::CloseCode;
-//use tungstenite::protocol::CloseFrame;
 
 /// Wraps a websocket connection
 pub struct WebSocket {
-    /// The endpoint of the websocket connection
-    pub address: String,
-    pub(crate) credentials: Option<Credentials>,
+    address: String,
+    credentials: Option<Credentials>,
     websocket: tungstenite::WebSocket<tungstenite::client::AutoStream>,
-    id_pool: VecDeque<usize>,
 }
 
-impl Connection for WebSocket {
-    type Error = WebSocketError;
-
-    fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, Self::Error> {
+impl WebSocket {
+    pub fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, WebSocketError> {
         debug!("Initiating websocket connection to {}", address);
         let uri = http::Uri::from_str(address)?;
 
@@ -51,29 +39,9 @@ impl Connection for WebSocket {
             address: address.to_owned(),
             credentials,
             websocket: ws.0,
-            id_pool: (0..1000).collect(),
         })
     }
 
-    fn call<U: DeserializeOwned + std::fmt::Debug>(
-        &mut self,
-        rpc: &mut Rpc<U>,
-    ) -> Result<U, ConnectionError> {
-        if let Some(id) = self.id_pool.pop_front() {
-            trace!("Using id {} for request", id);
-            rpc.id = id;
-            debug!("Calling rpc method: {:?}", &rpc);
-            self.id_pool.push_back(id);
-            let result_data = self.request(serde_json::to_string(&rpc)?)?;
-            let result: U = serde_json::from_str(&result_data)?;
-            Ok(result)
-        } else {
-            Err(ConnectionError::NoTicketId)
-        }
-    }
-}
-
-impl WebSocket {
     fn read_message(&mut self) -> Result<String, WebSocketError> {
         match self.read() {
             Ok(tungstenite::Message::Text(response)) => Ok(response),
@@ -133,22 +101,6 @@ impl Drop for WebSocket {
     }
 }
 
-/*
-fn create_handshake_request(
-    uri: &Uri,
-    credentials: Option<Credentials>,
-) -> Result<HttpRequest<()>, WebSocketError> {
-    let mut req_builder = HttpRequest::get(uri);
-    if let Some(ref credentials) = credentials {
-        let headers = req_builder.headers_mut().ok_or(WebSocketError::Handshake)?;
-        headers.insert("Authorization", credentials.to_auth_string().parse()?);
-    }
-
-    let request = req_builder.body(())?;
-    trace!("Built websocket handshake request: {:?}", &request);
-    Ok(request)
-}
-*/
 /// An error type collecting what can go wrong with a websocket
 #[derive(Debug, Error)]
 pub enum WebSocketError {

@@ -4,9 +4,10 @@ mod websocket;
 
 use credentials::Credentials;
 
-use crate::Rpc;
+use crate::rpc::Rpc;
 
-use serde::{de::DeserializeOwned, Deserialize};
+use log::{debug, trace};
+use serde::de::DeserializeOwned;
 use thiserror::Error;
 
 pub trait Request {
@@ -20,20 +21,42 @@ pub trait Subscribe {
         Self: Sized;
 }
 
-pub trait Connection {
-    type Error;
+pub struct Connection<T: Request> {
+    transport: T,
+    id_pool: std::collections::VecDeque<usize>,
+}
 
-    fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, Self::Error>
+impl<T> Connection<T>
+where
+    T: Request,
+{
+    fn new(transport: T) -> Self {
+        Self {
+            transport,
+            id_pool: (0..1000).collect(),
+        }
+    }
+
+    fn call<U>(&mut self, rpc: &mut Rpc<U>) -> Result<U, ConnectionError>
     where
-        Self: Sized;
-    fn call<U: DeserializeOwned + std::fmt::Debug>(
-        &mut self,
-        rpc: &mut Rpc<U>,
-    ) -> Result<U, ConnectionError>;
+        U: DeserializeOwned + std::fmt::Debug,
+    {
+        if let Some(id) = self.id_pool.pop_front() {
+            trace!("Using id {} for request", id);
+            rpc.id = id;
+            debug!("Calling rpc method: {:?}", &rpc);
+            self.id_pool.push_back(id);
+            let result_data = self.transport.request(serde_json::to_string(&rpc)?)?;
+            let result: U = serde_json::from_str(&result_data)?;
+            Ok(result)
+        } else {
+            Err(ConnectionError::NoTicketId)
+        }
+    }
 }
 
 /// Used to deserialize errors returned from the ethereum node.
-#[derive(Deserialize, Debug, Error)]
+#[derive(Debug, Error)]
 #[error("{message}")]
 pub struct JsonError {
     code: i32,
