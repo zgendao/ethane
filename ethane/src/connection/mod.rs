@@ -1,9 +1,11 @@
 mod credentials;
-mod http;
 mod subscription;
-mod websocket;
+mod transport;
 
-use credentials::Credentials;
+pub use credentials::Credentials;
+pub use subscription::{Subscription, SubscriptionError};
+pub use transport::http::{Http, HttpError};
+pub use transport::websocket::{WebSocket, WebSocketError};
 
 use crate::rpc::Rpc;
 
@@ -69,9 +71,9 @@ pub struct JsonError {
 #[derive(Debug, Error)]
 pub enum ConnectionError {
     #[error("{0}")]
-    WebSocketError(#[from] websocket::WebSocketError),
+    WebSocketError(#[from] WebSocketError),
     #[error("{0}")]
-    HttpError(#[from] http::HttpError),
+    HttpError(#[from] HttpError),
     #[error("Node Response Error: {0:?}")]
     JsonRpc(#[from] JsonError),
     #[error("Connector De-/Serialization Error: {0}")]

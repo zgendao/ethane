@@ -1,4 +1,4 @@
-use crate::types::{Bytes, Call, Address};
+use crate::types::{Address, Bytes, Call};
 use crate::{rpc, Connector};
 use ethane_abi::{Abi, AbiCall, Parameter};
 use std::path::Path;
@@ -10,7 +10,11 @@ pub struct Caller<T> {
 }
 
 impl Caller {
-    pub fn new(connector: Connector<T>, abi: serde_json::Value, contract_address: Address) -> Caller {
+    pub fn new(
+        connector: Connector<T>,
+        abi: serde_json::Value,
+        contract_address: Address,
+    ) -> Caller {
         let mut abi = Abi::new();
         Caller {
             abi,

@@ -1,6 +1,6 @@
 //! Implementation of a websocket transport.
 
-use super::{ConnectionError, Credentials, Request, Subscribe};
+use super::super::{ConnectionError, Credentials, Request, Subscribe};
 
 use log::{debug, error, trace};
 use std::str::FromStr;

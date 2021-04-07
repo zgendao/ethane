@@ -1,6 +1,6 @@
 //! Implementation of http transport
 
-use super::{ConnectionError, Credentials, Request};
+use super::super::{ConnectionError, Credentials, Request};
 
 use log::{debug, trace};
 use thiserror::Error;
