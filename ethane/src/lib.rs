@@ -69,9 +69,11 @@ pub use transport::{http::Http, websocket::WebSocket, Credentials};
 #[cfg(target_family = "unix")]
 pub use transport::uds::Uds;
 
+mod connection;
 pub mod connector;
-pub mod rpc;
+//pub mod contract;
+mod rpc;
 pub mod transport;
 pub mod types;
-//pub mod contract;
-mod connection;
+
+pub use rpc::Rpc;

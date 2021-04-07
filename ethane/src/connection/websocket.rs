@@ -1,8 +1,12 @@
 //! Implementation of a websocket transport.
 
-use super::{Connection, Credentials};
+use super::{Connection, ConnectionError, Credentials, Request, Subscribe};
+
+use crate::Rpc;
 
 use log::{debug, error, trace};
+use serde::de::DeserializeOwned;
+use std::collections::VecDeque;
 use std::str::FromStr;
 use thiserror::Error;
 //use std::borrow::Cow;
@@ -15,7 +19,8 @@ pub struct WebSocket {
     /// The endpoint of the websocket connection
     pub address: String,
     pub(crate) credentials: Option<Credentials>,
-    ws: tungstenite::WebSocket<tungstenite::client::AutoStream>,
+    websocket: tungstenite::WebSocket<tungstenite::client::AutoStream>,
+    id_pool: VecDeque<usize>,
 }
 
 impl Connection for WebSocket {
@@ -25,9 +30,9 @@ impl Connection for WebSocket {
     fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, Self::Error> {
         debug!("Initiating websocket connection to {}", address);
         let uri = http::Uri::from_str(address)?;
-        //let handshake_request = create_handshake_request(&uri, &credentials)?;
 
         let mut request_builder = http::Request::get(&uri);
+
         if let Some(ref credentials) = credentials {
             let headers = request_builder.headers_mut().ok_or(WebSocketError::Handshake)?;
             headers.insert("Authorization", credentials.to_auth_string().parse()?);
@@ -41,33 +46,48 @@ impl Connection for WebSocket {
         Ok(Self {
             address: address.to_owned(),
             credentials,
-            ws: ws.0,
+            websocket: ws.0,
+            id_pool: (0..1000).collect(),
         })
+    }
+
+    fn call<U: DeserializeOwned + std::fmt::Debug>(&mut self, rpc: &mut Rpc<U>) -> Result<U, ConnectionError> {
+        if let Some(id) = self.id_pool.pop_front() {
+            trace!("Using id {} for request", id);
+            rpc.id = id;
+            debug!("Calling rpc method: {:?}", &rpc);
+            self.id_pool.push_back(id);
+            let result_data = self.request(serde_json::to_string(&rpc)?)?;
+            let result: U = serde_json::from_str(&result_data)?;
+            Ok(result)
+        } else {
+            Err(ConnectionError::NoTicketId)
+        }
     }
 }
 
-/*
 impl WebSocket {
     fn read_message(&mut self) -> Result<String, WebSocketError> {
         match self.read() {
-            Ok(Message::Text(response)) => Ok(response),
+            Ok(tungstenite::Message::Text(response)) => Ok(response),
             Ok(_) => self.read_message(),
             Err(err) => Err(err),
         }
     }
 
-    fn read(&mut self) -> Result<Message, WebSocketError> {
-        let message = self.ws.read_message()?;
+    fn read(&mut self) -> Result<tungstenite::Message, WebSocketError> {
+        let message = self.websocket.read_message()?;
         trace!("Reading from websocket: {}", &message);
         Ok(message)
     }
 
-    fn write(&mut self, message: Message) -> Result<(), WebSocketError> {
+    fn write(&mut self, message: tungstenite::Message) -> Result<(), WebSocketError> {
         trace!("Writing to websocket: {}", &message);
-        self.ws.write_message(message)?;
+        self.websocket.write_message(message)?;
         Ok(())
     }
-
+}
+/*
     fn close(&mut self) -> Result<(), WebSocketError> {
         debug!("Closing websocket connection");
         let close_frame = CloseFrame {
@@ -78,21 +98,23 @@ impl WebSocket {
         self.ws.write_pending().map_err(WebSocketError::from)
     }
 }
-
+*/
 impl Request for WebSocket {
-    fn request(&mut self, cmd: String) -> Result<String, TransportError> {
-        let _write = self.write(Message::Text(cmd))?;
-        self.read_message().map_err(TransportError::from)
+    fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
+        let write_msg = tungstenite::Message::Text(cmd);
+        self.write(write_msg)?;
+        self.read_message().map_err(ConnectionError::from)
     }
 }
 
+/*
 impl Subscribe for WebSocket {
-    fn read_next(&mut self) -> Result<String, TransportError> {
-        self.read_message().map_err(TransportError::from)
+    fn read_next(&mut self) -> Result<String, ConnectionError> {
+        self.read_message().map_err(ConnectionError::from)
     }
 
-    fn fork(&self) -> Result<Self, TransportError> {
-        Self::new(self.address.clone(), self.credentials.clone()).map_err(TransportError::from)
+    fn fork(&self) -> Result<Self, ConnectionError> {
+        Self::new(self.address.clone(), self.credentials.clone()).map_err(ConnectionError::from)
     }
 }
 
@@ -104,7 +126,9 @@ impl Drop for WebSocket {
         }
     }
 }
+*/
 
+/*
 fn create_handshake_request(
     uri: &Uri,
     credentials: Option<Credentials>,
