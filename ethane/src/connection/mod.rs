@@ -1,5 +1,6 @@
 mod credentials;
 mod http;
+mod subscription;
 mod websocket;
 
 use credentials::Credentials;
