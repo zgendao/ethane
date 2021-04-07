@@ -1,16 +1,16 @@
-use crate::types::{Bytes, Call, H160};
+use crate::types::{Bytes, Call, Address};
 use crate::{rpc, Connector};
 use ethane_abi::{Abi, AbiCall, Parameter};
 use std::path::Path;
 
 pub struct Caller<T> {
     abi: Abi,
-    contract_address: H160,
+    contract_address: Address,
     connector: Connector<T>,
 }
 
 impl Caller {
-    pub fn new(connector: Connector<T>, abi: serde_json::Value, contract_address: H160) -> Caller {
+    pub fn new(connector: Connector<T>, abi: serde_json::Value, contract_address: Address) -> Caller {
         let mut abi = Abi::new();
         Caller {
             abi,
@@ -19,7 +19,7 @@ impl Caller {
         }
     }
 
-    pub fn new_from_path(connector: Connector<T>, path: &str, contract_address: H160) -> Caller {
+    pub fn new_from_path(connector: Connector<T>, path: &str, contract_address: Address) -> Caller {
         let mut abi = Abi::new();
         abi.parse(Path::new(path)).expect("unable to parse abi");
         Caller {

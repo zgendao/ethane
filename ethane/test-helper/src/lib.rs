@@ -1,5 +1,5 @@
 use ethane::rpc::{self, Rpc};
-use ethane::types::{Bytes, PrivateKey, TransactionRequest, H160, H256, U256};
+use ethane::types::{Bytes, PrivateKey, TransactionRequest, Address, H256, U256};
 
 use rand::Rng;
 use serde::de::DeserializeOwned;
@@ -42,14 +42,14 @@ pub fn create_secret() -> H256 {
     H256::from_str(&secret).unwrap()
 }
 
-pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> Result<H160, ConnectorError> {
+pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> Result<Address, ConnectorError> {
     client.call(rpc::personal_import_raw_key(
         PrivateKey::NonPrefixed(secret),
         String::from(ACCOUNTS_PASSWORD),
     ))
 }
 
-pub fn unlock_account(client: &mut ConnectorWrapper, address: H160) -> bool {
+pub fn unlock_account(client: &mut ConnectorWrapper, address: Address) -> bool {
     client
         .call(rpc::personal_unlock_account(
             address,
@@ -59,7 +59,7 @@ pub fn unlock_account(client: &mut ConnectorWrapper, address: H160) -> bool {
         .unwrap()
 }
 
-pub fn prefund_account(client: &mut ConnectorWrapper, address: H160) -> H256 {
+pub fn prefund_account(client: &mut ConnectorWrapper, address: Address) -> H256 {
     let coinbase = client.call(rpc::eth_coinbase()).unwrap();
     let tx = TransactionRequest {
         from: coinbase,
@@ -72,7 +72,7 @@ pub fn prefund_account(client: &mut ConnectorWrapper, address: H160) -> H256 {
     tx_hash
 }
 
-pub fn create_account(client: &mut ConnectorWrapper) -> (H256, H160) {
+pub fn create_account(client: &mut ConnectorWrapper) -> (H256, Address) {
     let secret = create_secret();
     let address = import_account(client, secret).unwrap();
     unlock_account(client, address);
@@ -94,10 +94,10 @@ pub fn compile_contract(path: &Path, contract_name: &str) -> Value {
 
 pub fn deploy_contract(
     client: &mut ConnectorWrapper,
-    address: H160,
+    address: Address,
     path: &Path,
     contract_name: &str,
-) -> (H160, Value) {
+) -> (Address, Value) {
     let raw_contract = compile_contract(path, contract_name);
     let bin = bin(raw_contract.clone());
     let abi = abi(raw_contract);
@@ -121,7 +121,7 @@ pub fn deploy_contract(
 
 pub fn simulate_transaction(
     client: &mut ConnectorWrapper,
-    from: H160,
+    from: Address,
     to: &str,
     value: U256,
 ) -> H256 {

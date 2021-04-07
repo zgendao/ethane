@@ -2,7 +2,7 @@
 //!
 //! This module provides custom types, but also re-exports some types from [ethereum_types].
 
-pub use ethereum_types::{Bloom, H160, H256, H64, U128, U256, U64};
+pub use ethereum_types::{Address, Bloom, H256, H64, U128, U256, U64};
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
@@ -38,9 +38,9 @@ impl Default for BlockParameter {
 /// Used for creating transactions
 #[derive(Clone, Debug, PartialEq, Serialize, Default)]
 pub struct TransactionRequest {
-    pub from: H160,
+    pub from: Address,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub to: Option<H160>,
+    pub to: Option<Address>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gas: Option<U256>,
     #[serde(rename = "gasPrice")]
@@ -61,14 +61,14 @@ pub struct Transaction {
     pub block_hash: Option<H256>,
     #[serde(rename = "blockNumber")]
     pub block_number: Option<U64>,
-    pub from: Option<H160>,
+    pub from: Option<Address>,
     pub gas: U256,
     #[serde(rename = "gasPrice")]
     pub gas_price: U256,
     pub hash: H256,
     pub input: Bytes,
     pub nonce: U256,
-    pub to: Option<H160>,
+    pub to: Option<Address>,
     #[serde(rename = "transactionIndex")]
     pub transaction_index: Option<U64>,
     pub value: U256,
@@ -88,14 +88,14 @@ pub struct TransactionReceipt {
     pub block_hash: H256,
     #[serde(rename = "blockNumber")]
     pub block_number: U64,
-    pub from: H160,
-    pub to: Option<H160>,
+    pub from: Address,
+    pub to: Option<Address>,
     #[serde(rename = "cumulativeGasUsed")]
     pub cumulative_gas_used: U256,
     #[serde(rename = "gasUsed")]
     pub gas_used: U256,
     #[serde(rename = "contractAddress")]
-    pub contract_address: Option<H160>,
+    pub contract_address: Option<Address>,
     pub logs: Vec<Log>,
     #[serde(rename = "logsBloom")]
     pub logs_bloom: Bloom,
@@ -105,7 +105,7 @@ pub struct TransactionReceipt {
 ///Contains information about events
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Log {
-    pub address: H160,
+    pub address: Address,
     pub topics: Vec<H256>,
     pub data: Bytes,
     #[serde(rename = "blockHash")]
@@ -216,7 +216,7 @@ pub struct Block {
     pub state_root: H256,
     #[serde(rename = "receiptsRoot")]
     pub receipts_root: H256,
-    pub miner: H160,
+    pub miner: Address,
     pub difficulty: U256,
     #[serde(rename = "totalDifficulty")]
     pub total_difficulty: U256,
@@ -249,7 +249,7 @@ pub struct BlockHeader {
     pub difficulty: U256,
     #[serde(rename = "sha3Uncles")]
     pub sha3_uncles: H256,
-    pub miner: H160,
+    pub miner: Address,
     #[serde(rename = "logsBloom")]
     pub logs_bloom: Option<Bloom>,
     #[serde(rename = "gasLimit")]
@@ -274,8 +274,8 @@ pub enum TransactionOrHash {
 #[derive(Clone, Debug, PartialEq, Serialize, Default)]
 pub struct Call {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub from: Option<H160>,
-    pub to: H160,
+    pub from: Option<Address>,
+    pub to: Address,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gas: Option<U256>,
     #[serde(rename = "gasPrice")]
@@ -291,9 +291,9 @@ pub struct Call {
 #[derive(Clone, Debug, PartialEq, Serialize, Default)]
 pub struct GasCall {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub from: Option<H160>,
+    pub from: Option<Address>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub to: Option<H160>,
+    pub to: Option<Address>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gas: Option<U256>,
     #[serde(rename = "gasPrice")]
@@ -315,7 +315,7 @@ pub struct Filter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to_block: Option<BlockParameter>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub address: Option<ValueOrVec<H160>>,
+    pub address: Option<ValueOrVec<Address>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub topics: Option<Vec<Option<ValueOrVec<H256>>>>,
 }
@@ -324,7 +324,7 @@ pub struct Filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Default)]
 pub struct FilterSubscription {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub address: Option<ValueOrVec<H160>>,
+    pub address: Option<ValueOrVec<Address>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub topics: Option<Vec<Option<ValueOrVec<H256>>>>,
 }
@@ -356,15 +356,15 @@ pub struct TxPoolStatus {
 /// Content of the transaction pool
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct TxPoolContent {
-    pub pending: HashMap<H160, HashMap<String, Transaction>>,
-    pub queued: HashMap<H160, HashMap<String, Transaction>>,
+    pub pending: HashMap<Address, HashMap<String, Transaction>>,
+    pub queued: HashMap<Address, HashMap<String, Transaction>>,
 }
 
 /// Content of transaction pool in debug view
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct TxPoolInspect {
-    pub pending: HashMap<H160, HashMap<String, String>>,
-    pub queued: HashMap<H160, HashMap<String, String>>,
+    pub pending: HashMap<Address, HashMap<String, String>>,
+    pub queued: HashMap<Address, HashMap<String, String>>,
 }
 
 /// Wrapper for node synchronization info

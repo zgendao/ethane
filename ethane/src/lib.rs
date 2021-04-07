@@ -20,7 +20,7 @@
 //! ```no_run
 //! use ethane::Connector;
 //! use ethane::rpc::eth_get_balance;
-//! use ethane::types::H160;
+//! use ethane::types::Address;
 //! # use test_helper::NodeProcess;
 //! # let node = NodeProcess::new_http("8545");
 //!
@@ -29,7 +29,7 @@
 //! let mut connector = Connector::http(node_endpoint, None).unwrap();
 //!
 //! // Make a request
-//! let address = H160::zero();
+//! let address = Address::zero();
 //! let balance = connector.call(eth_get_balance(address, None)).unwrap();
 //! ```
 //!
@@ -39,7 +39,7 @@
 //! use ethane::rpc::sub::eth_subscribe_new_pending_transactions;
 //! # use test_helper::NodeProcess;
 //! # use ethane::rpc::{eth_send_transaction, eth_coinbase};
-//! # use ethane::types::{TransactionRequest, H160, U256};
+//! # use ethane::types::{TransactionRequest, Address, U256};
 //!
 //! # let node = NodeProcess::new_ws("8546");
 //!
@@ -52,7 +52,7 @@
 //!     .subscribe(eth_subscribe_new_pending_transactions()).unwrap();
 //! # let tx_request = TransactionRequest {
 //! # from: connector.call(eth_coinbase()).unwrap(),
-//! # to: Some(H160::zero()),
+//! # to: Some(Address::zero()),
 //! # value: Some(U256::zero()),
 //! # ..Default::default()
 //! # };
