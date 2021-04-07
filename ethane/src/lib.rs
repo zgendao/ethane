@@ -73,4 +73,5 @@ pub mod connector;
 pub mod rpc;
 pub mod transport;
 pub mod types;
-pub mod contract;
+//pub mod contract;
+mod connection;

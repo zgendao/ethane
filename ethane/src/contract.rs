@@ -3,7 +3,7 @@ use crate::{rpc, Connector};
 use ethane_abi::{Abi, AbiCall, Parameter};
 use std::path::Path;
 
-pub struct Caller {
+pub struct Caller<T> {
     abi: Abi,
     contract_address: H160,
     connector: Connector<T>,
