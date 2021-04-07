@@ -1,3 +1,4 @@
+// TODO currently this file is not compiled.
 //! Implementation of Unix domain socket transport (Unix only)
 
 use crate::transport::{Request, Subscribe, TransportError};
