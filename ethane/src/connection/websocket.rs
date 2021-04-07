@@ -24,7 +24,6 @@ pub struct WebSocket {
 }
 
 impl Connection for WebSocket {
-
     type Error = WebSocketError;
 
     fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, Self::Error> {
@@ -34,12 +33,17 @@ impl Connection for WebSocket {
         let mut request_builder = http::Request::get(&uri);
 
         if let Some(ref credentials) = credentials {
-            let headers = request_builder.headers_mut().ok_or(WebSocketError::Handshake)?;
+            let headers = request_builder
+                .headers_mut()
+                .ok_or(WebSocketError::Handshake)?;
             headers.insert("Authorization", credentials.to_auth_string().parse()?);
         }
 
         let handshake_request = request_builder.body(())?;
-        trace!("Built websocket handshake request: {:?}", &handshake_request);
+        trace!(
+            "Built websocket handshake request: {:?}",
+            &handshake_request
+        );
 
         let ws = tungstenite::connect(handshake_request)?;
         trace!("Handshake Response: {:?}", ws.1);
@@ -51,7 +55,10 @@ impl Connection for WebSocket {
         })
     }
 
-    fn call<U: DeserializeOwned + std::fmt::Debug>(&mut self, rpc: &mut Rpc<U>) -> Result<U, ConnectionError> {
+    fn call<U: DeserializeOwned + std::fmt::Debug>(
+        &mut self,
+        rpc: &mut Rpc<U>,
+    ) -> Result<U, ConnectionError> {
         if let Some(id) = self.id_pool.pop_front() {
             trace!("Using id {} for request", id);
             rpc.id = id;
@@ -86,19 +93,19 @@ impl WebSocket {
         self.websocket.write_message(message)?;
         Ok(())
     }
-}
-/*
+
     fn close(&mut self) -> Result<(), WebSocketError> {
+        use tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
         debug!("Closing websocket connection");
         let close_frame = CloseFrame {
             code: CloseCode::Normal,
-            reason: Cow::from("Finished"),
+            reason: std::borrow::Cow::from("Finished"),
         };
-        self.ws.close(Some(close_frame))?;
-        self.ws.write_pending().map_err(WebSocketError::from)
+        self.websocket.close(Some(close_frame))?;
+        self.websocket.write_pending().map_err(WebSocketError::from)
     }
 }
-*/
+
 impl Request for WebSocket {
     fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
         let write_msg = tungstenite::Message::Text(cmd);
@@ -107,14 +114,13 @@ impl Request for WebSocket {
     }
 }
 
-/*
 impl Subscribe for WebSocket {
     fn read_next(&mut self) -> Result<String, ConnectionError> {
         self.read_message().map_err(ConnectionError::from)
     }
 
     fn fork(&self) -> Result<Self, ConnectionError> {
-        Self::new(self.address.clone(), self.credentials.clone()).map_err(ConnectionError::from)
+        Self::new(&self.address, self.credentials.clone()).map_err(ConnectionError::from)
     }
 }
 
@@ -126,7 +132,6 @@ impl Drop for WebSocket {
         }
     }
 }
-*/
 
 /*
 fn create_handshake_request(

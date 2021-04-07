@@ -6,7 +6,7 @@ use credentials::Credentials;
 
 use crate::Rpc;
 
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize};
 use thiserror::Error;
 
 pub trait Request {
@@ -15,19 +15,32 @@ pub trait Request {
 
 pub trait Subscribe {
     fn read_next(&mut self) -> Result<String, ConnectionError>;
-    fn fork(&mut self) -> Result<String, ConnectionError>;
+    fn fork(&self) -> Result<Self, ConnectionError>
+    where
+        Self: Sized;
 }
 
 pub trait Connection {
     type Error;
 
     fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, Self::Error>
-    where Self: Sized;
-    fn call<U: DeserializeOwned + std::fmt::Debug>(&mut self, rpc: &mut Rpc<U>) -> Result<U, ConnectionError>;
-    //fn close();
+    where
+        Self: Sized;
+    fn call<U: DeserializeOwned + std::fmt::Debug>(
+        &mut self,
+        rpc: &mut Rpc<U>,
+    ) -> Result<U, ConnectionError>;
 }
 
-/// Wraps the different transport errors that can happen
+/// Used to deserialize errors returned from the ethereum node.
+#[derive(Deserialize, Debug, Error)]
+#[error("{message}")]
+pub struct JsonError {
+    code: i32,
+    message: String,
+}
+
+/// Wraps the different transport errors that may occur.
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Error)]
 pub enum ConnectionError {
@@ -41,12 +54,4 @@ pub enum ConnectionError {
     Serde(#[from] serde_json::Error),
     #[error("Connector Error: Maximum number of connections reached")]
     NoTicketId,
-}
-
-/// Used to deserialize errors returned from the ethereum node
-#[derive(Deserialize, Debug, Error)]
-#[error("{message}")]
-pub struct JsonError {
-    code: i32,
-    message: String,
 }
