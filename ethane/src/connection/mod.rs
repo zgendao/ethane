@@ -33,14 +33,14 @@ impl<T> Connection<T>
 where
     T: Request,
 {
-    fn new(transport: T) -> Self {
+    pub fn new(transport: T) -> Self {
         Self {
             transport,
             id_pool: (0..1000).collect(),
         }
     }
 
-    fn call<U>(&mut self, rpc: &mut Rpc<U>) -> Result<U, ConnectionError>
+    pub fn call<U>(&mut self, mut rpc: Rpc<U>) -> Result<U, ConnectionError>
     where
         U: DeserializeOwned + std::fmt::Debug,
     {

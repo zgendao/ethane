@@ -37,7 +37,7 @@ impl<T: Subscribe + Request, U: DeserializeOwned + Debug> Subscription<T, U> {
 
 impl<T: Subscribe + Request, U: DeserializeOwned + Debug> Drop for Subscription<T, U> {
     fn drop(&mut self) {
-        match self.connection.call(&mut eth_unsubscribe(self.id)) {
+        match self.connection.call(eth_unsubscribe(self.id)) {
             Ok(true) => (),
             Ok(_) => error!("Unable to cancel subscription"),
             Err(err) => error!("{}", err),
