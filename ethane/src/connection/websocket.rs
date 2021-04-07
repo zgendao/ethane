@@ -115,16 +115,31 @@ pub enum WebSocketError {
     #[error("WebSocket Error. Unable to parse credentials {0}")]
     InvalidHeader(#[from] http::header::InvalidHeaderValue),
 }
-/*
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::net::{SocketAddr, TcpStream};
     use tungstenite::{accept, Message};
 
+    fn create_handshake_request(
+        uri: &http::Uri,
+        credentials: Option<Credentials>,
+    ) -> Result<http::Request<()>, WebSocketError> {
+        let mut req_builder = http::Request::get(uri);
+        if let Some(ref credentials) = credentials {
+            let headers = req_builder.headers_mut().ok_or(WebSocketError::Handshake)?;
+            headers.insert("Authorization", credentials.to_auth_string().parse()?);
+        }
+
+        let request = req_builder.body(())?;
+        trace!("Built websocket handshake request: {:?}", &request);
+        Ok(request)
+    }
+
     fn spawn_websocket_server<F>(mut handle_ws_stream: F, port: u16)
     where
-        F: FnMut(&mut WebSocketTungstenite<TcpStream>) + Send + 'static,
+        F: FnMut(&mut tungstenite::WebSocket<TcpStream>) + Send + 'static,
     {
         let tcp_listener =
             std::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port))).unwrap();
@@ -143,7 +158,7 @@ mod tests {
             .is_ok();
     }
 
-    fn ping_pong(ws_stream: &mut WebSocketTungstenite<TcpStream>) {
+    fn ping_pong(ws_stream: &mut tungstenite::WebSocket<TcpStream>) {
         match ws_stream.read_message() {
             Ok(message) => match message {
                 Message::Text(echo) => ws_stream
@@ -156,8 +171,8 @@ mod tests {
     }
 
     #[test]
-    fn test_websocket_create_handshake_request_with_credentials() {
-        let uri = Uri::from_static("localhost");
+    fn handshake_request_with_credentials() {
+        let uri = http::Uri::from_static("localhost");
         let credentials = Credentials::Basic(String::from("YWJjOjEyMw=="));
         let request = create_handshake_request(&uri, Some(credentials)).unwrap();
         assert_eq!(
@@ -167,19 +182,18 @@ mod tests {
     }
 
     #[test]
-    fn test_websocket_create_handshake_request_without_credentials() {
-        let uri = Uri::from_static("localhost");
+    fn handshake_request_without_credentials() {
+        let uri = http::Uri::from_static("localhost");
         let request = create_handshake_request(&uri, None).unwrap();
         assert_eq!(request.method(), http::method::Method::GET);
         assert_eq!(request.uri(), &uri);
     }
 
     #[test]
-    fn test_websocket_request() {
+    fn ping_pong_request() {
         spawn_websocket_server(ping_pong, 3001);
-        let mut ws_client = WebSocket::new(String::from("ws://localhost:3001"), None).unwrap();
+        let mut ws_client = WebSocket::new("ws://localhost:3001", None).unwrap();
         let response = ws_client.request(String::from("Ping")).unwrap();
         assert_eq!(response, "Ping Pong");
     }
 }
-*/

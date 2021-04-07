@@ -1,3 +1,4 @@
+/*
 use ethane::contract::Caller;
 use ethane::rpc;
 use ethane::types::{Bytes, Call, H160};
@@ -67,3 +68,4 @@ fn test_eth_call_contract_decimals() {
     let res = client.call(rpc::eth_call(call, None)).unwrap();
     println!("{:?}", res)
 }
+*/

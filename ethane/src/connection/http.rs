@@ -14,13 +14,13 @@ pub struct Http {
 }
 
 impl Http {
-    pub fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, HttpError> {
+    pub fn new(address: &str, credentials: Option<Credentials>) -> Self {
         debug!("Binding http client to {}", address);
-        Ok(Self {
+        Self {
             address: address.to_owned(),
             credentials,
             agent: ureq::Agent::new(),
-        })
+        }
     }
 
     fn prepare_json_request(&self) -> ureq::Request {
@@ -60,14 +60,14 @@ pub enum HttpError {
     #[error("Http Send Request Error: {0}")]
     UreqError(#[from] ureq::Error),
 }
-/*
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_http_prepare_request() {
-        let address = String::from("http://127.0.0.1");
+    fn prepare_request() {
+        let address = "http://127.0.0.1";
         let credentials = Credentials::Basic(String::from("check!"));
         let client = Http::new(address, Some(credentials));
         let request = client.prepare_json_request();
@@ -77,4 +77,3 @@ mod tests {
         assert_eq!(request.header("Accept").unwrap(), "application/json");
     }
 }
-*/

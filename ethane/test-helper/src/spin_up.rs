@@ -64,14 +64,14 @@ impl ConnectorWrapper {
         }
     }
 
-    pub fn get(self) -> Connector<T> {
-        match self {
-            Self::Websocket(connector) => connector.connector,
-            Self::Http(connector) => connector.connector,
-            #[cfg(target_family = "unix")]
-            Self::Uds(connector) => connector.connector,
-        }
-    }
+    //pub fn get(self) -> Connector<T> {
+    //    match self {
+    //        Self::Websocket(connector) => connector.connector,
+    //        Self::Http(connector) => connector.connector,
+    //        #[cfg(target_family = "unix")]
+    //        Self::Uds(connector) => connector.connector,
+    //    }
+    //}
 }
 
 pub trait DynSubscription<T: DeserializeOwned + Debug> {
