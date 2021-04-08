@@ -1,5 +1,8 @@
 use ethane::rpc::{sub::SubscriptionRequest, Rpc};
-use ethane::{Connection, ConnectionError, Http, Subscription, SubscriptionError, WebSocket, Request, Subscribe};
+use ethane::{
+    Connection, ConnectionError, Http, Request, Subscribe, Subscription, SubscriptionError,
+    WebSocket,
+};
 use regex::{Regex, RegexBuilder};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
@@ -111,7 +114,8 @@ impl<T: Subscribe + Request + 'static> ConnectionNodeBundle<T> {
 impl ConnectionNodeBundle<WebSocket> {
     pub fn ws() -> Self {
         let process = NodeProcess::new_ws("0");
-        let connection = Connection::new(WebSocket::new(&format!("ws://{}", process.address), None).unwrap());
+        let connection =
+            Connection::new(WebSocket::new(&format!("ws://{}", process.address), None).unwrap());
         ConnectionNodeBundle {
             connection: connection,
             process: Some(process),

@@ -1,5 +1,5 @@
 use ethane::rpc::{self, Rpc};
-use ethane::types::{Bytes, PrivateKey, TransactionRequest, Address, H256, U256};
+use ethane::types::{Address, Bytes, PrivateKey, TransactionRequest, H256, U256};
 
 use rand::Rng;
 use serde::de::DeserializeOwned;
@@ -42,7 +42,10 @@ pub fn create_secret() -> H256 {
     H256::from_str(&secret).unwrap()
 }
 
-pub fn import_account(client: &mut ConnectionWrapper, secret: H256) -> Result<Address, ConnectionError> {
+pub fn import_account(
+    client: &mut ConnectionWrapper,
+    secret: H256,
+) -> Result<Address, ConnectionError> {
     client.call(rpc::personal_import_raw_key(
         PrivateKey::NonPrefixed(secret),
         String::from(ACCOUNTS_PASSWORD),
