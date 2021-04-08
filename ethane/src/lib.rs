@@ -64,13 +64,7 @@
 
 pub use connection::*;
 
-//#[cfg(target_family = "unix")]
-//pub use transport::uds::Uds;
-
 mod connection;
 pub mod contract;
 pub mod rpc;
 pub mod types;
-
-//pub mod connection;
-//pub mod transport;
