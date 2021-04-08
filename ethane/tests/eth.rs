@@ -15,7 +15,7 @@ const ADDRESS3: &str = "0xca247d7425a29c6645fa991f9151f994a830882d";
 
 #[test]
 fn test_eth_protocol_version() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_expected(
         &mut client,
         rpc::eth_protocol_version(),
@@ -25,13 +25,13 @@ fn test_eth_protocol_version() {
 
 #[test]
 fn test_eth_syncing() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_expected(&mut client, rpc::eth_syncing(), SyncInfo::NotSyncing(false));
 }
 
 #[test]
 fn test_eth_coinbase() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_expected(
         &mut client,
         rpc::eth_coinbase(),
@@ -41,25 +41,25 @@ fn test_eth_coinbase() {
 
 #[test]
 fn test_eth_mining() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_expected(&mut client, rpc::eth_mining(), true);
 }
 
 #[test]
 fn test_eth_hashrate() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_expected(&mut client, rpc::eth_hashrate(), U256::from(0));
 }
 
 #[test]
 fn test_eth_gas_price() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_expected(&mut client, rpc::eth_gas_price(), U256::from(1 as u64));
 }
 
 #[test]
 fn test_eth_accounts() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let accounts = rpc_call_with_return(&mut client, rpc::eth_accounts());
     assert_eq!(accounts[0], H160::from_str(ADDRESS1).unwrap());
     assert_eq!(accounts[1], H160::from_str(ADDRESS2).unwrap());
@@ -69,7 +69,7 @@ fn test_eth_accounts() {
 #[test]
 #[ignore]
 fn test_eth_block_number() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let block_number = rpc_call_with_return(&mut client, rpc::eth_block_number());
     if !block_number.ge(&U64::from(0)) {
         panic!("Invalid block number, it's {}", block_number);
@@ -78,7 +78,7 @@ fn test_eth_block_number() {
 
 #[test]
 fn test_eth_get_balance() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let balance = rpc_call_with_return(
         &mut client,
         rpc::eth_get_balance(H160::from_str(ADDRESS1).unwrap(), None),
@@ -90,7 +90,7 @@ fn test_eth_get_balance() {
 
 #[test]
 fn test_eth_send_transaction_to_address() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let value = 1000000000000000000 as u64;
     let transaction = TransactionRequest {
         from: H160::from_str(ADDRESS1).unwrap(),
@@ -112,7 +112,7 @@ fn test_eth_send_transaction_to_address() {
 
 #[test]
 fn test_eth_send_transaction_contract_creation() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS1.parse().unwrap());
     let bin = bin(compile_contract(
         &Path::new(TEST_CONTRACT_PATH),
@@ -143,7 +143,7 @@ fn test_eth_send_transaction_contract_creation() {
 #[test]
 fn test_eth_get_transaction_by_hash() {
     let value = 2000000000000000000 as u64;
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let transaction = TransactionRequest {
         from: ADDRESS1.parse().unwrap(),
         to: Some(ADDRESS2.parse().unwrap()),
@@ -163,7 +163,7 @@ fn test_eth_get_transaction_by_hash() {
 #[test]
 fn test_eth_get_transaction_receipt() {
     let value = 1000000000000000000 as u64;
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     let transaction = TransactionRequest {
@@ -188,7 +188,7 @@ fn test_eth_get_transaction_receipt() {
 #[ignore]
 fn test_eth_get_storage_at() {
     // @TODO rewrite with ERC-20 and put data into the storage
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     let address = H160::from_str(ADDRESS2).unwrap();
@@ -211,7 +211,7 @@ fn test_eth_get_storage_at() {
 
 #[test]
 fn test_eth_get_transaction_count() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let sender = create_account(&mut client).1;
     prefund_account(&mut client, sender);
     simulate_transaction(&mut client, sender, ADDRESS1, U256::zero());
@@ -228,7 +228,7 @@ fn test_eth_get_transaction_count() {
 #[test]
 #[ignore]
 fn test_eth_get_block_by_number_full_tx() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     simulate_transaction(
@@ -246,7 +246,7 @@ fn test_eth_get_block_by_number_full_tx() {
 #[test]
 #[ignore]
 fn test_eth_get_block_by_number_only_hashes() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     simulate_transaction(
@@ -263,7 +263,7 @@ fn test_eth_get_block_by_number_only_hashes() {
 
 #[test]
 fn test_eth_get_block_by_number_no_block() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     simulate_transaction(
@@ -284,7 +284,7 @@ fn test_eth_get_block_by_number_no_block() {
 
 #[test]
 fn test_eth_get_block_transaction_count_by_hash() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     simulate_transaction(
@@ -305,7 +305,7 @@ fn test_eth_get_block_transaction_count_by_hash() {
 
 #[test]
 fn test_eth_get_block_transaction_count_by_number() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     simulate_transaction(
@@ -323,7 +323,7 @@ fn test_eth_get_block_transaction_count_by_number() {
 #[test]
 fn test_eth_get_uncle_count_by_block_hash() {
     // @TODO it's really hard to replicate
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     simulate_transaction(
@@ -344,7 +344,7 @@ fn test_eth_get_uncle_count_by_block_hash() {
 
 #[test]
 fn test_eth_get_uncle_count_by_block_number() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
     simulate_transaction(
@@ -362,7 +362,7 @@ fn test_eth_get_uncle_count_by_block_number() {
 
 #[test]
 fn test_eth_get_code_missing() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let (_, address) = create_account(&mut client);
     rpc_call_test_expected(
         &mut client,
@@ -373,7 +373,7 @@ fn test_eth_get_code_missing() {
 
 #[test]
 fn test_eth_get_code_contract() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let address = ADDRESS1.parse().unwrap();
     let (contract_address, _) = deploy_contract(
         &mut client,
@@ -390,7 +390,7 @@ fn test_eth_get_code_contract() {
 
 #[test]
 fn test_eth_sign() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let address = match import_account(&mut client, H256::from_str(FIX_SECRET).unwrap()) {
         Ok(a) => a,
         Err(_) => H160::from_str("0xdc677f7c5060b0b441d30f361d0c8529ac04e099").unwrap(),
@@ -425,7 +425,7 @@ fn test_eth_sign() {
 // We decide here to use what geth currently does and not follow the spec
 #[test]
 fn test_eth_sign_transaction() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let transaction = TransactionRequest {
         from: create_account(&mut client).1,
         to: Some(create_account(&mut client).1),
@@ -440,7 +440,7 @@ fn test_eth_sign_transaction() {
 
 #[test]
 fn test_eth_send_raw_transaction() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let transaction = TransactionRequest {
         from: create_account(&mut client).1,
         to: Some(create_account(&mut client).1),
@@ -456,7 +456,7 @@ fn test_eth_send_raw_transaction() {
 
 #[test]
 fn test_eth_call() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let address = create_account(&mut client).1;
     let (contract_address, _) = deploy_contract(
         &mut client,
@@ -482,7 +482,7 @@ fn test_eth_call() {
 
 #[test]
 fn test_eth_estimate_gas() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let gas_call = GasCall {
         from: Some(create_account(&mut client).1),
         to: Some(create_account(&mut client).1),
@@ -498,7 +498,7 @@ fn test_eth_estimate_gas() {
 
 #[test]
 fn test_eth_get_block_by_hash() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     simulate_transaction(
         &mut client,
         ADDRESS1.parse().unwrap(),
@@ -520,7 +520,7 @@ fn test_eth_get_block_by_hash() {
 
 #[test]
 fn test_eth_get_transaction_by_block_hash_and_index() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS3.parse().unwrap());
     prefund_account(&mut client, ADDRESS3.parse().unwrap());
     simulate_transaction(
@@ -546,7 +546,7 @@ fn test_eth_get_transaction_by_block_hash_and_index() {
 #[test]
 #[ignore]
 fn test_eth_get_transaction_by_block_number_and_index() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let value = 100000000 as u64;
     simulate_transaction(
         &mut client,
@@ -566,7 +566,7 @@ fn test_eth_get_transaction_by_block_number_and_index() {
 
 #[test]
 fn test_eth_get_uncle_by_block_hash_and_index() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let value = 100000000 as u64;
     simulate_transaction(
         &mut client,
@@ -588,7 +588,7 @@ fn test_eth_get_uncle_by_block_hash_and_index() {
 
 #[test]
 fn test_eth_get_uncle_by_block_number_and_index() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let transaction = TransactionRequest {
         from: create_account(&mut client).1,
         to: Some(create_account(&mut client).1),
@@ -638,7 +638,7 @@ fn test_eth_compile_serpent() {
 
 #[test]
 fn test_eth_new_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let address = create_account(&mut client).1;
     let (contract_address, _) = deploy_contract(
         &mut client,
@@ -658,26 +658,26 @@ fn test_eth_new_filter() {
 
 #[test]
 fn test_eth_new_block_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_some(&mut client, rpc::eth_new_block_filter());
 }
 
 #[test]
 fn test_eth_new_pending_transaction_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_some(&mut client, rpc::eth_new_pending_transaction_filter());
 }
 
 #[test]
 fn test_eth_uninstall_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let filter_id = client.call(rpc::eth_new_block_filter()).unwrap();
     rpc_call_test_expected(&mut client, rpc::eth_uninstall_filter(filter_id), true);
 }
 
 #[test]
 fn test_eth_get_filter_changes_new_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let address = create_account(&mut client).1;
     let (contract_address, _) = deploy_contract(
         &mut client,
@@ -707,7 +707,7 @@ fn test_eth_get_filter_changes_new_filter() {
 
 #[test]
 fn test_eth_get_filter_changes_block_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let tx = TransactionRequest {
         from: create_account(&mut client).1,
         to: Some(create_account(&mut client).1),
@@ -722,7 +722,7 @@ fn test_eth_get_filter_changes_block_filter() {
 
 #[test]
 fn test_eth_get_filter_logs_new_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let address = create_account(&mut client).1;
     let (contract_address, _) = deploy_contract(
         &mut client,
@@ -755,7 +755,7 @@ fn test_eth_get_filter_logs_new_filter() {
 #[test]
 #[ignore]
 fn test_eth_get_filter_logs_block_filter() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let tx = TransactionRequest {
         from: create_account(&mut client).1,
         to: Some(create_account(&mut client).1),
@@ -771,7 +771,7 @@ fn test_eth_get_filter_logs_block_filter() {
 #[test]
 #[ignore] // @TODO
 fn test_eth_get_logs() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let address = create_account(&mut client).1;
     let (contract_address, _) = deploy_contract(
         &mut client,

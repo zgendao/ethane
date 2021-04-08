@@ -125,10 +125,10 @@ mod tests {
     }
 
     #[test]
-    fn test_uds() {
+    fn uds_connection() {
         spawn_test_uds_server();
         let message = "{\"test\": true}";
-        let mut uds = Uds::new(TEST_IPC.to_string()).unwrap();
+        let mut uds = Uds::new(TEST_IPC).unwrap();
         let _write = uds.write(String::from(message)).unwrap();
 
         let _delete_socket = std::fs::remove_file(TEST_IPC).unwrap();
