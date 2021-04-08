@@ -6,7 +6,7 @@ use ethane::types::{
 use std::path::Path;
 use std::str::FromStr;
 
-use ethereum_types::H160;
+use ethereum_types::Address;
 use test_helper::*;
 
 const ADDRESS1: &str = "0x007ccffb7916f37f7aeef05e8096ecfbe55afc2f";
@@ -35,7 +35,7 @@ fn test_eth_coinbase() {
     rpc_call_test_expected(
         &mut client,
         rpc::eth_coinbase(),
-        H160::from_str(ADDRESS1).unwrap(),
+        Address::from_str(ADDRESS1).unwrap(),
     );
 }
 
@@ -61,9 +61,9 @@ fn test_eth_gas_price() {
 fn test_eth_accounts() {
     let mut client = ConnectionWrapper::new_from_env(None);
     let accounts = rpc_call_with_return(&mut client, rpc::eth_accounts());
-    assert_eq!(accounts[0], H160::from_str(ADDRESS1).unwrap());
-    assert_eq!(accounts[1], H160::from_str(ADDRESS2).unwrap());
-    assert_eq!(accounts[2], H160::from_str(ADDRESS3).unwrap());
+    assert_eq!(accounts[0], Address::from_str(ADDRESS1).unwrap());
+    assert_eq!(accounts[1], Address::from_str(ADDRESS2).unwrap());
+    assert_eq!(accounts[2], Address::from_str(ADDRESS3).unwrap());
 }
 
 #[test]
@@ -81,7 +81,7 @@ fn test_eth_get_balance() {
     let mut client = ConnectionWrapper::new_from_env(None);
     let balance = rpc_call_with_return(
         &mut client,
-        rpc::eth_get_balance(H160::from_str(ADDRESS1).unwrap(), None),
+        rpc::eth_get_balance(Address::from_str(ADDRESS1).unwrap(), None),
     );
     if !balance.gt(&U256::from(900000000000000000 as u64)) {
         panic!("Invalid balance should be bigger than 900 ETH");
@@ -93,8 +93,8 @@ fn test_eth_send_transaction_to_address() {
     let mut client = ConnectionWrapper::new_from_env(None);
     let value = 1000000000000000000 as u64;
     let transaction = TransactionRequest {
-        from: H160::from_str(ADDRESS1).unwrap(),
-        to: Some(H160::from_str(ADDRESS2).unwrap()),
+        from: Address::from_str(ADDRESS1).unwrap(),
+        to: Some(Address::from_str(ADDRESS2).unwrap()),
         value: Some(U256::from(value)),
         ..Default::default()
     };
@@ -156,8 +156,8 @@ fn test_eth_get_transaction_by_hash() {
         rpc::eth_get_transaction_by_hash(transaction_hash),
     );
     assert_eq!(tx.value, U256::from(value));
-    assert_eq!(tx.from.unwrap(), H160::from_str(ADDRESS1).unwrap());
-    assert_eq!(tx.to.unwrap(), H160::from_str(ADDRESS2).unwrap());
+    assert_eq!(tx.from.unwrap(), Address::from_str(ADDRESS1).unwrap());
+    assert_eq!(tx.to.unwrap(), Address::from_str(ADDRESS2).unwrap());
 }
 
 #[test]
@@ -180,8 +180,8 @@ fn test_eth_get_transaction_receipt() {
     assert_eq!(tx_receipt.cumulative_gas_used, U256::from(21000 as i32));
     assert_eq!(tx_receipt.gas_used, U256::from(21000 as i32));
     assert_eq!(tx_receipt.contract_address, None);
-    assert_eq!(tx_receipt.from, H160::from_str(ADDRESS2).unwrap());
-    assert_eq!(tx_receipt.to.unwrap(), H160::from_str(ADDRESS3).unwrap());
+    assert_eq!(tx_receipt.from, Address::from_str(ADDRESS2).unwrap());
+    assert_eq!(tx_receipt.to.unwrap(), Address::from_str(ADDRESS3).unwrap());
 }
 
 #[test]
@@ -191,7 +191,7 @@ fn test_eth_get_storage_at() {
     let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, ADDRESS2.parse().unwrap());
     prefund_account(&mut client, ADDRESS2.parse().unwrap());
-    let address = H160::from_str(ADDRESS2).unwrap();
+    let address = Address::from_str(ADDRESS2).unwrap();
     let (contract_address, _) = deploy_contract(
         &mut client,
         address,
@@ -393,7 +393,7 @@ fn test_eth_sign() {
     let mut client = ConnectionWrapper::new_from_env(None);
     let address = match import_account(&mut client, H256::from_str(FIX_SECRET).unwrap()) {
         Ok(a) => a,
-        Err(_) => H160::from_str("0xdc677f7c5060b0b441d30f361d0c8529ac04e099").unwrap(),
+        Err(_) => Address::from_str("0xdc677f7c5060b0b441d30f361d0c8529ac04e099").unwrap(),
     };
     println!("{:?}", address);
     let message = Bytes::from_slice("checkmate".as_bytes());

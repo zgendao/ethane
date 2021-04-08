@@ -9,7 +9,7 @@ pub use transport::http::{Http, HttpError};
 pub use transport::uds::{Uds, UdsError};
 pub use transport::websocket::{WebSocket, WebSocketError};
 
-use crate::rpc::{sub::SubscriptionRequest, Rpc};
+use crate::rpc::{sub::SubscriptionRequest, Rpc, RpcResponse};
 
 use log::{debug, info, trace};
 use serde::de::DeserializeOwned;
@@ -52,8 +52,8 @@ where
             debug!("Calling rpc method: {:?}", &rpc);
             self.id_pool.push_back(id);
             let result_data = self.transport.request(serde_json::to_string(&rpc)?)?;
-            let result: U = serde_json::from_str(&result_data)?;
-            Ok(result)
+            let result = serde_json::from_str::<RpcResponse<U>>(&result_data)?;
+            Ok(result.result)
         } else {
             Err(ConnectionError::NoTicketId)
         }

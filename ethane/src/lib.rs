@@ -18,7 +18,7 @@
 //!
 //! ## Request over http
 //! ```no_run
-//! use ethane::Connector;
+//! use ethane::{Connection, Http};
 //! use ethane::rpc::eth_get_balance;
 //! use ethane::types::Address;
 //! # use test_helper::NodeProcess;
@@ -26,7 +26,7 @@
 //!
 //! // Start up connection
 //! let node_endpoint = "http://127.0.0.1:8545";
-//! let mut connection = Connector::http(node_endpoint, None).unwrap();
+//! let mut connection = Connection::new(Http::new(node_endpoint, None));
 //!
 //! // Make a request
 //! let address = Address::zero();
@@ -35,7 +35,7 @@
 //!
 //! ## Starting a subscription over websocket
 //! ```no_run
-//! use ethane::Connector;
+//! use ethane::{Connection, WebSocket};
 //! use ethane::rpc::sub::eth_subscribe_new_pending_transactions;
 //! # use test_helper::NodeProcess;
 //! # use ethane::rpc::{eth_send_transaction, eth_coinbase};
@@ -45,7 +45,7 @@
 //!
 //! // Start up connection with websockets
 //! let node_endpoint = "ws://127.0.0.1:8546";
-//! let mut connection = Connector::websocket(node_endpoint, None).unwrap();
+//! let mut connection = Connection::new(WebSocket::new(node_endpoint, None).unwrap());
 //!
 //! // Subscribe to pending transactions
 //! let mut tx_subscription = connection
