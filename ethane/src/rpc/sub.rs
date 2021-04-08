@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 /// Rpc to start a subscription
 pub struct SubscriptionRequest<T> {
-    rpc: Rpc<U128>,
+    pub rpc: Rpc<U128>,
     result_type: PhantomData<T>,
 }
 

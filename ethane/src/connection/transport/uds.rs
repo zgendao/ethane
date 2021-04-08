@@ -16,7 +16,7 @@ pub struct Uds {
 }
 
 impl Uds {
-    pub(crate) fn new(path: &str) -> Result<Self, UdsError> {
+    pub fn new(path: &str) -> Result<Self, UdsError> {
         debug!("Opening connection to unix domain socket: {}", path);
         let write_stream = UnixStream::connect(path).map_err(UdsError::UdsInit)?;
         let read_stream = write_stream.try_clone().map_err(UdsError::UdsInit)?;

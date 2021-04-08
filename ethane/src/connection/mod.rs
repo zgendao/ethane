@@ -9,9 +9,9 @@ pub use transport::http::{Http, HttpError};
 pub use transport::uds::{Uds, UdsError};
 pub use transport::websocket::{WebSocket, WebSocketError};
 
-use crate::rpc::Rpc;
+use crate::rpc::{sub::SubscriptionRequest, Rpc};
 
-use log::{debug, trace};
+use log::{debug, info, trace};
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
@@ -57,6 +57,31 @@ where
         } else {
             Err(ConnectionError::NoTicketId)
         }
+    }
+}
+
+impl<T> Connection<T>
+where
+    T: Request + Subscribe,
+{
+    /// Starts a new subscription.
+    /// Use one of these rpc generating [functions](crate::rpc::sub) to provide the subscription request.
+    /// Returns a [subscription](Subscription) which you can poll for new items.
+    pub fn subscribe<U: DeserializeOwned + std::fmt::Debug>(
+        &mut self,
+        sub_request: SubscriptionRequest<U>,
+    ) -> Result<Subscription<T, U>, ConnectionError> {
+        info!("Starting a new subscription");
+        let mut connection = Connection {
+            transport: self.transport.fork()?,
+            id_pool: self.id_pool.clone(),
+        };
+        let subscription_id = connection.call(sub_request.rpc)?;
+        Ok(Subscription {
+            id: subscription_id,
+            connection,
+            result_type: std::marker::PhantomData,
+        })
     }
 }
 

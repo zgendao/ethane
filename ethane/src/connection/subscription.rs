@@ -12,7 +12,7 @@ use thiserror::Error;
 /// An active subscription
 ///
 /// Supports the [real-time events](https://geth.ethereum.org/docs/rpc/pubsub) namespace.
-/// Can be created by calling [subscribe](crate::connector::Connector::subscribe).
+/// Can be created by calling [subscribe](crate::connection::Connection::subscribe).
 /// In order to yield the next subscription item call [next_item](Self::next_item).
 pub struct Subscription<T: Subscribe + Request, U: DeserializeOwned + Debug> {
     /// The subscription id, which is returned when subscribing
