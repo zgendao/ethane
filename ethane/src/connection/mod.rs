@@ -5,6 +5,8 @@ mod transport;
 pub use credentials::Credentials;
 pub use subscription::{Subscription, SubscriptionError};
 pub use transport::http::{Http, HttpError};
+#[cfg(target_family = "unix")]
+pub use transport::uds::{Uds, UdsError};
 pub use transport::websocket::{WebSocket, WebSocketError};
 
 use crate::rpc::Rpc;
@@ -74,6 +76,9 @@ pub enum ConnectionError {
     WebSocketError(#[from] WebSocketError),
     #[error("{0}")]
     HttpError(#[from] HttpError),
+    #[cfg(target_family = "unix")]
+    #[error("{0}")]
+    UdsError(#[from] UdsError),
     #[error("Node Response Error: {0:?}")]
     JsonRpc(#[from] JsonError),
     #[error("Connector De-/Serialization Error: {0}")]

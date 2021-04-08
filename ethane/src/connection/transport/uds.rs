@@ -1,7 +1,6 @@
-// TODO currently this file is not compiled.
 //! Implementation of Unix domain socket transport (Unix only)
 
-use crate::transport::{Request, Subscribe, TransportError};
+use super::super::{ConnectionError, Request, Subscribe};
 use log::{debug, error, trace};
 use std::io::{BufRead, BufReader, Write};
 use std::net::Shutdown;
@@ -11,18 +10,18 @@ use thiserror::Error;
 
 /// An interprocess connection using a unix domain socket (Unix only)
 pub struct Uds {
-    pub path: String,
+    path: String,
     read_stream: BufReader<UnixStream>,
     write_stream: UnixStream,
 }
 
 impl Uds {
-    pub(crate) fn new(path: String) -> Result<Self, UdsError> {
-        debug!("Opening connection to unix domain socket: {}", &path);
-        let write_stream = UnixStream::connect(path.clone()).map_err(UdsError::UdsInit)?;
+    pub(crate) fn new(path: &str) -> Result<Self, UdsError> {
+        debug!("Opening connection to unix domain socket: {}", path);
+        let write_stream = UnixStream::connect(path).map_err(UdsError::UdsInit)?;
         let read_stream = write_stream.try_clone().map_err(UdsError::UdsInit)?;
         Ok(Self {
-            path,
+            path: path.to_owned(),
             read_stream: BufReader::new(read_stream),
             write_stream,
         })
@@ -55,22 +54,22 @@ impl Uds {
 }
 
 impl Request for Uds {
-    fn request(&mut self, cmd: String) -> Result<String, TransportError> {
+    fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
         let _write = self.write(cmd)?;
-        self.read_json().map_err(TransportError::UdsError)
+        self.read_json().map_err(ConnectionError::UdsError)
     }
 }
 
 impl Subscribe for Uds {
-    fn read_next(&mut self) -> Result<String, TransportError> {
-        self.read_json().map_err(TransportError::UdsError)
+    fn read_next(&mut self) -> Result<String, ConnectionError> {
+        self.read_json().map_err(ConnectionError::UdsError)
     }
 
-    fn fork(&self) -> Result<Self, TransportError>
+    fn fork(&self) -> Result<Self, ConnectionError>
     where
         Self: Sized,
     {
-        Self::new(self.path.clone()).map_err(TransportError::from)
+        Self::new(&self.path).map_err(ConnectionError::from)
     }
 }
 

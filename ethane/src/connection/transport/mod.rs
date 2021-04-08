@@ -1,3 +1,4 @@
 pub mod http;
+#[cfg(target_family = "unix")]
+pub mod uds;
 pub mod websocket;
-// TODO implement uds if needed
