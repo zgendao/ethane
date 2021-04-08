@@ -11,7 +11,7 @@
 //! **This library is very raw and under heavy development.
 //! Expect to find some bugs and use at your own risk!**
 //!
-//! In order to get started, create a [connector](crate::Connector) over some transport.
+//! In order to get started, create a [connection](crate::Connection) over some transport.
 //! The following examples show you how to make a request and how to subscribe to events.
 //!
 //! # Examples
@@ -24,13 +24,13 @@
 //! # use test_helper::NodeProcess;
 //! # let node = NodeProcess::new_http("8545");
 //!
-//! // Start up connector
+//! // Start up connection
 //! let node_endpoint = "http://127.0.0.1:8545";
-//! let mut connector = Connector::http(node_endpoint, None).unwrap();
+//! let mut connection = Connector::http(node_endpoint, None).unwrap();
 //!
 //! // Make a request
 //! let address = Address::zero();
-//! let balance = connector.call(eth_get_balance(address, None)).unwrap();
+//! let balance = connection.call(eth_get_balance(address, None)).unwrap();
 //! ```
 //!
 //! ## Starting a subscription over websocket
@@ -43,20 +43,20 @@
 //!
 //! # let node = NodeProcess::new_ws("8546");
 //!
-//! // Start up connector with websockets
+//! // Start up connection with websockets
 //! let node_endpoint = "ws://127.0.0.1:8546";
-//! let mut connector = Connector::websocket(node_endpoint, None).unwrap();
+//! let mut connection = Connector::websocket(node_endpoint, None).unwrap();
 //!
 //! // Subscribe to pending transactions
-//! let mut tx_subscription = connector
+//! let mut tx_subscription = connection
 //!     .subscribe(eth_subscribe_new_pending_transactions()).unwrap();
 //! # let tx_request = TransactionRequest {
-//! # from: connector.call(eth_coinbase()).unwrap(),
+//! # from: connection.call(eth_coinbase()).unwrap(),
 //! # to: Some(Address::zero()),
 //! # value: Some(U256::zero()),
 //! # ..Default::default()
 //! # };
-//! # let _tx_hash = connector.call(eth_send_transaction(tx_request));
+//! # let _tx_hash = connection.call(eth_send_transaction(tx_request));
 //!
 //! // Get next transaction item
 //! let tx = tx_subscription.next_item().unwrap();
@@ -72,5 +72,5 @@ pub mod contract;
 pub mod rpc;
 pub mod types;
 
-//pub mod connector;
+//pub mod connection;
 //pub mod transport;

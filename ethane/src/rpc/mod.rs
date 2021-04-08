@@ -11,7 +11,7 @@
 //! This is why some functions are marked as deprecated. They will probably be removed.
 //!
 //! Use these functions to generate [Rpc](Rpc) objects and pass them to the
-//! [call](crate::Connector::call) function of a [connector](crate::Connector).
+//! [call](crate::Connection::call) function of a [connection](crate::Connection).
 
 use log::error;
 use serde::de::DeserializeOwned;
