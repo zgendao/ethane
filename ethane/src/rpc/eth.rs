@@ -1,7 +1,7 @@
 use super::Rpc;
 use crate::types::{
-    Block, BlockParameter, Bytes, Call, Filter, GasCall, HashOrLog, SignedTransaction, SyncInfo,
-    Transaction, TransactionReceipt, TransactionRequest, H160, H256, H64, U128, U256, U64,
+    Address, Block, BlockParameter, Bytes, Call, Filter, GasCall, HashOrLog, SignedTransaction,
+    SyncInfo, Transaction, TransactionReceipt, TransactionRequest, H256, H64, U128, U256, U64,
 };
 
 pub fn eth_protocol_version() -> Rpc<String> {
@@ -12,7 +12,7 @@ pub fn eth_syncing() -> Rpc<SyncInfo> {
     Rpc::new("eth_syncing")
 }
 
-pub fn eth_coinbase() -> Rpc<H160> {
+pub fn eth_coinbase() -> Rpc<Address> {
     Rpc::new("eth_coinbase")
 }
 
@@ -28,7 +28,7 @@ pub fn eth_gas_price() -> Rpc<U256> {
     Rpc::new("eth_gasPrice")
 }
 
-pub fn eth_accounts() -> Rpc<Vec<H160>> {
+pub fn eth_accounts() -> Rpc<Vec<Address>> {
     Rpc::new("eth_accounts")
 }
 
@@ -36,7 +36,7 @@ pub fn eth_block_number() -> Rpc<U64> {
     Rpc::new("eth_blockNumber")
 }
 
-pub fn eth_get_balance(address: H160, block_param: Option<BlockParameter>) -> Rpc<U256> {
+pub fn eth_get_balance(address: Address, block_param: Option<BlockParameter>) -> Rpc<U256> {
     let block_param = block_param.unwrap_or(BlockParameter::Latest);
     let mut rpc = Rpc::new("eth_getBalance");
     rpc.add_param(address);
@@ -63,7 +63,7 @@ pub fn eth_get_transaction_receipt(transaction_hash: H256) -> Rpc<Option<Transac
 }
 
 pub fn eth_get_storage_at(
-    address: H160,
+    address: Address,
     storage_pos: U256,
     block_param: Option<BlockParameter>,
 ) -> Rpc<Bytes> {
@@ -75,7 +75,10 @@ pub fn eth_get_storage_at(
     rpc
 }
 
-pub fn eth_get_transaction_count(address: H160, block_param: Option<BlockParameter>) -> Rpc<U256> {
+pub fn eth_get_transaction_count(
+    address: Address,
+    block_param: Option<BlockParameter>,
+) -> Rpc<U256> {
     let block_param = block_param.unwrap_or(BlockParameter::Latest);
     let mut rpc = Rpc::new("eth_getTransactionCount");
     rpc.add_param(address);
@@ -120,7 +123,7 @@ pub fn eth_get_uncle_count_by_block_number(block_param: Option<BlockParameter>) 
     rpc
 }
 
-pub fn eth_get_code(address: H160, block_param: Option<BlockParameter>) -> Rpc<Bytes> {
+pub fn eth_get_code(address: Address, block_param: Option<BlockParameter>) -> Rpc<Bytes> {
     let block_param = block_param.unwrap_or(BlockParameter::Latest);
     let mut rpc = Rpc::new("eth_getCode");
     rpc.add_param(address);
@@ -128,7 +131,7 @@ pub fn eth_get_code(address: H160, block_param: Option<BlockParameter>) -> Rpc<B
     rpc
 }
 
-pub fn eth_sign(address: H160, data: Bytes) -> Rpc<Bytes> {
+pub fn eth_sign(address: Address, data: Bytes) -> Rpc<Bytes> {
     let mut rpc = Rpc::new("eth_sign");
     rpc.add_param(address);
     rpc.add_param(data);

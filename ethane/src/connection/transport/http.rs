@@ -1,33 +1,31 @@
 //! Implementation of http transport
 
-use super::Credentials;
-use crate::transport::{Request, TransportError};
+use super::super::{ConnectionError, Credentials, Request};
+
 use log::{debug, trace};
 use thiserror::Error;
-use ureq::{Agent, Error as UreqError, Request as UreqRequest};
 
 /// Wraps a http client
 pub struct Http {
     /// The domain where requests are sent
-    pub address: String,
-    pub(crate) credentials: Option<Credentials>,
-    agent: Agent,
+    address: String,
+    credentials: Option<Credentials>,
+    agent: ureq::Agent,
 }
 
 impl Http {
-    pub(crate) fn new(address: String, credentials: Option<Credentials>) -> Self {
-        debug!("Creating http client to {}", address);
-        Http {
-            agent: Agent::new(),
-            address,
+    pub fn new(address: &str, credentials: Option<Credentials>) -> Self {
+        debug!("Binding http client to {}", address);
+        Self {
+            address: address.to_owned(),
             credentials,
+            agent: ureq::Agent::new(),
         }
     }
 
-    fn prepare_json_request(&self) -> UreqRequest {
-        let domain = self.address.clone();
-        let mut request = self.agent.request("POST", &domain);
-        if let Some(ref credentials) = self.credentials {
+    fn prepare_json_request(&self) -> ureq::Request {
+        let mut request = self.agent.request("POST", &self.address);
+        if let Some(credentials) = &self.credentials {
             request = request.set("Authorization", &credentials.to_auth_string());
         }
         request = request.set("Content-Type", "application/json");
@@ -37,7 +35,7 @@ impl Http {
 }
 
 impl Request for Http {
-    fn request(&mut self, cmd: String) -> Result<String, TransportError> {
+    fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
         let request = self.prepare_json_request();
         trace!("Sending request {:?} with body {}", &request, &cmd);
         let response = request.send_string(&cmd).map_err(HttpError::from)?;
@@ -60,7 +58,7 @@ pub enum HttpError {
     #[error("Http Response Parsing Error: {0}")]
     Conversion(#[from] std::io::Error),
     #[error("Http Send Request Error: {0}")]
-    UreqError(#[from] UreqError),
+    UreqError(#[from] ureq::Error),
 }
 
 #[cfg(test)]
@@ -68,8 +66,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_http_prepare_request() {
-        let address = String::from("http://127.0.0.1");
+    fn prepare_request() {
+        let address = "http://127.0.0.1";
         let credentials = Credentials::Basic(String::from("check!"));
         let client = Http::new(address, Some(credentials));
         let request = client.prepare_json_request();
