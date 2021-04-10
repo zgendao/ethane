@@ -25,75 +25,70 @@ impl Parameter {
                 32,
             )),
             ParameterType::Bool => Ok((Self::Bool(raw_bytes[31] == 1), 32)),
-            ParameterType::Uint(length) => {
-                match length {
-                    8 => {
-                        let cleaned =
-                            remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
-                        Ok((
-                            Self::Uint8(cleaned.try_into().map_err(|_| {
-                                AbiParserError::InvalidAbiEncoding(
-                                    "Data doesn't fit into type".to_owned(),
-                                )
-                            })?),
-                            32,
-                        ))
-                    }
-                    16 => {
-                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
-                        Ok((
-                            Self::Uint16(cleaned.try_into().map_err(|_| {
-                                AbiParserError::InvalidAbiEncoding(
-                                    "Data doesn't fit into type".to_owned(),
-                                )
-                            })?),
-                            32,
-                        ))
-                    },
-                    32 => {
-                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
-                        Ok((
-                            Self::Uint32(cleaned.try_into().map_err(|_| {
-                                AbiParserError::InvalidAbiEncoding(
-                                    "Data doesn't fit into type".to_owned(),
-                                )
-                            })?),
-                            32,
-                        ))
-                    },
-                    64 => {
-                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
-                        Ok((
-                            Self::Uint64(cleaned.try_into().map_err(|_| {
-                                AbiParserError::InvalidAbiEncoding(
-                                    "Data doesn't fit into type".to_owned(),
-                                )
-                            })?),
-                            32,
-                        ))
-                    },
-                    128 => {
-                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
-                        Ok((
-                            Self::Uint128(cleaned.try_into().map_err(|_| {
-                                AbiParserError::InvalidAbiEncoding(
-                                    "Data doesn't fit into type".to_owned(),
-                                )
-                            })?),
-                            32,
-                        ))
-                    },
-                    256 => Ok((
-                        Self::Uint256(raw_bytes.try_into().map_err(|_| {
+            ParameterType::Uint(length) => match length {
+                8 => {
+                    let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                    Ok((
+                        Self::Uint8(cleaned.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
                                 "Data doesn't fit into type".to_owned(),
                             )
                         })?),
                         32,
-                    )),
-                    _ => unimplemented!(),
+                    ))
                 }
-            }
+                16 => {
+                    let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                    Ok((
+                        Self::Uint16(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
+                        32,
+                    ))
+                }
+                32 => {
+                    let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                    Ok((
+                        Self::Uint32(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
+                        32,
+                    ))
+                }
+                64 => {
+                    let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                    Ok((
+                        Self::Uint64(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
+                        32,
+                    ))
+                }
+                128 => {
+                    let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                    Ok((
+                        Self::Uint128(cleaned.try_into().map_err(|_| {
+                            AbiParserError::InvalidAbiEncoding(
+                                "Data doesn't fit into type".to_owned(),
+                            )
+                        })?),
+                        32,
+                    ))
+                }
+                256 => Ok((
+                    Self::Uint256(raw_bytes.try_into().map_err(|_| {
+                        AbiParserError::InvalidAbiEncoding("Data doesn't fit into type".to_owned())
+                    })?),
+                    32,
+                )),
+                _ => unimplemented!(),
+            },
             ParameterType::Int(length) => {
                 let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
                 match length {
@@ -187,9 +182,9 @@ fn get_right_padding_length(mut length: usize) -> usize {
 #[cfg(test)]
 mod test {
     use super::*;
+    use ethereum_types::U256;
     use hex_literal::hex;
     use std::str::FromStr;
-    use ethereum_types::U256;
 
     #[test]
     fn test_decode_address() {
