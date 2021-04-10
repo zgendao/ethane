@@ -79,6 +79,28 @@ impl Parameter {
         }
     }
 
+    pub fn from_u128(param: u64) -> Self {
+        Self::Uint128(U128::from(param))
+    }
+
+    pub fn to_u128(&self) -> Option<u128> {
+        match self {
+            Parameter::Uint128(val) => Some(val.as_u128()),
+            _ => None,
+        }
+    }
+
+    pub fn from_u256(param: U256) -> Self {
+        Self::Uint256(U256::from(param))
+    }
+
+    pub fn to_u256(&self) -> Option<U256> {
+        match self {
+            Parameter::Uint256(val) => Some(*val),
+            _ => None,
+        }
+    }
+
     pub fn from_i8(param: i8) -> Self {
         Self::Int8([param as u8])
     }

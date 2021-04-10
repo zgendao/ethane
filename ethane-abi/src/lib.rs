@@ -35,18 +35,14 @@ impl Abi {
         }
     }
 
-    /// Parses an ABI `.json` file into the `Abi` instance.
-    pub fn parse(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
-        let file = File::open(path_to_abi)?;
-        let reader = BufReader::new(file);
-        let functions: serde_json::Value = serde_json::from_reader(reader)?;
-
+    /// Parses an ABI value into the `Abi` instance.
+    pub fn parse_json(&mut self, abi: serde_json::Value) -> Result<(), AbiParserError> {
         let mut i: usize = 0;
-        while functions[i] != serde_json::Value::Null {
-            if functions[i]["type"] == "function" {
-                if functions[i]["name"] != serde_json::Value::Null {
-                    let name = functions[i]["name"].as_str().unwrap().to_owned();
-                    self.functions.insert(name, Function::parse(&functions[i])?);
+        while abi[i] != serde_json::Value::Null {
+            if abi[i]["type"] == "function" {
+                if abi[i]["name"] != serde_json::Value::Null {
+                    let name = abi[i]["name"].as_str().unwrap().to_owned();
+                    self.functions.insert(name, Function::parse(&abi[i])?);
                 } else {
                     return Err(AbiParserError::MissingData(
                         "Function name is missing from ABI.".to_owned(),
@@ -57,6 +53,15 @@ impl Abi {
         }
 
         Ok(())
+    }
+
+    /// Parses an ABI `.json` file into the `Abi` instance.
+    pub fn parse_file(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
+        let file = File::open(path_to_abi)?;
+        let reader = BufReader::new(file);
+        let abi: serde_json::Value = serde_json::from_reader(reader)?;
+
+        self.parse_json(abi)
     }
 
     /// Encodes a given [`AbiCall`] into a vector of bytes.
@@ -169,7 +174,7 @@ mod tests {
         let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
 
         let mut abi = Abi::new();
-        abi.parse(path).expect("unable to parse abi");
+        abi.parse_file(path).expect("unable to parse abi");
         let addr = Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap();
         let hash = abi.encode(&AbiCall {
             function_name: "bar",
@@ -185,7 +190,7 @@ mod tests {
         let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
 
         let mut abi = Abi::new();
-        abi.parse(path).expect("unable to parse abi");
+        abi.parse_file(path).expect("unable to parse abi");
         let hash = abi.encode(&AbiCall {
             function_name: "approve",
             parameters: vec![
@@ -205,7 +210,7 @@ mod tests {
         let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
 
         let mut abi = Abi::new();
-        abi.parse(path).expect("unable to parse abi");
+        abi.parse_file(path).expect("unable to parse abi");
         let hash = abi.encode(&AbiCall {
             function_name: "totalSupply",
             parameters: vec![],
@@ -219,7 +224,7 @@ mod tests {
         let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
 
         let mut abi = Abi::new();
-        abi.parse(path).expect("unable to parse abi");
+        abi.parse_file(path).expect("unable to parse abi");
         let hash = abi.encode(&AbiCall {
             function_name: "transferFrom",
             parameters: vec![

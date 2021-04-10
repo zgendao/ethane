@@ -15,10 +15,11 @@ where
 {
     pub fn new(
         connection: Connection<T>,
-        abi: serde_json::Value,
+        abi_json: serde_json::Value,
         contract_address: Address,
     ) -> Caller<T> {
         let mut abi = Abi::new();
+        abi.parse_json(abi_json);
         Caller {
             abi,
             contract_address,
@@ -32,7 +33,8 @@ where
         contract_address: Address,
     ) -> Caller<T> {
         let mut abi = Abi::new();
-        abi.parse(Path::new(path)).expect("unable to parse abi");
+        abi.parse_file(Path::new(path))
+            .expect("unable to parse abi");
         Caller {
             abi,
             contract_address,
@@ -45,8 +47,8 @@ where
         let data = self
             .abi
             .encode(&AbiCall {
-                function_name: "decimals",
-                parameters: vec![],
+                function_name,
+                parameters: params,
             })
             .unwrap();
 
@@ -56,9 +58,9 @@ where
             ..Default::default()
         };
 
-        let result = self.connection.call(rpc::eth_call(payload, None)).unwrap();
-        println!("{:?}", result);
-        // @TODO decode result
-        vec![]
+        let call_result = self.connection.call(rpc::eth_call(payload, None)).unwrap();
+        self.abi
+            .decode(function_name, call_result.0.as_slice())
+            .unwrap()
     }
 }

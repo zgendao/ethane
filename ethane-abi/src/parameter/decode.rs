@@ -26,10 +26,10 @@ impl Parameter {
             )),
             ParameterType::Bool => Ok((Self::Bool(raw_bytes[31] == 1), 32)),
             ParameterType::Uint(length) => {
-                let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                // let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
                 match length {
                     8 => Ok((
-                        Self::Uint8(cleaned.try_into().map_err(|_| {
+                        Self::Uint8(raw_bytes.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
                                 "Data doesn't fit into type".to_owned(),
                             )
@@ -37,7 +37,7 @@ impl Parameter {
                         32,
                     )),
                     16 => Ok((
-                        Self::Uint16(cleaned.try_into().map_err(|_| {
+                        Self::Uint16(raw_bytes.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
                                 "Data doesn't fit into type".to_owned(),
                             )
@@ -45,7 +45,7 @@ impl Parameter {
                         32,
                     )),
                     32 => Ok((
-                        Self::Uint32(cleaned.try_into().map_err(|_| {
+                        Self::Uint32(raw_bytes.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
                                 "Data doesn't fit into type".to_owned(),
                             )
@@ -53,7 +53,7 @@ impl Parameter {
                         32,
                     )),
                     64 => Ok((
-                        Self::Uint64(cleaned.try_into().map_err(|_| {
+                        Self::Uint64(raw_bytes.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
                                 "Data doesn't fit into type".to_owned(),
                             )
@@ -61,7 +61,7 @@ impl Parameter {
                         32,
                     )),
                     128 => Ok((
-                        Self::Uint128(cleaned.try_into().map_err(|_| {
+                        Self::Uint128(raw_bytes.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
                                 "Data doesn't fit into type".to_owned(),
                             )
@@ -69,7 +69,7 @@ impl Parameter {
                         32,
                     )),
                     256 => Ok((
-                        Self::Uint256(cleaned.try_into().map_err(|_| {
+                        Self::Uint256(raw_bytes.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
                                 "Data doesn't fit into type".to_owned(),
                             )
