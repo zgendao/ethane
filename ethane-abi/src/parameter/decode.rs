@@ -26,48 +26,63 @@ impl Parameter {
             )),
             ParameterType::Bool => Ok((Self::Bool(raw_bytes[31] == 1), 32)),
             ParameterType::Uint(length) => {
-                // let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
                 match length {
-                    8 => Ok((
-                        Self::Uint8(raw_bytes.try_into().map_err(|_| {
-                            AbiParserError::InvalidAbiEncoding(
-                                "Data doesn't fit into type".to_owned(),
-                            )
-                        })?),
-                        32,
-                    )),
-                    16 => Ok((
-                        Self::Uint16(raw_bytes.try_into().map_err(|_| {
-                            AbiParserError::InvalidAbiEncoding(
-                                "Data doesn't fit into type".to_owned(),
-                            )
-                        })?),
-                        32,
-                    )),
-                    32 => Ok((
-                        Self::Uint32(raw_bytes.try_into().map_err(|_| {
-                            AbiParserError::InvalidAbiEncoding(
-                                "Data doesn't fit into type".to_owned(),
-                            )
-                        })?),
-                        32,
-                    )),
-                    64 => Ok((
-                        Self::Uint64(raw_bytes.try_into().map_err(|_| {
-                            AbiParserError::InvalidAbiEncoding(
-                                "Data doesn't fit into type".to_owned(),
-                            )
-                        })?),
-                        32,
-                    )),
-                    128 => Ok((
-                        Self::Uint128(raw_bytes.try_into().map_err(|_| {
-                            AbiParserError::InvalidAbiEncoding(
-                                "Data doesn't fit into type".to_owned(),
-                            )
-                        })?),
-                        32,
-                    )),
+                    8 => {
+                        let cleaned =
+                            remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                        Ok((
+                            Self::Uint8(cleaned.try_into().map_err(|_| {
+                                AbiParserError::InvalidAbiEncoding(
+                                    "Data doesn't fit into type".to_owned(),
+                                )
+                            })?),
+                            32,
+                        ))
+                    }
+                    16 => {
+                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                        Ok((
+                            Self::Uint16(cleaned.try_into().map_err(|_| {
+                                AbiParserError::InvalidAbiEncoding(
+                                    "Data doesn't fit into type".to_owned(),
+                                )
+                            })?),
+                            32,
+                        ))
+                    },
+                    32 => {
+                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                        Ok((
+                            Self::Uint32(cleaned.try_into().map_err(|_| {
+                                AbiParserError::InvalidAbiEncoding(
+                                    "Data doesn't fit into type".to_owned(),
+                                )
+                            })?),
+                            32,
+                        ))
+                    },
+                    64 => {
+                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                        Ok((
+                            Self::Uint64(cleaned.try_into().map_err(|_| {
+                                AbiParserError::InvalidAbiEncoding(
+                                    "Data doesn't fit into type".to_owned(),
+                                )
+                            })?),
+                            32,
+                        ))
+                    },
+                    128 => {
+                        let cleaned = remove_left_padding_bytes(32 - (length / 8), &raw_bytes[..32]);
+                        Ok((
+                            Self::Uint128(cleaned.try_into().map_err(|_| {
+                                AbiParserError::InvalidAbiEncoding(
+                                    "Data doesn't fit into type".to_owned(),
+                                )
+                            })?),
+                            32,
+                        ))
+                    },
                     256 => Ok((
                         Self::Uint256(raw_bytes.try_into().map_err(|_| {
                             AbiParserError::InvalidAbiEncoding(
@@ -174,6 +189,7 @@ mod test {
     use super::*;
     use hex_literal::hex;
     use std::str::FromStr;
+    use ethereum_types::U256;
 
     #[test]
     fn test_decode_address() {
@@ -224,6 +240,26 @@ mod test {
         let decoded = Parameter::decode(&ParameterType::Uint(64), &encoded).unwrap();
 
         let expected = Parameter::from_u64(511);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_u128() {
+        let encoded = hex!("00000000000000000000000000000000000000000000000000000000000001FF");
+        let decoded = Parameter::decode(&ParameterType::Uint(128), &encoded).unwrap();
+
+        let expected = Parameter::from_u128(511);
+        assert_eq!(decoded.0, expected);
+        assert_eq!(decoded.1, 32);
+    }
+
+    #[test]
+    fn test_decode_u256() {
+        let encoded = hex!("00000000000000000000000000000000000000000000000000000000000001FF");
+        let decoded = Parameter::decode(&ParameterType::Uint(256), &encoded).unwrap();
+
+        let expected = Parameter::from_u256(U256::from(511));
         assert_eq!(decoded.0, expected);
         assert_eq!(decoded.1, 32);
     }
