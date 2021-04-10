@@ -1,3 +1,5 @@
+/*
+use ethane::contract::Caller;
 use ethane::rpc;
 use ethane::types::{Bytes, Call, H160};
 use ethane_abi::*;
@@ -18,29 +20,16 @@ fn test_eth_call_contract() {
         &Path::new(TEST_ERC20_PATH),
         TEST_ERC20_NAME,
     );
-    // let contract_address = H160::from_str("0xea23602c4de23d94332567ab172dcda778d129b3").unwrap();
-    // parse contract
-    let mut abi = Abi::new();
-    abi.parse(Path::new(
+
+    let mut caller = Caller::new_from_path(
+        client.get(),
         "../ethane/test-helper/src/fixtures/TestERC20.abi",
-    ))
-    .expect("unable to parse abi");
+        contract_address,
+    );
 
-    let test_hash = abi
-        .encode(&AbiCall {
-            function_name: "balanceOf",
-            parameters: vec![Parameter::Address(address)],
-        })
-        .unwrap();
-    println!("{:X?}", test_hash);
+    let result = caller.call("balanceOf", vec![Parameter::Address(address)]);
 
-    let call = Call {
-        to: contract_address,
-        data: Some(Bytes::from_slice(&test_hash)),
-        ..Default::default()
-    };
-    let res = client.call(rpc::eth_call(call, None));
-    println!("{:?}", res)
+    println!("{:?}", result)
 }
 
 #[test]
@@ -70,6 +59,7 @@ fn test_eth_call_contract_decimals() {
             parameters: vec![],
         })
         .unwrap();
+    println!("{:X?}", test_hash);
     let call = Call {
         to: contract_address,
         data: Some(Bytes::from_slice(&test_hash)),
@@ -78,3 +68,4 @@ fn test_eth_call_contract_decimals() {
     let res = client.call(rpc::eth_call(call, None)).unwrap();
     println!("{:?}", res)
 }
+*/

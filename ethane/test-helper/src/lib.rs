@@ -1,5 +1,5 @@
 use ethane::rpc::{self, Rpc};
-use ethane::types::{Bytes, PrivateKey, TransactionRequest, H160, H256, U256};
+use ethane::types::{Address, Bytes, PrivateKey, TransactionRequest, H256, U256};
 
 use rand::Rng;
 use serde::de::DeserializeOwned;
@@ -11,13 +11,13 @@ use std::str::FromStr;
 use tiny_keccak::{Hasher, Keccak};
 
 mod spin_up;
-pub use spin_up::{ConnectorNodeBundle, ConnectorWrapper, NodeProcess};
+pub use spin_up::{ConnectionNodeBundle, ConnectionWrapper, NodeProcess};
 
 mod fixtures;
-use ethane::ConnectorError;
+use ethane::ConnectionError;
 pub use fixtures::*;
 
-pub fn wait_for_transaction(client: &mut ConnectorWrapper, tx_hash: H256) {
+pub fn wait_for_transaction(client: &mut ConnectionWrapper, tx_hash: H256) {
     loop {
         let transaction = client
             .call(rpc::eth_get_transaction_by_hash(tx_hash))
@@ -42,14 +42,17 @@ pub fn create_secret() -> H256 {
     H256::from_str(&secret).unwrap()
 }
 
-pub fn import_account(client: &mut ConnectorWrapper, secret: H256) -> Result<H160, ConnectorError> {
+pub fn import_account(
+    client: &mut ConnectionWrapper,
+    secret: H256,
+) -> Result<Address, ConnectionError> {
     client.call(rpc::personal_import_raw_key(
         PrivateKey::NonPrefixed(secret),
         String::from(ACCOUNTS_PASSWORD),
     ))
 }
 
-pub fn unlock_account(client: &mut ConnectorWrapper, address: H160) -> bool {
+pub fn unlock_account(client: &mut ConnectionWrapper, address: Address) -> bool {
     client
         .call(rpc::personal_unlock_account(
             address,
@@ -59,7 +62,7 @@ pub fn unlock_account(client: &mut ConnectorWrapper, address: H160) -> bool {
         .unwrap()
 }
 
-pub fn prefund_account(client: &mut ConnectorWrapper, address: H160) -> H256 {
+pub fn prefund_account(client: &mut ConnectionWrapper, address: Address) -> H256 {
     let coinbase = client.call(rpc::eth_coinbase()).unwrap();
     let tx = TransactionRequest {
         from: coinbase,
@@ -72,7 +75,7 @@ pub fn prefund_account(client: &mut ConnectorWrapper, address: H160) -> H256 {
     tx_hash
 }
 
-pub fn create_account(client: &mut ConnectorWrapper) -> (H256, H160) {
+pub fn create_account(client: &mut ConnectionWrapper) -> (H256, Address) {
     let secret = create_secret();
     let address = import_account(client, secret).unwrap();
     unlock_account(client, address);
@@ -93,11 +96,11 @@ pub fn compile_contract(path: &Path, contract_name: &str) -> Value {
 }
 
 pub fn deploy_contract(
-    client: &mut ConnectorWrapper,
-    address: H160,
+    client: &mut ConnectionWrapper,
+    address: Address,
     path: &Path,
     contract_name: &str,
-) -> (H160, Value) {
+) -> (Address, Value) {
     let raw_contract = compile_contract(path, contract_name);
     let bin = bin(raw_contract.clone());
     let abi = abi(raw_contract);
@@ -120,8 +123,8 @@ pub fn deploy_contract(
 }
 
 pub fn simulate_transaction(
-    client: &mut ConnectorWrapper,
-    from: H160,
+    client: &mut ConnectionWrapper,
+    from: Address,
     to: &str,
     value: U256,
 ) -> H256 {
@@ -153,7 +156,7 @@ pub fn keccak(input: &[u8]) -> [u8; 32] {
 }
 
 pub fn rpc_call_test_expected<T: DeserializeOwned + Debug + PartialEq>(
-    client: &mut ConnectorWrapper,
+    client: &mut ConnectionWrapper,
     rpc: Rpc<T>,
     expected: T,
 ) {
@@ -166,7 +169,7 @@ pub fn rpc_call_test_expected<T: DeserializeOwned + Debug + PartialEq>(
 }
 
 pub fn rpc_call_test_some<T: DeserializeOwned + Debug + PartialEq>(
-    client: &mut ConnectorWrapper,
+    client: &mut ConnectionWrapper,
     rpc: Rpc<T>,
 ) {
     match client.call(rpc) {
@@ -178,7 +181,7 @@ pub fn rpc_call_test_some<T: DeserializeOwned + Debug + PartialEq>(
 }
 
 pub fn rpc_call_with_return<T: DeserializeOwned + Debug + PartialEq>(
-    client: &mut ConnectorWrapper,
+    client: &mut ConnectionWrapper,
     rpc: Rpc<T>,
 ) -> T {
     match client.call(rpc) {

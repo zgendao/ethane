@@ -1,86 +1,94 @@
-//! Implementation of websocket transport
+//! Implementation of a websocket transport.
 
-use super::{Credentials, Request, Subscribe, TransportError};
-use http::{Request as HttpRequest, Uri};
+use super::super::{ConnectionError, Credentials, Request, Subscribe};
+
 use log::{debug, error, trace};
-use std::borrow::Cow;
 use std::str::FromStr;
 use thiserror::Error;
-use tungstenite::client::AutoStream;
-use tungstenite::protocol::frame::coding::CloseCode;
-use tungstenite::protocol::CloseFrame;
-use tungstenite::{connect as ws_connect, Message, WebSocket as WebSocketTungstenite};
 
 /// Wraps a websocket connection
 pub struct WebSocket {
-    /// The endpoint of the websocket connection
-    pub address: String,
-    pub(crate) credentials: Option<Credentials>,
-    ws: WebSocketTungstenite<AutoStream>,
+    address: String,
+    credentials: Option<Credentials>,
+    websocket: tungstenite::WebSocket<tungstenite::client::AutoStream>,
 }
 
 impl WebSocket {
-    pub(crate) fn new(
-        address: String,
-        credentials: Option<Credentials>,
-    ) -> Result<WebSocket, WebSocketError> {
+    pub fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, WebSocketError> {
         debug!("Initiating websocket connection to {}", address);
-        let uri = Uri::from_str(&address)?;
-        let handshake_request = create_handshake_request(&uri, credentials.clone())?;
-        let ws = ws_connect(handshake_request)?;
+        let uri = http::Uri::from_str(address)?;
+
+        let mut request_builder = http::Request::get(&uri);
+
+        if let Some(ref credentials) = credentials {
+            let headers = request_builder
+                .headers_mut()
+                .ok_or(WebSocketError::Handshake)?;
+            headers.insert("Authorization", credentials.to_auth_string().parse()?);
+        }
+
+        let handshake_request = request_builder.body(())?;
+        trace!(
+            "Built websocket handshake request: {:?}",
+            &handshake_request
+        );
+
+        let ws = tungstenite::connect(handshake_request)?;
         trace!("Handshake Response: {:?}", ws.1);
-        Ok(WebSocket {
-            address,
+        Ok(Self {
+            address: address.to_owned(),
             credentials,
-            ws: ws.0,
+            websocket: ws.0,
         })
     }
 
     fn read_message(&mut self) -> Result<String, WebSocketError> {
         match self.read() {
-            Ok(Message::Text(response)) => Ok(response),
+            Ok(tungstenite::Message::Text(response)) => Ok(response),
             Ok(_) => self.read_message(),
             Err(err) => Err(err),
         }
     }
 
-    fn read(&mut self) -> Result<Message, WebSocketError> {
-        let message = self.ws.read_message()?;
+    fn read(&mut self) -> Result<tungstenite::Message, WebSocketError> {
+        let message = self.websocket.read_message()?;
         trace!("Reading from websocket: {}", &message);
         Ok(message)
     }
 
-    fn write(&mut self, message: Message) -> Result<(), WebSocketError> {
+    fn write(&mut self, message: tungstenite::Message) -> Result<(), WebSocketError> {
         trace!("Writing to websocket: {}", &message);
-        self.ws.write_message(message)?;
+        self.websocket.write_message(message)?;
         Ok(())
     }
 
     fn close(&mut self) -> Result<(), WebSocketError> {
+        use tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
         debug!("Closing websocket connection");
         let close_frame = CloseFrame {
             code: CloseCode::Normal,
-            reason: Cow::from("Finished"),
+            reason: std::borrow::Cow::from("Finished"),
         };
-        self.ws.close(Some(close_frame))?;
-        self.ws.write_pending().map_err(WebSocketError::from)
+        self.websocket.close(Some(close_frame))?;
+        self.websocket.write_pending().map_err(WebSocketError::from)
     }
 }
 
 impl Request for WebSocket {
-    fn request(&mut self, cmd: String) -> Result<String, TransportError> {
-        let _write = self.write(Message::Text(cmd))?;
-        self.read_message().map_err(TransportError::from)
+    fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
+        let write_msg = tungstenite::Message::Text(cmd);
+        self.write(write_msg)?;
+        self.read_message().map_err(ConnectionError::from)
     }
 }
 
 impl Subscribe for WebSocket {
-    fn read_next(&mut self) -> Result<String, TransportError> {
-        self.read_message().map_err(TransportError::from)
+    fn read_next(&mut self) -> Result<String, ConnectionError> {
+        self.read_message().map_err(ConnectionError::from)
     }
 
-    fn fork(&self) -> Result<Self, TransportError> {
-        Self::new(self.address.clone(), self.credentials.clone()).map_err(TransportError::from)
+    fn fork(&self) -> Result<Self, ConnectionError> {
+        Self::new(&self.address, self.credentials.clone()).map_err(ConnectionError::from)
     }
 }
 
@@ -91,21 +99,6 @@ impl Drop for WebSocket {
             error!("{}", err);
         }
     }
-}
-
-fn create_handshake_request(
-    uri: &Uri,
-    credentials: Option<Credentials>,
-) -> Result<HttpRequest<()>, WebSocketError> {
-    let mut req_builder = HttpRequest::get(uri);
-    if let Some(ref credentials) = credentials {
-        let headers = req_builder.headers_mut().ok_or(WebSocketError::Handshake)?;
-        headers.insert("Authorization", credentials.to_auth_string().parse()?);
-    }
-
-    let request = req_builder.body(())?;
-    trace!("Built websocket handshake request: {:?}", &request);
-    Ok(request)
 }
 
 /// An error type collecting what can go wrong with a websocket
@@ -129,9 +122,24 @@ mod tests {
     use std::net::{SocketAddr, TcpStream};
     use tungstenite::{accept, Message};
 
+    fn create_handshake_request(
+        uri: &http::Uri,
+        credentials: Option<Credentials>,
+    ) -> Result<http::Request<()>, WebSocketError> {
+        let mut req_builder = http::Request::get(uri);
+        if let Some(ref credentials) = credentials {
+            let headers = req_builder.headers_mut().ok_or(WebSocketError::Handshake)?;
+            headers.insert("Authorization", credentials.to_auth_string().parse()?);
+        }
+
+        let request = req_builder.body(())?;
+        trace!("Built websocket handshake request: {:?}", &request);
+        Ok(request)
+    }
+
     fn spawn_websocket_server<F>(mut handle_ws_stream: F, port: u16)
     where
-        F: FnMut(&mut WebSocketTungstenite<TcpStream>) + Send + 'static,
+        F: FnMut(&mut tungstenite::WebSocket<TcpStream>) + Send + 'static,
     {
         let tcp_listener =
             std::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port))).unwrap();
@@ -150,7 +158,7 @@ mod tests {
             .is_ok();
     }
 
-    fn ping_pong(ws_stream: &mut WebSocketTungstenite<TcpStream>) {
+    fn ping_pong(ws_stream: &mut tungstenite::WebSocket<TcpStream>) {
         match ws_stream.read_message() {
             Ok(message) => match message {
                 Message::Text(echo) => ws_stream
@@ -163,8 +171,8 @@ mod tests {
     }
 
     #[test]
-    fn test_websocket_create_handshake_request_with_credentials() {
-        let uri = Uri::from_static("localhost");
+    fn handshake_request_with_credentials() {
+        let uri = http::Uri::from_static("localhost");
         let credentials = Credentials::Basic(String::from("YWJjOjEyMw=="));
         let request = create_handshake_request(&uri, Some(credentials)).unwrap();
         assert_eq!(
@@ -174,17 +182,17 @@ mod tests {
     }
 
     #[test]
-    fn test_websocket_create_handshake_request_without_credentials() {
-        let uri = Uri::from_static("localhost");
+    fn handshake_request_without_credentials() {
+        let uri = http::Uri::from_static("localhost");
         let request = create_handshake_request(&uri, None).unwrap();
         assert_eq!(request.method(), http::method::Method::GET);
         assert_eq!(request.uri(), &uri);
     }
 
     #[test]
-    fn test_websocket_request() {
+    fn ping_pong_request() {
         spawn_websocket_server(ping_pong, 3001);
-        let mut ws_client = WebSocket::new(String::from("ws://localhost:3001"), None).unwrap();
+        let mut ws_client = WebSocket::new("ws://localhost:3001", None).unwrap();
         let response = ws_client.request(String::from("Ping")).unwrap();
         assert_eq!(response, "Ping Pong");
     }

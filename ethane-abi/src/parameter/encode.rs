@@ -1,4 +1,5 @@
 use super::Parameter;
+
 impl Parameter {
     /// Encodes the given [`Parameter`] according to the Ethereum
     /// [contract ABI
