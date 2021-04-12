@@ -34,7 +34,7 @@ where
         contract_address: Address,
     ) -> Caller<T> {
         let mut abi = Abi::new();
-        abi.parse_json(abi_json).unwrap();
+        abi.parse_json(abi_json).expect("unable to parse abi");
         Caller {
             abi,
             contract_address,
