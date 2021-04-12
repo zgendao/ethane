@@ -15,7 +15,6 @@ use ethane::Uds;
 use rand::distributions::Alphanumeric;
 #[cfg(target_family = "unix")]
 use rand::{thread_rng, Rng};
-use std::borrow::Borrow;
 
 pub enum ConnectionWrapper {
     Websocket(ConnectionNodeBundle<WebSocket>),

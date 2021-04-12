@@ -10,7 +10,8 @@ pub struct Caller<T: Request> {
 }
 
 pub struct CallOpts {
-    force_call_type: Option<CallType>,
+    pub force_call_type: Option<CallType>,
+    pub from: Option<Address>,
 }
 
 pub enum CallType {
@@ -33,7 +34,7 @@ where
         contract_address: Address,
     ) -> Caller<T> {
         let mut abi = Abi::new();
-        abi.parse_json(abi_json);
+        abi.parse_json(abi_json).unwrap();
         Caller {
             abi,
             contract_address,
@@ -67,29 +68,32 @@ where
             parameters: params,
         };
 
-        let mut call_type = CallType::Transaction;
-        match self.abi.get_state_mutability(abi_call) {
+        let mut call_type = match self.abi.get_state_mutability(abi_call) {
             Some(m) => match m {
-                StateMutability::Pure => call_type = CallType::Call,
-                StateMutability::View => call_type = CallType::Call,
-                StateMutability::NonPayable => call_type = CallType::Transaction,
-                StateMutability::Payable => call_type = CallType::Transaction,
+                StateMutability::Pure => CallType::Call,
+                StateMutability::View => CallType::Call,
+                StateMutability::NonPayable => CallType::Transaction,
+                StateMutability::Payable => CallType::Transaction,
             },
-            None => call_type = CallType::Transaction,
-        }
+            None => CallType::Transaction,
+        };
 
+        let mut from_address: Address = Default::default();
         match opts {
-            Some(o) => match o.force_call_type {
-                Some(ct) => call_type = ct,
-                None => {}
-            },
+            Some(o) => {
+                from_address = o.from.unwrap();
+                match o.force_call_type {
+                    Some(ct) => call_type = ct,
+                    None => {}
+                }
+            }
             None => {}
         }
 
         let data = self.abi.encode(abi_call).unwrap();
 
         match call_type {
-            CallType::Transaction => self.eth_send_transaction(data),
+            CallType::Transaction => self.eth_send_transaction(data, from_address),
             CallType::Call => self.eth_call(function_name, data),
         }
     }
@@ -109,8 +113,9 @@ where
         )
     }
 
-    fn eth_send_transaction(&mut self, data: Vec<u8>) -> CallResult {
+    fn eth_send_transaction(&mut self, data: Vec<u8>, from_address: Address) -> CallResult {
         let payload = TransactionRequest {
+            from: from_address,
             to: Some(self.contract_address),
             data: Some(Bytes::from_slice(&data)),
             ..Default::default()
