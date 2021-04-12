@@ -3,21 +3,31 @@ use crate::AbiParserError;
 /// ABI function input/output parameter type.
 #[derive(Debug, PartialEq)]
 pub enum ParameterType {
+    /// A 160 bit (20 bytes) unsigned integer.
     Address,
-    Array,
+    /// A simple boolean with its value restricted to 0 or 1.
     Bool,
+    /// A dynamic sequence of bytes.
     Bytes,
-    FixedArray(usize),
+    /// A static sequence of bytes with `n` elements.
     FixedBytes(usize),
     /// Contains an address (20 bytes) followed by a function selector (4
     /// bytes).
     ///
     /// Encoded the same way as a [`FixedBytes`] parameter containing 24 bytes.
     Function,
+    /// A generic `n` bit signed integer type.
     Int(usize),
+    /// A generic `n` bit unsigned integer type.
     Uint(usize),
+    /// A generic string encoded to a sequence of `UTF-8` bytes.
     String,
-    Tuple,
+    /// A dynamic array holding the same, arbitrary type.
+    Array(Box<ParameterType>),
+    /// A fixed length array, with length `n`, holding the same, arbitrary type.
+    FixedArray(Box<ParameterType>, usize),
+    /// A tuple holding a sequence of various arbitrary types.
+    Tuple(Vec<ParameterType>),
 }
 
 impl ParameterType {
@@ -61,6 +71,15 @@ impl ParameterType {
             Self::Uint(len) => format!("uint{}", len),
             Self::String => "string".to_owned(),
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn is_dynamic(&self) -> bool {
+        match self {
+            Self::Array(_) | Self::FixedBytes(_) | Self::String => true,
+            Self::FixedArray(parameter_type, _) => parameter_type.is_dynamic(),
+            Self::Tuple(value) => value.iter().any(|x| x.is_dynamic()),
+            _ => true,
         }
     }
 }
