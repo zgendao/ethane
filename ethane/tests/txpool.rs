@@ -6,14 +6,14 @@ use test_helper::*;
 #[test]
 #[ignore] // @TODO not supported
 fn test_txpool_status() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     rpc_call_test_some(&mut client, rpc::txpool_status())
 }
 
 #[test]
 #[ignore] // @TODO not supported
 fn test_txpool_content() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let transaction = TransactionRequest {
         from: create_account(&mut client).1,
         to: Some(create_account(&mut client).1),
@@ -31,7 +31,7 @@ fn test_txpool_content() {
 #[test]
 #[ignore] // @TODO not supported
 fn test_txpool_inspect() {
-    let mut client = ConnectorWrapper::new_from_env(None);
+    let mut client = ConnectionWrapper::new_from_env(None);
     let transaction = TransactionRequest {
         from: create_account(&mut client).1,
         to: Some(create_account(&mut client).1),

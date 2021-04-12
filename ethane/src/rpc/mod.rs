@@ -11,11 +11,11 @@
 //! This is why some functions are marked as deprecated. They will probably be removed.
 //!
 //! Use these functions to generate [Rpc](Rpc) objects and pass them to the
-//! [call](crate::Connector::call) function of a [connector](crate::Connector).
+//! [call](crate::Connection::call) function of a [connection](crate::Connection).
 
 use log::error;
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -52,6 +52,13 @@ pub struct Rpc<T: DeserializeOwned + Debug> {
     /// Type annotation needed for the result
     #[serde(skip_serializing)]
     pub result_type: PhantomData<T>,
+}
+
+#[derive(Deserialize)]
+pub struct RpcResponse<'a, T: 'a> {
+    pub id: usize,
+    pub jsonrpc: &'a str,
+    pub result: T,
 }
 
 impl<T: DeserializeOwned + Debug> Rpc<T> {

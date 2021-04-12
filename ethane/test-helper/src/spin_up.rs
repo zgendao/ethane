@@ -1,27 +1,30 @@
 use ethane::rpc::{sub::SubscriptionRequest, Rpc};
-#[cfg(target_family = "unix")]
-use ethane::transport::uds::Uds;
-use ethane::transport::{Request, Subscribe};
-use ethane::{Connector, ConnectorError, Http, Subscription, SubscriptionError, WebSocket};
-#[cfg(target_family = "unix")]
-use rand::distributions::Alphanumeric;
-#[cfg(target_family = "unix")]
-use rand::{thread_rng, Rng};
+use ethane::{
+    Connection, ConnectionError, Http, Request, Subscribe, Subscription, SubscriptionError,
+    WebSocket,
+};
 use regex::{Regex, RegexBuilder};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::io::{BufRead, BufReader};
 use std::process::{Child, Command};
 
-pub enum ConnectorWrapper {
-    Websocket(ConnectorNodeBundle<WebSocket>),
-    Http(ConnectorNodeBundle<Http>),
+#[cfg(target_family = "unix")]
+use ethane::Uds;
+#[cfg(target_family = "unix")]
+use rand::distributions::Alphanumeric;
+#[cfg(target_family = "unix")]
+use rand::{thread_rng, Rng};
+
+pub enum ConnectionWrapper {
+    Websocket(ConnectionNodeBundle<WebSocket>),
+    Http(ConnectionNodeBundle<Http>),
     #[cfg(target_family = "unix")]
-    Uds(ConnectorNodeBundle<Uds>),
+    Uds(ConnectionNodeBundle<Uds>),
 }
 
-impl ConnectorWrapper {
-    pub fn new_from_env(conn_type: Option<&str>) -> ConnectorWrapper {
+impl ConnectionWrapper {
+    pub fn new_from_env(conn_type: Option<&str>) -> ConnectionWrapper {
         let conn = match conn_type {
             Some(conn) => String::from(conn),
             None => String::from(
@@ -31,11 +34,11 @@ impl ConnectorWrapper {
             ),
         };
         match &conn[..] {
-            "ganache" => Self::Http(ConnectorNodeBundle::ganache()),
-            "http" => Self::Http(ConnectorNodeBundle::http()),
-            "ws" => Self::Websocket(ConnectorNodeBundle::ws()),
+            "ganache" => Self::Http(ConnectionNodeBundle::ganache()),
+            "http" => Self::Http(ConnectionNodeBundle::http()),
+            "ws" => Self::Websocket(ConnectionNodeBundle::ws()),
             #[cfg(target_family = "unix")]
-            "uds" => Self::Uds(ConnectorNodeBundle::uds()),
+            "uds" => Self::Uds(ConnectionNodeBundle::uds()),
             #[cfg(target_family = "unix")]
             _ => panic!("Please set environment variable 'CONNECTION'. Valid values are either 'http', 'ws' or 'uds'"),
             #[cfg(not(target_family = "unix"))]
@@ -43,101 +46,109 @@ impl ConnectorWrapper {
         }
     }
 
-    pub fn call<U: DeserializeOwned + Debug>(&mut self, rpc: Rpc<U>) -> Result<U, ConnectorError> {
+    pub fn call<U: DeserializeOwned + Debug>(&mut self, rpc: Rpc<U>) -> Result<U, ConnectionError> {
         match self {
-            Self::Websocket(connector) => connector.call(rpc),
-            Self::Http(connector) => connector.call(rpc),
+            Self::Websocket(connection) => connection.call(rpc),
+            Self::Http(connection) => connection.call(rpc),
             #[cfg(target_family = "unix")]
-            Self::Uds(connector) => connector.call(rpc),
+            Self::Uds(connection) => connection.call(rpc),
         }
     }
 
     pub fn subscribe<U: DeserializeOwned + Debug + 'static>(
         &mut self,
         sub_request: SubscriptionRequest<U>,
-    ) -> Result<Box<dyn DynSubscription<U>>, ConnectorError> {
+    ) -> Result<Box<dyn DynSubscription<U>>, ConnectionError> {
         match self {
-            Self::Websocket(connector) => connector.subscribe(sub_request),
+            Self::Websocket(connection) => connection.subscribe(sub_request),
             #[cfg(target_family = "unix")]
-            Self::Uds(connector) => connector.subscribe(sub_request),
+            Self::Uds(connection) => connection.subscribe(sub_request),
             _ => panic!("Subscription not supported for this transport"),
         }
     }
+
+    //pub fn get<T: Request>(self) -> Connection<T> {
+    //    match self {
+    //        Self::Websocket(connection) => connection.connection,
+    //        Self::Http(connection) => connection.connection,
+    //        #[cfg(target_family = "unix")]
+    //        Self::Uds(connection) => connection.connection,
+    //    }
+    //}
 }
 
-pub trait DynSubscription<T: DeserializeOwned + Debug> {
-    fn next_item(&mut self) -> Result<T, SubscriptionError>;
+pub trait DynSubscription<U: DeserializeOwned + Debug> {
+    fn next_item(&mut self) -> Result<U, SubscriptionError>;
 }
 
-impl<T: DeserializeOwned + Debug, U: Subscribe + Request> DynSubscription<T>
+impl<T: Subscribe + Request, U: DeserializeOwned + Debug> DynSubscription<U>
     for Subscription<T, U>
 {
-    fn next_item(&mut self) -> Result<T, SubscriptionError> {
+    fn next_item(&mut self) -> Result<U, SubscriptionError> {
         self.next_item()
     }
 }
 
 #[allow(dead_code)]
-pub struct ConnectorNodeBundle<T> {
-    connector: Connector<T>,
+pub struct ConnectionNodeBundle<T: Request> {
+    connection: Connection<T>,
     process: Option<NodeProcess>,
 }
 
-impl<T: Request> ConnectorNodeBundle<T> {
-    fn call<U: DeserializeOwned + Debug>(&mut self, rpc: Rpc<U>) -> Result<U, ConnectorError> {
-        self.connector.call(rpc)
+impl<T: Request> ConnectionNodeBundle<T> {
+    fn call<U: DeserializeOwned + Debug>(&mut self, rpc: Rpc<U>) -> Result<U, ConnectionError> {
+        self.connection.call(rpc)
     }
 }
 
-impl<T: Subscribe + Request + 'static> ConnectorNodeBundle<T> {
+impl<T: Subscribe + Request + 'static> ConnectionNodeBundle<T> {
     pub fn subscribe<U: DeserializeOwned + Debug + 'static>(
         &mut self,
         sub_request: SubscriptionRequest<U>,
-    ) -> Result<Box<dyn DynSubscription<U>>, ConnectorError> {
-        let sub_result = self.connector.subscribe(sub_request);
+    ) -> Result<Box<dyn DynSubscription<U>>, ConnectionError> {
+        let sub_result = self.connection.subscribe(sub_request);
         sub_result.map(|el| Box::new(el) as Box<dyn DynSubscription<U>>)
     }
 }
 
-impl ConnectorNodeBundle<WebSocket> {
+impl ConnectionNodeBundle<WebSocket> {
     pub fn ws() -> Self {
         let process = NodeProcess::new_ws("0");
-        let connector = Connector::websocket(&format!("ws://{}", process.address), None).unwrap();
-        ConnectorNodeBundle {
-            connector: connector,
+        let connection =
+            Connection::new(WebSocket::new(&format!("ws://{}", process.address), None).unwrap());
+        ConnectionNodeBundle {
+            connection: connection,
             process: Some(process),
         }
     }
 }
 
-impl ConnectorNodeBundle<Http> {
+impl ConnectionNodeBundle<Http> {
     pub fn http() -> Self {
         let process = NodeProcess::new_http("0");
-        let connector = Connector::http(&format!("http://{}", process.address), None).unwrap();
-        ConnectorNodeBundle {
-            connector: connector,
+        let connection = Connection::new(Http::new(&format!("http://{}", process.address), None));
+        ConnectionNodeBundle {
+            connection: connection,
             process: Some(process),
         }
     }
-}
 
-impl ConnectorNodeBundle<Http> {
     pub fn ganache() -> Self {
-        let connector = Connector::http("http://localhost:8545", None).unwrap();
-        ConnectorNodeBundle {
-            connector: connector,
+        let connection = Connection::new(Http::new("http://localhost:8545", None));
+        ConnectionNodeBundle {
+            connection: connection,
             process: None,
         }
     }
 }
 
 #[cfg(target_family = "unix")]
-impl ConnectorNodeBundle<Uds> {
+impl ConnectionNodeBundle<Uds> {
     pub fn uds() -> Self {
         let process = NodeProcess::new_uds(None);
-        let connector = Connector::unix_domain_socket(&process.address).unwrap();
-        ConnectorNodeBundle {
-            connector: connector,
+        let connection = Connection::new(Uds::new(&process.address).unwrap());
+        ConnectionNodeBundle {
+            connection: connection,
             process: Some(process),
         }
     }
