@@ -90,11 +90,11 @@ where
 
         match call_type {
             CallType::Transaction => self.eth_send_transaction(data),
-            CallType::Call => self.eth_call(data),
+            CallType::Call => self.eth_call(function_name, data),
         }
     }
 
-    fn eth_call(&mut self, data: Vec<u8>) -> CallResult {
+    fn eth_call(&mut self, function_name: &str, data: Vec<u8>) -> CallResult {
         let payload = Call {
             to: self.contract_address,
             data: Some(Bytes::from_slice(&data)),

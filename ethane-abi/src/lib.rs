@@ -64,9 +64,9 @@ impl Abi {
         self.parse_json(abi)
     }
 
-    pub fn get_state_mutability(self, abi_call: &AbiCall) -> Option<StateMutability> {
+    pub fn get_state_mutability(&self, abi_call: &AbiCall) -> Option<StateMutability> {
         if let Some(function) = self.functions.get(abi_call.function_name) {
-            function.state_mutability
+            return function.state_mutability;
         }
 
         None

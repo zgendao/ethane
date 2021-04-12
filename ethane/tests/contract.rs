@@ -1,4 +1,4 @@
-use ethane::contract::Caller;
+use ethane::contract::{CallResult, Caller};
 use ethane::types::{Address, Bytes, Call, U256};
 use ethane::{rpc, Connection, Http};
 use ethane_abi::*;
@@ -28,10 +28,15 @@ fn test_eth_call_contract() {
         contract_address,
     );
 
-    let result = caller.call("balanceOf", vec![Parameter::Address(address)]);
-    assert_eq!(result[0].get_type(), ParameterType::Uint(256));
-    assert_eq!(result[0].to_u256().unwrap(), U256::from(1000000000));
-    println!("{:?}", result[0])
+    let result = caller.call("balanceOf", vec![Parameter::Address(address)], None);
+    match result {
+        CallResult::Transaction(_) => panic!("Should be eth_call"),
+        CallResult::Call(r) => {
+            assert_eq!(r[0].get_type(), ParameterType::Uint(256));
+            assert_eq!(r[0].to_u256().unwrap(), U256::from(1000000000));
+            println!("{:?}", r[0])
+        }
+    }
 }
 
 #[test]
