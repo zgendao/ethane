@@ -33,7 +33,7 @@ where
         contract_address: Address,
     ) -> Caller<T> {
         let mut abi = Abi::new();
-        abi.parse_json(abi_json);
+        abi.parse_json(abi_json).expect("unable to parse abi");
         Caller {
             abi,
             contract_address,
@@ -67,23 +67,21 @@ where
             parameters: params,
         };
 
-        let mut call_type = CallType::Transaction;
-        match self.abi.get_state_mutability(abi_call) {
-            Some(m) => match m {
-                StateMutability::Pure => call_type = CallType::Call,
-                StateMutability::View => call_type = CallType::Call,
-                StateMutability::NonPayable => call_type = CallType::Transaction,
-                StateMutability::Payable => call_type = CallType::Transaction,
-            },
-            None => call_type = CallType::Transaction,
-        }
+        let mut call_type = if let Some(m) = self.abi.get_state_mutability(abi_call) {
+            match m {
+                StateMutability::Pure => CallType::Call,
+                StateMutability::View => CallType::Call,
+                StateMutability::NonPayable => CallType::Transaction,
+                StateMutability::Payable => CallType::Transaction,
+            }
+        } else {
+            CallType::Transaction
+        };
 
-        match opts {
-            Some(o) => match o.force_call_type {
-                Some(ct) => call_type = ct,
-                None => {}
-            },
-            None => {}
+        if let Some(o) = opts {
+            if let Some(ct) = o.force_call_type {
+                call_type = ct;
+            }
         }
 
         let data = self.abi.encode(abi_call).unwrap();
