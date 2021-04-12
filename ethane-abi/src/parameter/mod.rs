@@ -22,12 +22,18 @@ pub enum Parameter {
     Int128(U128),
     Int256(U256),
     Bool(bool),
-    // Vector of bytes with known size.
+    /// Vector of bytes with known size.
     FixedBytes(Vec<u8>),
-    // dynamic sized byte sequence
+    /// Dynamic sized byte sequence
     Bytes(Vec<u8>),
-    // dynamic sized unicode string assumed to be UTF-8 encoded.
+    /// Dynamic sized unicode string assumed to be UTF-8 encoded.
     String(String),
+    /// Array of parameters.
+    Array(Vec<Parameter>),
+    /// Array of parameters.
+    FixedArray(Vec<Parameter>),
+    /// Tuple of parameters.
+    Tuple(Vec<Parameter>),
 }
 
 impl Parameter {
