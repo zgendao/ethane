@@ -7,8 +7,6 @@ use crate::ParameterType;
 /// is available as the key to the respective function in the `HashMap` of the
 /// [`crate::Abi`] parser.
 pub struct Function {
-    // TODO do we even need this field?
-    pub _type: &'static str, // once read, this is allocated until the program finishes
     pub inputs: Vec<FunctionParameter>,
     pub outputs: Vec<FunctionParameter>,
     pub state_mutability: Option<StateMutability>,
@@ -22,7 +20,6 @@ impl Function {
         let inputs = Self::parse_parameters(&raw_func["inputs"])?;
         let outputs = Self::parse_parameters(&raw_func["outputs"])?;
         Ok(Self {
-            _type: "function",
             inputs,
             outputs,
             state_mutability: StateMutability::parse(raw_func),

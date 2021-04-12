@@ -34,9 +34,9 @@ mod test {
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 1
+            0, 0, 0, 0, 0, 0, 0, 17
         ];
-        assert_eq!(expected, left_pad_to_32_bytes(&[1]));
+        assert_eq!(expected, left_pad_to_32_bytes(&[17]));
 
         let expected = [
             0, 0, 0, 0, 0, 0, 0, 0,
