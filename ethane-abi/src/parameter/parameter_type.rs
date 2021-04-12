@@ -4,12 +4,20 @@ use crate::AbiParserError;
 #[derive(Debug, PartialEq)]
 pub enum ParameterType {
     Address,
+    Array,
     Bool,
     Bytes,
+    FixedArray(usize),
     FixedBytes(usize),
+    /// Contains an address (20 bytes) followed by a function selector (4
+    /// bytes).
+    ///
+    /// Encoded the same way as a [`FixedBytes`] parameter containing 24 bytes.
+    Function,
     Int(usize),
     Uint(usize),
     String,
+    Tuple,
 }
 
 impl ParameterType {
@@ -52,6 +60,7 @@ impl ParameterType {
             Self::Int(len) => format!("int{}", len),
             Self::Uint(len) => format!("uint{}", len),
             Self::String => "string".to_owned(),
+            _ => unimplemented!(),
         }
     }
 }

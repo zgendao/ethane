@@ -170,6 +170,10 @@ impl Parameter {
             Self::Int64(_) => ParameterType::Int(64),
             Self::Int128(_) => ParameterType::Int(128),
             Self::Int256(_) => ParameterType::Int(256),
+            Self::Function(_) => ParameterType::Function,
+            Self::Array(_) => ParameterType::Array,
+            Self::FixedArray(data) => ParameterType::FixedArray(data.len()),
+            Self::Tuple(_) => ParameterType::Tuple,
         }
     }
 }

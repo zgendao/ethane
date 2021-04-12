@@ -42,6 +42,7 @@ impl Parameter {
                 res
             }
             Parameter::String(val) => Parameter::Bytes(Vec::from(val.as_bytes())).encode(),
+            _ => unimplemented!(),
         }
     }
 }

@@ -140,6 +140,7 @@ impl Parameter {
                         })?),
                         32,
                     )),
+                    // TODO
                     _ => unimplemented!(),
                 }
             }
@@ -160,6 +161,8 @@ impl Parameter {
             ParameterType::FixedBytes(length) => {
                 Ok((Self::FixedBytes(raw_bytes[..length].to_vec()), 32))
             }
+
+            _ => unimplemented!(),
         }
     }
 }
