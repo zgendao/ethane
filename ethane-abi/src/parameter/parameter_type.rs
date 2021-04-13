@@ -69,9 +69,8 @@ impl ParameterType {
         } else if parsed_str.ends_with("]") {
             // we have an array
             let tokens = parsed_str.split('[').collect::<Vec<&str>>();
-            println!("{:?}", tokens);
             let mut array_type = Self::parse(tokens[0])?; // first token is the internal type name of the array
-            for t in tokens[1..].iter().rev() {
+            for t in &tokens[1..] {
                 // iterate over the array lengths (if any), starting from the back
                 let trimmed = t.trim_end_matches(']');
                 if trimmed.is_empty() {
@@ -277,18 +276,20 @@ mod test {
             _ => panic!("Failed to parse fixed array of lenght 3"),
         }
 
-        match dbg!(ParameterType::parse("uint256[][][5]").unwrap()) {
-            ParameterType::Array(outer_type) => match *outer_type {
-                ParameterType::Array(inner_type) => match *inner_type {
-                    ParameterType::FixedArray(param_type, len) => {
-                        assert_eq!(*param_type, ParameterType::Uint(256));
-                        assert_eq!(len, 5);
-                    }
-                    _ => panic!("Failed to parse fixed array of lenght 3"),
-                },
-                _ => panic!("Failed to parse fixed array of lenght 3"),
-            },
-            _ => panic!("Failed to parse fixed array of lenght 3"),
+        match ParameterType::parse("uint256[][][5]").unwrap() {
+            ParameterType::FixedArray(outer_type, len) => {
+                assert_eq!(len, 5);
+                match *outer_type {
+                    ParameterType::Array(inner_type) => match *inner_type {
+                        ParameterType::Array(param_type) => {
+                            assert_eq!(*param_type, ParameterType::Uint(256))
+                        }
+                        _ => panic!("Failed to parse nested array"),
+                    },
+                    _ => panic!("Failed to parse nested array"),
+                }
+            }
+            _ => panic!("Failed to parse nested array"),
         }
     }
 
