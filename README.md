@@ -1,5 +1,7 @@
 # Ethane 
 
+Package originally created by [thojest](https://github.com/thojest) and later maintained by ZGen DAO. This repository considerd as the development line of the project, and the mainline hosted under [ethane](https://github.com/thojest/ethane).
+
 Ethane is an alternative web3 implementation with the aim of being slim and simple.
 It does not depend on futures or any executors. It currently supports http and
 websockets (both plain and TLS) and inter process communication via Unix domain sockets (Unix only). For
@@ -9,6 +11,9 @@ http and websockets it also supports Http Basic and Bearer Authentication.
 Expect to find some bugs and use at your own risk!**
 
 Please also have a look at the [documentation](https://docs.rs/ethane).
+If you just want to use this crate, it is also available on crates.io
+([Ethane](https://crates.io/crates/ethane)). If you find any bugs please
+do not hesitate to open an issue.
 
 ## How to use this library
 
