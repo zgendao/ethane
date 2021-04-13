@@ -166,6 +166,8 @@ pub enum AbiParserError {
     MissingData(String),
     #[error("Invalid ABI encoding error: {0}")]
     InvalidAbiEncoding(String),
+    #[error("Parameter type doesn't match the internal data type")]
+    TypeError,
 }
 
 #[cfg(test)]
