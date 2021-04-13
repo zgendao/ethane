@@ -32,34 +32,93 @@ pub enum ParameterType {
 }
 
 impl ParameterType {
+    /// Parses a [`ParameterType`] from a string literal based on the
+    /// Solidity/ABI type syntax.
+    ///
+    /// It only supports tuples enclosing at least 2 different types. Thus,
+    /// tuples like (T) and () are not supported.
     pub fn parse(parsed_str: &str) -> Result<Self, AbiParserError> {
-        let result = match parsed_str {
-            "address" => Self::Address,
-            "bool" => Self::Bool,
-            "bytes" => Self::Bytes,
-            "string" => Self::String,
-            param_type if param_type.starts_with("int") => {
-                let len = usize::from_str_radix(&param_type[3..], 10).map_err(|e| {
-                    AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
-                })?;
-                Self::Int(len)
+        let len = parsed_str.len();
+        // TODO how can tuple parsing be better?
+        if parsed_str.ends_with(")") {
+            // we have a tuple
+            let mut parameter_type_vec = Vec::<ParameterType>::new();
+            // throw away the parentheses and split arguments
+            let internal_types = parsed_str[1..len - 1].split(',').collect::<Vec<&str>>();
+            let mut start_index = 0;
+            let mut parsing_nested_tuple = false;
+            for (end_index, t) in internal_types.iter().enumerate() {
+                if t.contains("(") {
+                    // found the start of a nested tuple
+                    start_index = end_index;
+                    parsing_nested_tuple = true;
+                } else if t.contains(")") {
+                    // found the end of the nested tuple
+                    // join everything between the nested parentheses, e.g.
+                    // [(bytes32, bool, string)].join(',') -> "(bytes32,bool,string)"
+                    parameter_type_vec.push(Self::parse(
+                        &internal_types[start_index..end_index + 1].join(","),
+                    )?);
+                    parsing_nested_tuple = false;
+                } else if !parsing_nested_tuple {
+                    parameter_type_vec.push(Self::parse(t)?);
+                }
             }
-            param_type if param_type.starts_with("uint") => {
-                let len = usize::from_str_radix(&param_type[4..], 10).map_err(|e| {
-                    AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
-                })?;
-                Self::Uint(len)
-            }
-            param_type if param_type.starts_with("bytes") => {
-                let len = usize::from_str_radix(&param_type[5..], 10).map_err(|e| {
-                    AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
-                })?;
-                Self::FixedBytes(len)
-            }
-            _ => return Err(AbiParserError::InvalidAbiEncoding(parsed_str.to_string())),
-        };
 
-        Ok(result)
+            Ok(Self::Tuple(parameter_type_vec))
+        } else if parsed_str.ends_with("]") {
+            // we have an array
+            let tokens = parsed_str.split('[').collect::<Vec<&str>>();
+            println!("{:?}", tokens);
+            let mut array_type = Self::parse(tokens[0])?; // first token is the internal type name of the array
+            for t in tokens[1..].iter().rev() {
+                // iterate over the array lengths (if any), starting from the back
+                let trimmed = t.trim_end_matches(']');
+                if trimmed.is_empty() {
+                    array_type = Self::Array(Box::new(array_type));
+                } else {
+                    array_type = Self::FixedArray(
+                        Box::new(array_type),
+                        trimmed.parse().map_err(|e| {
+                            AbiParserError::InvalidAbiEncoding(format!("{}, {}", e, parsed_str))
+                        })?,
+                    );
+                }
+            }
+
+            Ok(array_type)
+        } else {
+            let result = match parsed_str {
+                // we have an elementary type
+                "address" => Self::Address,
+                "bool" => Self::Bool,
+                "bytes" => Self::Bytes,
+                "int" => Self::Int(256),
+                "uint" => Self::Uint(256),
+                "string" => Self::String,
+                param_type if param_type.starts_with("int") => {
+                    let len = usize::from_str_radix(&param_type[3..], 10).map_err(|e| {
+                        AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
+                    })?;
+                    Self::Int(len)
+                }
+                param_type if param_type.starts_with("uint") => {
+                    let len = usize::from_str_radix(&param_type[4..], 10).map_err(|e| {
+                        AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
+                    })?;
+                    Self::Uint(len)
+                }
+                param_type if param_type.starts_with("bytes") => {
+                    let len = usize::from_str_radix(&param_type[5..], 10).map_err(|e| {
+                        AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
+                    })?;
+                    Self::FixedBytes(len)
+                }
+                _ => return Err(AbiParserError::InvalidAbiEncoding(parsed_str.to_string())),
+            };
+
+            Ok(result)
+        }
     }
 
     pub fn as_abi_string(&self) -> String {
@@ -124,7 +183,7 @@ mod test {
     use std::mem::discriminant;
 
     #[test]
-    fn parse_parameter_type() {
+    fn parse_elementary_parameter_type() {
         assert_eq!(
             discriminant(&ParameterType::parse("address").unwrap()),
             discriminant(&ParameterType::Address)
@@ -142,29 +201,94 @@ mod test {
             discriminant(&ParameterType::String)
         );
 
+        match ParameterType::parse("int").unwrap() {
+            ParameterType::Int(a) => assert_eq!(a, 256),
+            _ => panic!("Failed to parse int"),
+        }
+
+        match ParameterType::parse("uint").unwrap() {
+            ParameterType::Uint(a) => assert_eq!(a, 256),
+            _ => panic!("Failed to parse uint"),
+        }
+
         match ParameterType::parse("uint16").unwrap() {
             ParameterType::Uint(a) => assert_eq!(a, 16),
-            _ => panic!("Error while parsing uint16"),
+            _ => panic!("Failed to parse uint16"),
         }
 
         match ParameterType::parse("uint64").unwrap() {
             ParameterType::Uint(a) => assert_eq!(a, 64),
-            _ => panic!("Error while parsing uint64"),
+            _ => panic!("Failed to parse uint64"),
         }
 
         match ParameterType::parse("uint256").unwrap() {
             ParameterType::Uint(a) => assert_eq!(a, 256),
-            _ => panic!("Error while parsing uint256"),
+            _ => panic!("Failed to parse uint256"),
         }
 
         match ParameterType::parse("int256").unwrap() {
             ParameterType::Int(a) => assert_eq!(a, 256),
-            _ => panic!("Error while parsing int256"),
+            _ => panic!("Failed to parse int256"),
         }
 
         match ParameterType::parse("bytes32").unwrap() {
             ParameterType::FixedBytes(a) => assert_eq!(a, 32),
-            _ => panic!("Error while parsing bytes32"),
+            _ => panic!("Failed to parse bytes32"),
+        }
+    }
+
+    #[test]
+    fn parse_tuple() {
+        match ParameterType::parse("(address,bool,uint32,string)").unwrap() {
+            ParameterType::Tuple(vec) => {
+                assert_eq!(vec[0], ParameterType::Address);
+                assert_eq!(vec[1], ParameterType::Bool);
+                assert_eq!(vec[2], ParameterType::Uint(32));
+                assert_eq!(vec[3], ParameterType::String);
+            }
+            _ => panic!("Failed to parse simple tuple"),
+        }
+
+        match ParameterType::parse("(address,(bytes32,uint256,bool),int32,string)").unwrap() {
+            ParameterType::Tuple(vec) => {
+                assert_eq!(vec[0], ParameterType::Address);
+                match &vec[1] {
+                    ParameterType::Tuple(inner_vec) => {
+                        assert_eq!(inner_vec[0], ParameterType::FixedBytes(32));
+                        assert_eq!(inner_vec[1], ParameterType::Uint(256));
+                        assert_eq!(inner_vec[2], ParameterType::Bool);
+                    }
+                    _ => panic!("Failed to parse nested tuple"),
+                }
+                assert_eq!(vec[2], ParameterType::Int(32));
+                assert_eq!(vec[3], ParameterType::String);
+            }
+            _ => panic!("Failed to parse outer tuple"),
+        }
+    }
+
+    #[test]
+    fn parse_array() {
+        match ParameterType::parse("address[3]").unwrap() {
+            ParameterType::FixedArray(param_type, len) => {
+                assert_eq!(*param_type, ParameterType::Address);
+                assert_eq!(len, 3);
+            }
+            _ => panic!("Failed to parse fixed array of lenght 3"),
+        }
+
+        match dbg!(ParameterType::parse("uint256[][][5]").unwrap()) {
+            ParameterType::Array(outer_type) => match *outer_type {
+                ParameterType::Array(inner_type) => match *inner_type {
+                    ParameterType::FixedArray(param_type, len) => {
+                        assert_eq!(*param_type, ParameterType::Uint(256));
+                        assert_eq!(len, 5);
+                    }
+                    _ => panic!("Failed to parse fixed array of lenght 3"),
+                },
+                _ => panic!("Failed to parse fixed array of lenght 3"),
+            },
+            _ => panic!("Failed to parse fixed array of lenght 3"),
         }
     }
 
