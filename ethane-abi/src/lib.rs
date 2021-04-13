@@ -64,6 +64,14 @@ impl Abi {
         self.parse_json(abi)
     }
 
+    pub fn get_state_mutability(&self, abi_call: &AbiCall) -> Option<StateMutability> {
+        if let Some(function) = self.functions.get(abi_call.function_name) {
+            return function.state_mutability;
+        }
+
+        None
+    }
+
     /// Encodes a given [`AbiCall`] into a vector of bytes.
     ///
     /// The result's first 4 bytes are generated via a `Keccak256` hash of the
