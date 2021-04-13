@@ -42,7 +42,6 @@ fn test_eth_call_contract() {
 }
 
 #[test]
-#[ignore]
 fn test_eth_call_contract_transfer() {
     // deploy contract
     let mut client = ConnectionWrapper::new_from_env(None);

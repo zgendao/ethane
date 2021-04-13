@@ -68,26 +68,23 @@ where
             parameters: params,
         };
 
-        let mut call_type = match self.abi.get_state_mutability(abi_call) {
-            Some(m) => match m {
+        let mut call_type = if let Some(m) = self.abi.get_state_mutability(abi_call) {
+            match m {
                 StateMutability::Pure => CallType::Call,
                 StateMutability::View => CallType::Call,
                 StateMutability::NonPayable => CallType::Transaction,
                 StateMutability::Payable => CallType::Transaction,
-            },
-            None => CallType::Transaction,
+            }
+        } else {
+            CallType::Transaction
         };
 
         let mut from_address: Address = Default::default();
-        match opts {
-            Some(o) => {
-                from_address = o.from.unwrap();
-                match o.force_call_type {
-                    Some(ct) => call_type = ct,
-                    None => {}
-                }
+        if let Some(o) = opts {
+            from_address = o.from.unwrap();
+            if let Some(ct) = o.force_call_type {
+                call_type = ct;
             }
-            None => {}
         }
 
         let data = self.abi.encode(abi_call).unwrap();
