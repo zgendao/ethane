@@ -9,8 +9,8 @@ use thiserror::Error;
 mod function;
 mod parameter;
 
-use function::{Function, StateMutability};
-use parameter::{Parameter, ParameterType};
+pub use function::{Function, StateMutability};
+pub use parameter::{Parameter, ParameterType};
 
 /// Parses a `.json` file containing ABI encoded Solidity functions.
 ///
@@ -114,6 +114,37 @@ impl Abi {
                 hash.append(&mut parameter.encode());
             }
 
+            Ok(hash)
+        } else {
+            Err(AbiParserError::MissingData(
+                "Function name not found in ABI".to_owned(),
+            ))
+        }
+    }
+
+    pub fn updated_encode(
+        &self,
+        function_name: &str,
+        parameters: Vec<parameter::tmp::Parameter>,
+    ) -> Result<Vec<u8>, AbiParserError> {
+        if let Some(function) = self.functions.get(function_name) {
+            let mut abi_arguments = Vec::<String>::with_capacity(parameters.len());
+            for (input, param) in function.inputs.iter().zip(parameters.iter()) {
+                if input.parameter_type.type_check(param) {
+                    abi_arguments.push(input.parameter_type.as_abi_string())
+                } else {
+                    return Err(AbiParserError::InvalidAbiEncoding(format!(
+                        "Invalid parameter type supplied. Expected {:?}",
+                        input.parameter_type
+                    )));
+                }
+            }
+            let signature = format!("{}({})", function_name, abi_arguments.join(","));
+            let mut hasher = Keccak256::new();
+            hasher.update(signature);
+            // Take first 4 bytes of the Keccak hash
+            let mut hash = hasher.finalize()[0..4].to_vec();
+            // Append the encoded parameters to the hash
             Ok(hash)
         } else {
             Err(AbiParserError::MissingData(

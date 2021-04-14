@@ -110,14 +110,14 @@ impl From<bool> for Parameter {
 // Dynamic array of bytes
 impl From<&[u8]> for Parameter {
     fn from(input: &[u8]) -> Self {
-        Self::Bytes(right_pad_to_32_multiples(input))
+        Self::Bytes(input.to_vec())
     }
 }
 
 // String literal into a dynamic array of bytes
 impl From<&str> for Parameter {
     fn from(input: &str) -> Self {
-        Self::String(right_pad_to_32_multiples(input.as_bytes()))
+        Self::String(input.as_bytes().to_vec())
     }
 }
 
@@ -329,7 +329,7 @@ mod test {
         // From &str string literal
         let param = Parameter::from("Hello, world!");
         if let Parameter::String(value) = param {
-            let expected = hex!("48656c6c6f2c20776f726c642100000000000000000000000000000000000000");
+            let expected = hex!("48656c6c6f2c20776f726c6421");
             assert_eq!(value, expected);
         } else {
             panic!("From &str test failed")
@@ -342,8 +342,7 @@ mod test {
             let expected = hex!(
             "01010101010101010101010101010101
                 01010101010101010101010101010101
-                01010101010101010101010000000000
-                00000000000000000000000000000000");
+                0101010101010101010101");
             assert_eq!(value, expected);
         } else {
             panic!("From &[u8] test failed")

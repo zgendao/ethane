@@ -3,10 +3,10 @@ mod encode;
 mod parameter_type;
 
 mod construction;
-mod tmp;
+pub mod tmp;
 mod utils;
 
-use parameter_type::ParameterType;
+pub use parameter_type::ParameterType;
 
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};

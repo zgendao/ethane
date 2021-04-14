@@ -1,5 +1,5 @@
-use crate::parameter_type::ParameterType;
 use crate::AbiParserError;
+use crate::ParameterType;
 
 /// An ABI function instance.
 ///
