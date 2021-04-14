@@ -145,7 +145,7 @@ impl Abi {
             // Take first 4 bytes of the Keccak hash
             let mut hash = hasher.finalize()[0..4].to_vec();
             // Append the encoded parameters to the hash
-            //encode_into(&mut hash, parameters)
+            parameter::encode_into::encode_into(&mut hash, parameters);
             Ok(hash)
         } else {
             Err(AbiParserError::MissingData(

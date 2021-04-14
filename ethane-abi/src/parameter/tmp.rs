@@ -1,9 +1,6 @@
 use super::utils::*;
 use ethereum_types::H256;
 
-use std::collections::HashMap;
-use std::ops::Range;
-
 #[derive(Clone)]
 pub enum Parameter {
     Address(H256),
@@ -19,7 +16,14 @@ pub enum Parameter {
 }
 
 impl Parameter {
-    fn encode(&self) -> Vec<u8> {
+    /// Encodes strictly the data part of the underlying type.
+    ///
+    /// It will not check whether the parameter is dynamic or not, it simply
+    /// encodes the enclosed data in place. For some types, it first writes the
+    /// number of elements of the data in bytes. For further info, check the
+    /// Solidity [contract ABI
+    /// specification](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html#function-selector).
+    pub fn encode(&self) -> Vec<u8> {
         match self {
             Self::Address(data) | Self::Bool(data) | Self::Int(data, _) | Self::Uint(data, _) => {
                 data.as_bytes().to_vec()
@@ -39,44 +43,20 @@ impl Parameter {
         }
     }
 
-    /// Recursively checks wether a given type is dynamic.
+    /// Recursively checks wether a given parameter is dynamic.
     ///
     /// For example, a [`Tuple`] can be dynamic if any of its contained types
     /// are dynamic. Additionally, a [`FixedArray`] is static if it contains
     /// values with static type and dynamic otherwise.
-    fn is_dynamic(&self) -> bool {
+    pub fn is_dynamic(&self) -> bool {
         match self {
-            Self::Array(_) | Self::Bytes | Self::String => true,
-            Self::FixedArray(parameter_type, _) => parameter_type.is_dynamic(),
-            Self::Tuple(value) => value.iter().any(|x| x.is_dynamic()),
+            Self::Array(_) | Self::Bytes(_) | Self::String(_) => true,
+            Self::FixedArray(parameters) | Self::Tuple(parameters) => {
+                parameters.iter().any(|x| x.is_dynamic())
+            }
             _ => false,
         }
     }
-}
-
-fn encode_into(hash: &mut [u8], parameters: Vec<Parameter>) -> usize {
-    let mut hash_len = hash.len();
-    let mut dynamic_type_map = HashMap::<usize, Range>::with_capacity(parameters.len());
-    for (i, param) in parameters.iter().enumerate() {
-        if param.is_dynamic() {
-            // save range where we will insert the data pointer since
-            // we don't know (YET) where exactly the dynamic data will
-            // start
-            dynamic_type_map.insert(i, hash_len..hash_len + 32);
-            // append a 32 byte zero slice as a placeholder for our
-            // future dynamic data pointer
-            hash.extend_from_slice(&[0u8; 32]);
-            // update hash position (length)
-            hash_len = hash.len();
-        } else {
-            hash.extend_from_slice(param.static_encode());
-        }
-    }
-
-    for (i, range) in dynamic_type_map {
-    }
-
-    0
 }
 
 #[cfg(test)]
@@ -86,8 +66,8 @@ mod test {
     #[test]
     #[rustfmt::skip]
     fn parameter_encode() {
-        assert_eq!(Parameter::Address(H256::zero()).static_encode(), vec![0u8; 32]);
-        assert_eq!(Parameter::from("Hello, World!").static_encode(), vec![
+        assert_eq!(Parameter::Address(H256::zero()).encode(), vec![0u8; 32]);
+        assert_eq!(Parameter::from("Hello, World!").encode(), vec![
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -101,7 +81,7 @@ mod test {
                 Parameter::Uint(H256::from_low_u64_be(0x4a), 8),
                 Parameter::Uint(H256::from_low_u64_be(0xff), 8),
                 Parameter::Uint(H256::from_low_u64_be(0xde), 8),
-        ]).static_encode(),
+        ]).encode(),
         vec![
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -126,40 +106,42 @@ mod test {
     fn parameter_is_dynamic() {
         assert!(!Parameter::Address(H256::zero()).is_dynamic());
         assert!(!Parameter::Bool(H256::zero()).is_dynamic());
-        assert!(Parameter::Bytes.is_dynamic());
-        assert!(!Parameter::FixedBytes(128).is_dynamic());
-        assert!(!Parameter::Function.is_dynamic());
-        assert!(!Parameter::Uint(32).is_dynamic());
-        assert!(!Parameter::Int(256).is_dynamic());
-        assert!(Parameter::String.is_dynamic());
-        assert!(Parameter::Array(Box::new(Parameter::Address)).is_dynamic());
-        assert!(Parameter::Array(Box::new(Parameter::Bytes)).is_dynamic());
-        assert!(!Parameter::FixedArray(Box::new(Parameter::Function), 3).is_dynamic());
-        assert!(Parameter::FixedArray(Box::new(Parameter::String), 2).is_dynamic());
+        assert!(Parameter::Bytes(Vec::new()).is_dynamic());
+        assert!(!Parameter::FixedBytes(Vec::new()).is_dynamic());
+        assert!(!Parameter::Uint(H256::zero(), 16).is_dynamic());
+        assert!(!Parameter::Int(H256::zero(), 32).is_dynamic());
+        assert!(Parameter::String(Vec::new()).is_dynamic());
+        assert!(Parameter::Array(vec![Parameter::Address(H256::zero()); 5]).is_dynamic());
+        assert!(Parameter::Array(vec![Parameter::Bytes(Vec::new())]).is_dynamic());
+        assert!(!Parameter::FixedArray(vec![Parameter::Uint(H256::zero(), 64); 3]).is_dynamic());
+        assert!(Parameter::FixedArray(vec![Parameter::String(Vec::new()); 2]).is_dynamic());
         assert!(!Parameter::Tuple(vec![
-            Parameter::Function,
-            Parameter::Uint(32),
-            Parameter::FixedBytes(64)
+            Parameter::Address(H256::zero()),
+            Parameter::Uint(H256::zero(), 32),
+            Parameter::FixedBytes(Vec::new())
         ])
         .is_dynamic());
         assert!(Parameter::Tuple(vec![
-            Parameter::Function,
-            Parameter::Uint(32),
-            Parameter::String
+            Parameter::FixedBytes(Vec::new()),
+            Parameter::Uint(H256::zero(), 32),
+            Parameter::String(Vec::new())
         ])
         .is_dynamic());
-        assert!(!Parameter::FixedArray(
-            Box::new(Parameter::FixedArray(
-                Box::new(Parameter::Int(8)),
+        assert!(!Parameter::FixedArray(vec![
+            Parameter::FixedArray(vec![
+                Parameter::Int(
+                    H256::zero(),
+                    8
+                );
                 5
-            )),
+            ]);
             2
-        )
+        ])
         .is_dynamic());
         assert!(Parameter::Tuple(vec![
-            Parameter::Function,
-            Parameter::Uint(32),
-            Parameter::FixedArray(Box::new(Parameter::String), 3)
+            Parameter::FixedBytes(Vec::new()),
+            Parameter::Uint(H256::zero(), 32),
+            Parameter::FixedArray(vec![Parameter::String(Vec::new()); 3])
         ])
         .is_dynamic());
     }

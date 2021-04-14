@@ -178,7 +178,6 @@ impl ParameterType {
 #[cfg(test)]
 mod test {
     use super::*;
-    use ethereum_types::{Address, H256, U256};
     use std::mem::discriminant;
 
     #[test]

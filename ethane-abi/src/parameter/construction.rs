@@ -6,7 +6,7 @@ use std::convert::From;
 
 impl Parameter {
     #[inline]
-    pub fn new_int_(bytes: [u8; 32], signed: bool) -> Self {
+    pub fn new_int(bytes: [u8; 32], signed: bool) -> Self {
         if signed {
             Self::Int(H256::from(&bytes), 256)
         } else {

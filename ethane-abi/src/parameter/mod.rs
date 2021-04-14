@@ -3,6 +3,7 @@ mod encode;
 mod parameter_type;
 
 mod construction;
+pub mod encode_into;
 pub mod tmp;
 mod utils;
 
