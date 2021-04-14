@@ -4,6 +4,7 @@ use crate::AbiParserError;
 /// ABI function input/output parameter type.
 #[derive(Debug, PartialEq)]
 pub enum ParameterType {
+    // TODO make this public only on crate level
     /// A 160 bit (20 bytes) unsigned integer.
     Address,
     /// A simple boolean with its value restricted to 0 or 1.

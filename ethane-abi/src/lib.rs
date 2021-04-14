@@ -6,11 +6,11 @@ use std::path::Path;
 use sha3::{Digest, Keccak256};
 use thiserror::Error;
 
-pub use function::{Function, StateMutability};
-pub use parameter::{Parameter, ParameterType};
-
 mod function;
 mod parameter;
+
+use function::{Function, StateMutability};
+use parameter::{Parameter, ParameterType};
 
 /// Parses a `.json` file containing ABI encoded Solidity functions.
 ///

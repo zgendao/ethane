@@ -6,7 +6,7 @@ mod construction;
 mod tmp;
 mod utils;
 
-pub use parameter_type::ParameterType;
+use parameter_type::ParameterType;
 
 use byteorder::{BigEndian, ByteOrder};
 use ethereum_types::{Address, U128, U256, U64};
