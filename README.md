@@ -3,16 +3,23 @@
 </p>
 
 [![Stake to support us](https://badge.devprotocol.xyz/0xE25F166Ae42a8c08b5B18fc2Ce1EEE2Db4911604/descriptive)](https://stakes.social/0xE25F166Ae42a8c08b5B18fc2Ce1EEE2Db4911604)
+[![Latest Version](https://img.shields.io/crates/v/ethane.svg)](https://crates.io/crates/ethane)
+![Minimum rustc version](https://img.shields.io/badge/rustc-1.31.0+-green.svg)
 
-Package originally created by [thojest](https://github.com/thojest) and later maintained by ZGen DAO. This repository considerd as the development line of the project, and the mainline hosted under [ethane](https://github.com/thojest/ethane).
+### Story
+
+Package originally created by [thojest](https://github.com/thojest) and later maintained by ZGEN DAO.
+Created on purpose to make the web3 connection much simpler when using Rust.
+This creates a simple alternative to other web3 packages in Rust.
+
+### Description
 
 Ethane is an alternative web3 implementation with the aim of being slim and simple.
 It does not depend on futures or any executors. It currently supports http and
 websockets (both plain and TLS) and inter process communication via Unix domain sockets (Unix only). For
 http and websockets it also supports Http Basic and Bearer Authentication.
 
-**This library is very raw and under heavy development.
-Expect to find some bugs and use at your own risk!**
+Also it has a built-in ABI parser library. It's hidden under the contract functionalities but also it can be used alongside with the main crate.
 
 Please also have a look at the [documentation](https://docs.rs/ethane).
 If you just want to use this crate, it is also available on crates.io
