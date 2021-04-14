@@ -28,12 +28,20 @@ impl Parameter {
             Self::Address(data) | Self::Bool(data) | Self::Int(data, _) | Self::Uint(data, _) => {
                 data.as_bytes().to_vec()
             }
-            Self::FixedBytes(data) | Self::Bytes(data) | Self::String(data) => {
+            Self::FixedBytes(data) => right_pad_to_32_multiples(data).to_vec(),
+            Self::Bytes(data) | Self::String(data) => {
                 let mut encoded = left_pad_to_32_bytes(&data.len().to_be_bytes()).to_vec();
                 encoded.extend_from_slice(&right_pad_to_32_multiples(data));
                 encoded
             }
-            Self::FixedArray(params) | Self::Array(params) | Self::Tuple(params) => {
+            Self::FixedArray(params) => {
+                let mut encoded = Vec::<u8>::new();
+                for p in params {
+                    encoded.extend_from_slice(&p.encode());
+                }
+                encoded
+            }
+            Self::Array(params) | Self::Tuple(params) => {
                 let mut encoded = left_pad_to_32_bytes(&params.len().to_be_bytes()).to_vec();
                 for p in params {
                     encoded.extend_from_slice(&p.encode());
