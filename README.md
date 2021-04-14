@@ -1,4 +1,4 @@
-<img src="/web/assets/ethane.png" alt="Ethane Logo" width="306" height="344" /> 
+<img src="/web/assets/ethane.png" alt="Ethane Logo" width="400" /> 
 
 Package originally created by [thojest](https://github.com/thojest) and later maintained by ZGen DAO. This repository considerd as the development line of the project, and the mainline hosted under [ethane](https://github.com/thojest/ethane).
 
