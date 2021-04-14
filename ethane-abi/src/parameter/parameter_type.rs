@@ -146,7 +146,6 @@ impl ParameterType {
         }
     }
 
-
     /// Recursively checks whether the given [`Parameter`] data matches the expected
     /// [`ParameterType`].
     #[rustfmt::skip]

@@ -130,7 +130,6 @@ impl From<bool> for Parameter {
     }
 }
 
-
 // String literal into a dynamic array of bytes
 impl From<&str> for Parameter {
     #[inline]

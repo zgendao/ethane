@@ -23,7 +23,7 @@ impl Parameter {
     /// number of elements of the data in bytes. For further info, check the
     /// Solidity [contract ABI
     /// specification](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html#function-selector).
-    pub fn encode(&self) -> Vec<u8> {
+    pub fn static_encode(&self) -> Vec<u8> {
         match self {
             Self::Address(data) | Self::Bool(data) | Self::Int(data, _) | Self::Uint(data, _) => {
                 data.as_bytes().to_vec()
@@ -37,19 +37,19 @@ impl Parameter {
             Self::FixedArray(params) => {
                 let mut encoded = Vec::<u8>::new();
                 for p in params {
-                    encoded.extend_from_slice(&p.encode());
+                    encoded.extend_from_slice(&p.static_encode());
                 }
                 encoded
             }
-            // only encode the length of the underlying data
-            // and run encode_only recursively on "params" which might be dynamic
-            // TODO -> no need for this
-            Self::Array(params) | Self::Tuple(params) =>  left_pad_to_32_bytes(&params.len().to_be_bytes()).to_vec(),
-            //    for p in params {
-            //        encoded.extend_from_slice(&p.encode());
-            //    }
-            //    encoded
-            //}
+            _ => panic!("These types cannot be statically encoded!"), // only encode the length of the underlying data
+                                                                      // and run encode_only recursively on "params" which might be dynamic
+                                                                      // TODO -> no need for this
+                                                                      //Self::Array(params) | Self::Tuple(params) =>  left_pad_to_32_bytes(&params.len().to_be_bytes()).to_vec(),
+                                                                      //    for p in params {
+                                                                      //        encoded.extend_from_slice(&p.encode());
+                                                                      //    }
+                                                                      //    encoded
+                                                                      //}
         }
     }
 
@@ -76,8 +76,8 @@ mod test {
     #[test]
     #[rustfmt::skip]
     fn parameter_encode() {
-        assert_eq!(Parameter::Address(H256::zero()).encode(), vec![0u8; 32]);
-        assert_eq!(Parameter::from("Hello, World!").encode(), vec![
+        assert_eq!(Parameter::Address(H256::zero()).static_encode(), vec![0u8; 32]);
+        assert_eq!(Parameter::from("Hello, World!").static_encode(), vec![
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -87,28 +87,24 @@ mod test {
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
         ]); 
-        assert_eq!(Parameter::Array(vec![
+        assert_eq!(Parameter::FixedArray(vec![
                 Parameter::Uint(H256::from_low_u64_be(0x4a), 8),
                 Parameter::Uint(H256::from_low_u64_be(0xff), 8),
                 Parameter::Uint(H256::from_low_u64_be(0xde), 8),
-        ]).encode(),
+        ]).static_encode(),
         vec![
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0x03, // length
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0x4a, // first
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0xff, // second
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0xde, // third
+            0, 0, 0, 0, 0, 0, 0, 0x4a, // first
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0xff, // second
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0xde, // third
         ]);
     }
 
