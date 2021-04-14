@@ -1,4 +1,8 @@
-<img src="/web/assets/ethane.png" alt="Ethane Logo" width="400" /> 
+<p align="center">
+    <img src="/web/assets/ethane.png" alt="Ethane Logo" width="400" /> 
+</p>
+
+[![Stake to support us](https://badge.devprotocol.xyz/0xE25F166Ae42a8c08b5B18fc2Ce1EEE2Db4911604/descriptive)](https://stakes.social/0xE25F166Ae42a8c08b5B18fc2Ce1EEE2Db4911604)
 
 Package originally created by [thojest](https://github.com/thojest) and later maintained by ZGen DAO. This repository considerd as the development line of the project, and the mainline hosted under [ethane](https://github.com/thojest/ethane).
 
