@@ -5,23 +5,37 @@ use ethereum_types::{Address, H256, U128, U256, U64};
 use std::convert::From;
 
 impl Parameter {
-    pub fn int_from_fixed_bytes(bytes: [u8; 32], signed: bool) -> Self {
+    #[inline]
+    pub fn new_int_(bytes: [u8; 32], signed: bool) -> Self {
         if signed {
             Self::Int(H256::from(&bytes), 256)
         } else {
             Self::Uint(H256::from(&bytes), 256)
         }
     }
+
+    /// Method for creating [`FixedBytes`] from a slice of bytes.
+    #[inline]
+    pub fn new_fixed_bytes(bytes: &[u8]) -> Self {
+        Self::FixedBytes(bytes.to_vec())
+    }
+
+    #[inline]
+    pub fn new_bytes(bytes: &[u8]) -> Self {
+        Self::Bytes(bytes.to_vec())
+    }
 }
 
 // Unsigned elementary integer types
 impl From<u8> for Parameter {
+    #[inline]
     fn from(input: u8) -> Self {
         Self::Uint(H256::from_slice(&left_pad_to_32_bytes(&[input])), 8)
     }
 }
 
 impl From<u16> for Parameter {
+    #[inline]
     fn from(input: u16) -> Self {
         Self::Uint(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -31,6 +45,7 @@ impl From<u16> for Parameter {
 }
 
 impl From<u32> for Parameter {
+    #[inline]
     fn from(input: u32) -> Self {
         Self::Uint(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -40,6 +55,7 @@ impl From<u32> for Parameter {
 }
 
 impl From<u64> for Parameter {
+    #[inline]
     fn from(input: u64) -> Self {
         Self::Uint(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -49,6 +65,7 @@ impl From<u64> for Parameter {
 }
 
 impl From<u128> for Parameter {
+    #[inline]
     fn from(input: u128) -> Self {
         Self::Uint(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -59,12 +76,14 @@ impl From<u128> for Parameter {
 
 // Signed elementary integer types
 impl From<i8> for Parameter {
+    #[inline]
     fn from(input: i8) -> Self {
         Self::Int(H256::from_slice(&left_pad_to_32_bytes(&[input as u8])), 8)
     }
 }
 
 impl From<i16> for Parameter {
+    #[inline]
     fn from(input: i16) -> Self {
         Self::Int(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -74,6 +93,7 @@ impl From<i16> for Parameter {
 }
 
 impl From<i32> for Parameter {
+    #[inline]
     fn from(input: i32) -> Self {
         Self::Int(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -83,6 +103,7 @@ impl From<i32> for Parameter {
 }
 
 impl From<i64> for Parameter {
+    #[inline]
     fn from(input: i64) -> Self {
         Self::Int(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -92,6 +113,7 @@ impl From<i64> for Parameter {
 }
 
 impl From<i128> for Parameter {
+    #[inline]
     fn from(input: i128) -> Self {
         Self::Int(
             H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
@@ -102,20 +124,16 @@ impl From<i128> for Parameter {
 
 // Boolean type
 impl From<bool> for Parameter {
+    #[inline]
     fn from(input: bool) -> Self {
         Self::Bool(H256::from_slice(&left_pad_to_32_bytes(&[u8::from(input)])))
     }
 }
 
-// Dynamic array of bytes
-impl From<&[u8]> for Parameter {
-    fn from(input: &[u8]) -> Self {
-        Self::Bytes(input.to_vec())
-    }
-}
 
 // String literal into a dynamic array of bytes
 impl From<&str> for Parameter {
+    #[inline]
     fn from(input: &str) -> Self {
         Self::String(input.as_bytes().to_vec())
     }
@@ -123,12 +141,14 @@ impl From<&str> for Parameter {
 
 // From Ethereum types
 impl From<Address> for Parameter {
+    #[inline]
     fn from(input: Address) -> Self {
         Self::Address(H256::from_slice(&left_pad_to_32_bytes(&input.as_bytes())))
     }
 }
 
 impl From<U64> for Parameter {
+    #[inline]
     fn from(input: U64) -> Self {
         let mut bytes = [0u8; 8];
         input.to_big_endian(&mut bytes);
@@ -137,6 +157,7 @@ impl From<U64> for Parameter {
 }
 
 impl From<U128> for Parameter {
+    #[inline]
     fn from(input: U128) -> Self {
         let mut bytes = [0u8; 16];
         input.to_big_endian(&mut bytes);
@@ -145,6 +166,7 @@ impl From<U128> for Parameter {
 }
 
 impl From<U256> for Parameter {
+    #[inline]
     fn from(input: U256) -> Self {
         let mut padded = [0u8; 32];
         input.to_big_endian(&mut padded);
@@ -337,8 +359,20 @@ mod test {
 
         // From byte slice
         let bytes = [1u8; 43];
-        let param = Parameter::from(&bytes[..]);
+        let param = Parameter::new_bytes(&bytes[..]);
         if let Parameter::Bytes(value) = param {
+            let expected = hex!(
+            "01010101010101010101010101010101
+                01010101010101010101010101010101
+                0101010101010101010101");
+            assert_eq!(value, expected);
+        } else {
+            panic!("From &[u8] test failed")
+        }
+
+        let bytes = [1u8; 43];
+        let param = Parameter::new_fixed_bytes(&bytes[..]);
+        if let Parameter::FixedBytes(value) = param {
             let expected = hex!(
             "01010101010101010101010101010101
                 01010101010101010101010101010101
@@ -352,7 +386,7 @@ mod test {
     #[test]
     fn parameter_from_fixed_bytes() {
         // Signed integer from fixed slice
-        let param = Parameter::int_from_fixed_bytes([14; 32], true); // signed = true
+        let param = Parameter::new_int([14; 32], true); // signed = true
         if let Parameter::Int(value, len) = param {
             assert_eq!(len, 256);
             assert_eq!(value.to_fixed_bytes(), [14u8; 32]);
@@ -361,7 +395,7 @@ mod test {
         }
 
         // Unsigned integer from fixed slice
-        let param = Parameter::int_from_fixed_bytes([12; 32], false); // signed = false
+        let param = Parameter::new_int([12; 32], false); // signed = false
         if let Parameter::Uint(value, len) = param {
             assert_eq!(len, 256);
             assert_eq!(value.to_fixed_bytes(), [12u8; 32]);

@@ -145,6 +145,7 @@ impl Abi {
             // Take first 4 bytes of the Keccak hash
             let mut hash = hasher.finalize()[0..4].to_vec();
             // Append the encoded parameters to the hash
+            //encode_into(&mut hash, parameters)
             Ok(hash)
         } else {
             Err(AbiParserError::MissingData(
@@ -190,7 +191,7 @@ pub struct AbiCall<'a> {
 #[derive(Error, Debug)]
 pub enum AbiParserError {
     #[error("Couldn't open ABI file: {0}")]
-    FileIOError(#[from] std::io::Error),
+    FileIoError(#[from] std::io::Error),
     #[error("De-/Serialization error: {0}")]
     Serde(#[from] serde_json::Error),
     #[error("Missing data error: {0}")]
