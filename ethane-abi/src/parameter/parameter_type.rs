@@ -120,16 +120,28 @@ impl ParameterType {
         }
     }
 
+    /// Generates an ABI contract string representation of the underlying type.
     pub fn as_abi_string(&self) -> String {
         match self {
             Self::Address => "address".to_owned(),
             Self::Bool => "bool".to_owned(),
             Self::Bytes => "bytes".to_owned(),
             Self::FixedBytes(len) => format!("bytes{}", len),
+            Self::Function => "function".to_owned(),
             Self::Int(len) => format!("int{}", len),
             Self::Uint(len) => format!("uint{}", len),
             Self::String => "string".to_owned(),
-            _ => unimplemented!(),
+            Self::Array(param_type) => param_type.as_abi_string() + "[]",
+            Self::FixedArray(param_type, len) => param_type.as_abi_string() + &format!("[{}]", len),
+            Self::Tuple(param_types) => {
+                let mut abi_string = String::from("(");
+                for pt in param_types {
+                    abi_string += &(pt.as_abi_string() + ",");
+                }
+                // TODO could this be more elegant? maybe use .join(',') on a Vec<String>?
+                abi_string.pop(); // pop last added comma
+                abi_string + ")"
+            }
         }
     }
 
@@ -291,6 +303,26 @@ mod test {
             }
             _ => panic!("Failed to parse nested array"),
         }
+
+        match ParameterType::parse("(bool,string)[2][4]").unwrap() {
+            ParameterType::FixedArray(outer_type, len) => {
+                assert_eq!(len, 4);
+                match *outer_type {
+                    ParameterType::FixedArray(inner_type, len) => {
+                        assert_eq!(len, 2);
+                        match *inner_type {
+                            ParameterType::Tuple(vec) => {
+                                assert_eq!(vec[0], ParameterType::Bool);
+                                assert_eq!(vec[1], ParameterType::String);
+                            }
+                            _ => panic!("Failed to parse nested tuple array"),
+                        }
+                    }
+                    _ => panic!("Failed to parse nested tuple array"),
+                }
+            }
+            _ => panic!("Failed to parse nested tuple array"),
+        }
     }
 
     #[test]
@@ -302,6 +334,45 @@ mod test {
         assert_eq!(&ParameterType::FixedBytes(32).as_abi_string(), "bytes32");
         assert_eq!(&ParameterType::Uint(256).as_abi_string(), "uint256");
         assert_eq!(&ParameterType::Int(128).as_abi_string(), "int128");
+        assert_eq!(&ParameterType::Function.as_abi_string(), "function");
+        assert_eq!(
+            &ParameterType::Array(Box::new(ParameterType::Bool)).as_abi_string(),
+            "bool[]"
+        );
+        assert_eq!(
+            &ParameterType::Array(Box::new(ParameterType::Address)).as_abi_string(),
+            "address[]"
+        );
+        assert_eq!(
+            &ParameterType::Array(Box::new(ParameterType::String)).as_abi_string(),
+            "string[]"
+        );
+        assert_eq!(
+            &ParameterType::FixedArray(Box::new(ParameterType::Int(8)), 3).as_abi_string(),
+            "int8[3]"
+        );
+        assert_eq!(
+            &ParameterType::FixedArray(Box::new(ParameterType::Address), 10).as_abi_string(),
+            "address[10]"
+        );
+        assert_eq!(
+            &ParameterType::FixedArray(Box::new(ParameterType::Uint(256)), 2).as_abi_string(),
+            "uint256[2]"
+        );
+    }
+
+    #[test]
+    fn complex_parameter_type_as_string() {
+        let abi_str = "(uint256,bytes,bytes32,address[3])";
+        assert_eq!(
+            &ParameterType::parse(abi_str).unwrap().as_abi_string(),
+            abi_str
+        );
+        let abi_str = "address[][2][]";
+        assert_eq!(
+            &ParameterType::parse(abi_str).unwrap().as_abi_string(),
+            abi_str
+        );
     }
 
     #[test]
