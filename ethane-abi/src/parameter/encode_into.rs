@@ -16,29 +16,32 @@ pub fn encode_into(hash: &mut Vec<u8>, parameters: Vec<Parameter>) {
             // append a 32 byte zero slice as a placeholder for our
             // future dynamic data pointer
             hash.extend_from_slice(&[0u8; 32]);
-            // update hash position (length)
-            hash_len = hash.len();
         } else {
             match param {
-                Parameter::Array(data) | Parameter::Tuple(data) => encode_into(hash, data.to_vec()),
+                // in case of a static tuple,
+                // recursively encode the internal data
+                Parameter::Tuple(data) => encode_into(hash, data.to_vec()),
                 _ => hash.extend_from_slice(&param.encode()),
             }
         }
+        // update hash position (length)
+        hash_len = hash.len();
     }
 
-    for (index, range) in dynamic_type_map {
+    for (index, range) in dynamic_type_map.into_iter() {
+        // fill in the pointer offset to the dynamic data
+        // the offset is measured from the 4th byte so the
+        // Keccak method ID doesn't count
+        hash[range].copy_from_slice(&left_pad_to_32_bytes(&(hash_len - 4).to_be_bytes()));
         match &parameters[index] {
-            Parameter::Array(data) | Parameter::Tuple(data) => encode_into(hash, data.to_vec()),
-            _ => {
-                // fill in the pointer offset to the dynamic data
-                // the offset is measured from the 4th byte so the
-                // Keccak method ID doesn't count
-                hash[range].copy_from_slice(&left_pad_to_32_bytes(&(hash_len - 4).to_be_bytes()));
-                // append the encoded data
-                hash.extend_from_slice(&parameters[index].encode());
-                hash_len = hash.len();
-            }
+            Parameter::Array(data) | Parameter::Tuple(data) => {
+                // encode the length of the underlying dynamic data
+                hash.extend_from_slice(&left_pad_to_32_bytes(&data.len().to_be_bytes()));
+                encode_into(hash, data.to_vec());
+            },
+            _ => hash.extend_from_slice(&parameters[index].encode()),
         }
+        hash_len = hash.len();
     }
 }
 
@@ -106,10 +109,10 @@ mod test {
             Parameter::new_bytes(&"dave".as_bytes()),
             Parameter::from(true),
             Parameter::Array(vec![
-                Parameter::from(U256::from_dec_str("1")),
-                Parameter::from(U256::from_dec_str("2")),
-                Parameter::from(U256::from_dec_str("3")),
-            ]);
+                Parameter::from(U256::from_dec_str("1").unwrap()),
+                Parameter::from(U256::from_dec_str("2").unwrap()),
+                Parameter::from(U256::from_dec_str("3").unwrap()),
+            ])
         ]);
         assert_eq!(hash, vec![
             0xff, 0xee, 0x00, 0x07, // signature
@@ -129,6 +132,26 @@ mod test {
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0x04, // "dave" consists of 4 bytes
+            0x64, 0x61, 0x76, 0x65, 0, 0, 0, 0, // "dave" as bytes
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, // flushed right
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0x03, // uint array has 3 elements
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0x01, // first element
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0x02, // second element
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0x03, // third element
         ]);
     }
 }

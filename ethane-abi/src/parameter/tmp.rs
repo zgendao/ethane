@@ -41,13 +41,15 @@ impl Parameter {
                 }
                 encoded
             }
-            Self::Array(params) | Self::Tuple(params) => {
-                let mut encoded = left_pad_to_32_bytes(&params.len().to_be_bytes()).to_vec();
-                for p in params {
-                    encoded.extend_from_slice(&p.encode());
-                }
-                encoded
-            }
+            // only encode the length of the underlying data
+            // and run encode_only recursively on "params" which might be dynamic
+            // TODO -> no need for this
+            Self::Array(params) | Self::Tuple(params) =>  left_pad_to_32_bytes(&params.len().to_be_bytes()).to_vec(),
+            //    for p in params {
+            //        encoded.extend_from_slice(&p.encode());
+            //    }
+            //    encoded
+            //}
         }
     }
 
@@ -95,18 +97,18 @@ mod test {
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0x03, // length
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0x4a, // first
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0xff, // second
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0xde, // third
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0x4a, // first
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0xff, // second
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0xde, // third
         ]);
     }
 
