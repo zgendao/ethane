@@ -6,13 +6,13 @@
 [![Latest Version](https://img.shields.io/crates/v/ethane.svg)](https://crates.io/crates/ethane)
 ![Minimum rustc version](https://img.shields.io/badge/rustc-1.31.0+-green.svg)
 
-### Story
+## Story
 
 Package originally created by [thojest](https://github.com/thojest) and later maintained by ZGEN DAO.
 Created on purpose to make the web3 connection much simpler when using Rust.
 This creates a simple alternative to other web3 packages in Rust.
 
-### Description
+## Description
 
 Ethane is an alternative web3 implementation with the aim of being slim and simple.
 It does not depend on futures or any executors. It currently supports http and
@@ -26,7 +26,7 @@ If you just want to use this crate, it is also available on crates.io
 ([Ethane](https://crates.io/crates/ethane)). If you find any bugs please
 do not hesitate to open an issue.
 
-## How to use this library
+## Usage
 
 In order to get started, create a connector over some transport.
 The following examples show you how to make a request and how to subscribe to events.
@@ -62,3 +62,5 @@ let mut tx_subscription = connector
 // Get next transaction item
 let tx = tx_subscription.next_item().unwrap();
 ```
+
+## Contribution
