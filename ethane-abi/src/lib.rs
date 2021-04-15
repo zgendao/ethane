@@ -116,7 +116,8 @@ impl Abi {
         hash: &[u8],
     ) -> Result<Vec<Parameter>, AbiParserError> {
         if let Some(function) = self.functions.get(function_name) {
-            let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
+            //let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
+            let mut start_index = 0;
             let mut parameters = Vec::<Parameter>::with_capacity(function.outputs.len());
             for output in &function.outputs {
                 let (parameter, i) =

@@ -1,5 +1,5 @@
 use ethane::contract::{CallResult, Caller};
-use ethane::types::{Address, Bytes, Call, U256};
+use ethane::types::{Address, Bytes, Call, H256};
 use ethane::{rpc, Connection, Http};
 use ethane_abi::*;
 use std::path::Path;
@@ -28,14 +28,19 @@ fn test_eth_call_contract() {
         contract_address,
     );
 
-    let result = caller.call("balanceOf", vec![Parameter::Address(address)], None);
+    let result = caller.call(
+        "balanceOf",
+        vec![Parameter::from(Address::from(address))],
+        None,
+    );
     match result {
         CallResult::Transaction(_) => panic!("Should be eth_call"),
-        CallResult::Call(r) => {
-            assert_eq!(r[0].get_type(), ParameterType::Uint(256));
-            assert_eq!(r[0].to_u256().unwrap(), U256::from(1000000000));
-            println!("{:?}", r[0])
-        }
+        CallResult::Call(r) => match r[0] {
+            Parameter::Uint(data, 256) => {
+                assert_eq!(data, H256::from_low_u64_be(1000000000_u64));
+            }
+            _ => panic!("Invalid data received!"),
+        },
     }
 }
 
@@ -60,12 +65,7 @@ fn test_eth_call_contract_decimals() {
     .expect("unable to parse abi");
 
     // TODO there is no "decimals" function in TestERC20.abi
-    let test_hash = abi
-        .encode(&AbiCall {
-            function_name: "decimals",
-            parameters: vec![],
-        })
-        .unwrap();
+    let test_hash = abi.encode("decimals", vec![]).unwrap();
     println!("{:X?}", test_hash);
     let call = Call {
         to: contract_address,
