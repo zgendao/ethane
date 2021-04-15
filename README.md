@@ -17,9 +17,8 @@ This creates a simple alternative to other web3 packages in Rust.
 Ethane is an alternative web3 implementation with the aim of being slim and simple.
 It does not depend on futures or any executors. It currently supports http and
 websockets (both plain and TLS) and inter process communication via Unix domain sockets (Unix only). For
-http and websockets it also supports Http Basic and Bearer Authentication.
-
-Also it has a built-in ABI parser library. It's hidden under the contract functionalities but also it can be used alongside with the main crate.
+http and websockets it also supports Http Basic and Bearer Authentication. Also it has a built-in ABI parser library. 
+It's hidden under the contract functionalities but also it can be used alongside with the main crate.
 
 Please also have a look at the [documentation](https://docs.rs/ethane).
 If you just want to use this crate, it is also available on crates.io
@@ -28,26 +27,81 @@ do not hesitate to open an issue.
 
 ## Usage
 
-In order to get started, create a connector over some transport.
-The following examples show you how to make a request and how to subscribe to events.
+Guidelines to use the Ethane library.
 
-### Request over http
+### Connection
+
+Everything starts with a connection.
+
 ```rust
-use ethane::Connector;
-use ethane::rpc::eth_get_balance;
-use ethane::types::H160;
+use ethane::{Connection, Http, WebSocket};
 
-// Start up connector
-let node_endpoint = "http://127.0.0.1:8545";
-let mut connector = Connector::http(node_endpoint, None).unwrap();
-
-// Make a request
-let address = H160::zero();
-let balance = connector.call(eth_get_balance(address, None)).unwrap();
+fn main() {
+    let conn = Connection::new(Http::new("http://localhost:8545", None));
+    // or
+    let conn = Connection::new(WebSocket::new("ws://localhost:8546", None));
+}
 ```
+
+### Methods
+
+After, we created the connection to the Ethereum Network we can call several methods. 
+More details on the supported methods later.
+
+```rust
+use ethane::{Connection, Http};
+use ethane::types::Address;
+
+fn main() {
+    let conn = Connection::new(Http::new("http://localhost:8545", None));
+    
+    match conn.call(rpc::eth_get_balance(Address::from_str(ADDRESS1).unwrap(), None)) {
+        Ok(res) => res,
+        Err(err) => println!("{:?}", err),
+    }
+}
+```
+
+### Contract call
+
+The library supports contract calls as well via `ethane-abi`.
+
+```rust
+use ethane::{Connection, Http};
+use ethane::contract::{CallOpts, CallResult, Caller};
+use ethane::types::Address;
+use ethane_abi::Parameter;
+
+fn main() {
+    let conn = Connection::new(Http::new("http://localhost:8545", None));
+
+    let mut caller = Caller::new_from_path(
+        conn,
+        "path/to/contract.abi",
+        Address::from_str("0x141770c471a64bcde74c587e55a1ffd9a1bffd31").unwrap(),
+    );
+
+    let result = caller.call("balanceOf", vec![Parameter::Address(address)], None);
+    match result {
+        CallResult::Transaction(_) => panic!("Should be eth_call"),
+        CallResult::Call(r) => {
+            assert_eq!(r[0].get_type(), ParameterType::Uint(256));
+            assert_eq!(r[0].to_u256().unwrap(), U256::from(1000000000));
+        }
+    }
+}
+```
+
+### Subscribe
+
+```rust
+// @TODO
+```
+
 
 ### Starting a subscription over websocket
 ```rust
+// @TODO
 use ethane::Connector;
 use ethane::rpc::sub::eth_subscribe_new_pending_transactions;
 
@@ -64,3 +118,6 @@ let tx = tx_subscription.next_item().unwrap();
 ```
 
 ## Contribution
+
+Issues and PRs are warmly welcomed. 
+Development follows the [OSS standard](https://github.com/PumpkinSeed/oss-standard).
