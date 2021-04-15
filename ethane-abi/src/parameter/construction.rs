@@ -1,5 +1,5 @@
-use super::tmp::Parameter;
-use crate::parameter::utils::*;
+use super::utils::*;
+use super::Parameter;
 use ethereum_types::{Address, H256, U128, U256, U64};
 
 use std::convert::From;

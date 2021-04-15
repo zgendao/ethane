@@ -1,5 +1,5 @@
-use super::tmp::Parameter;
 use super::utils::left_pad_to_32_bytes;
+use super::Parameter;
 
 use std::ops::Range;
 

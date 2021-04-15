@@ -1,4 +1,4 @@
-use super::tmp::Parameter;
+use super::Parameter;
 use crate::AbiParserError;
 
 /// ABI function input/output parameter type.
@@ -121,6 +121,15 @@ impl ParameterType {
         }
     }
 
+    pub fn is_dynamic(&self) -> bool {
+        match self {
+            Self::Array(_) | Self::Bytes | Self::String => true,
+            Self::FixedArray(parameter_type, _) => parameter_type.is_dynamic(),
+            Self::Tuple(value) => value.iter().any(|x| x.is_dynamic()),
+            _ => false,
+        }
+    }
+
     /// Generates an ABI contract string representation of the underlying type.
     pub fn as_abi_string(&self) -> String {
         match self {
@@ -232,6 +241,48 @@ mod test {
             ParameterType::FixedBytes(a) => assert_eq!(a, 32),
             _ => panic!("Failed to parse bytes32"),
         }
+    }
+
+    #[test]
+    fn type_is_dynamic() {
+        assert!(!ParameterType::Address.is_dynamic());
+        assert!(!ParameterType::Bool.is_dynamic());
+        assert!(ParameterType::Bytes.is_dynamic());
+        assert!(!ParameterType::FixedBytes(128).is_dynamic());
+        assert!(!ParameterType::Function.is_dynamic());
+        assert!(!ParameterType::Uint(32).is_dynamic());
+        assert!(!ParameterType::Int(256).is_dynamic());
+        assert!(ParameterType::String.is_dynamic());
+        assert!(ParameterType::Array(Box::new(ParameterType::Address)).is_dynamic());
+        assert!(ParameterType::Array(Box::new(ParameterType::Bytes)).is_dynamic());
+        assert!(!ParameterType::FixedArray(Box::new(ParameterType::Function), 3).is_dynamic());
+        assert!(ParameterType::FixedArray(Box::new(ParameterType::String), 2).is_dynamic());
+        assert!(!ParameterType::Tuple(vec![
+            ParameterType::Function,
+            ParameterType::Uint(32),
+            ParameterType::FixedBytes(64)
+        ])
+        .is_dynamic());
+        assert!(ParameterType::Tuple(vec![
+            ParameterType::Function,
+            ParameterType::Uint(32),
+            ParameterType::String
+        ])
+        .is_dynamic());
+        assert!(!ParameterType::FixedArray(
+            Box::new(ParameterType::FixedArray(
+                Box::new(ParameterType::Int(8)),
+                5
+            )),
+            2
+        )
+        .is_dynamic());
+        assert!(ParameterType::Tuple(vec![
+            ParameterType::Function,
+            ParameterType::Uint(32),
+            ParameterType::FixedArray(Box::new(ParameterType::String), 3)
+        ])
+        .is_dynamic());
     }
 
     #[test]
