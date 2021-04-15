@@ -10,7 +10,8 @@ pub struct Caller<T: Request> {
 }
 
 pub struct CallOpts {
-    force_call_type: Option<CallType>,
+    pub force_call_type: Option<CallType>,
+    pub from: Option<Address>,
 }
 
 pub enum CallType {
@@ -73,7 +74,9 @@ where
             CallType::Transaction
         };
 
+        let mut from_address: Address = Default::default();
         if let Some(o) = opts {
+            from_address = o.from.unwrap();
             if let Some(ct) = o.force_call_type {
                 call_type = ct;
             }
@@ -82,7 +85,7 @@ where
         let data = self.abi.encode(function_name, params).unwrap();
 
         match call_type {
-            CallType::Transaction => self.eth_send_transaction(data),
+            CallType::Transaction => self.eth_send_transaction(data, from_address),
             CallType::Call => self.eth_call(function_name, data),
         }
     }
@@ -102,8 +105,9 @@ where
         )
     }
 
-    fn eth_send_transaction(&mut self, data: Vec<u8>) -> CallResult {
+    fn eth_send_transaction(&mut self, data: Vec<u8>, from_address: Address) -> CallResult {
         let payload = TransactionRequest {
+            from: from_address,
             to: Some(self.contract_address),
             data: Some(Bytes::from_slice(&data)),
             ..Default::default()
