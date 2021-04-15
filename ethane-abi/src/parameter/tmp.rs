@@ -34,22 +34,14 @@ impl Parameter {
                 encoded.extend_from_slice(&right_pad_to_32_multiples(data));
                 encoded
             }
-            Self::FixedArray(params) => {
+            Self::FixedArray(params) | Self::Tuple(params) => {
                 let mut encoded = Vec::<u8>::new();
                 for p in params {
                     encoded.extend_from_slice(&p.static_encode());
                 }
                 encoded
             }
-            _ => panic!("These types cannot be statically encoded!"), // only encode the length of the underlying data
-                                                                      // and run encode_only recursively on "params" which might be dynamic
-                                                                      // TODO -> no need for this
-                                                                      //Self::Array(params) | Self::Tuple(params) =>  left_pad_to_32_bytes(&params.len().to_be_bytes()).to_vec(),
-                                                                      //    for p in params {
-                                                                      //        encoded.extend_from_slice(&p.encode());
-                                                                      //    }
-                                                                      //    encoded
-                                                                      //}
+            Self::Array(_) => panic!("Array type cannot be statically encoded!"),
         }
     }
 
