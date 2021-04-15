@@ -7,9 +7,7 @@ pub use encode_into::encode_into;
 pub use parameter_type::ParameterType;
 use utils::*;
 
-use crate::AbiParserError;
-
-use ethereum_types::H256;
+use ethereum_types::{Address, H256};
 
 #[derive(Clone)]
 pub enum Parameter {
@@ -70,11 +68,40 @@ impl Parameter {
         }
     }
 
-    pub fn decode(
-        param_type: &ParameterType,
-        raw_bytes: &[u8],
-    ) -> Result<(Self, usize), AbiParserError> {
-        unimplemented!();
+    pub fn decode(parameter_type: &ParameterType, raw_bytes: &[u8]) -> (Self, usize) {
+        match parameter_type {
+            ParameterType::Address => {
+                let mut bytes = [0u8; 20];
+                bytes.copy_from_slice(&raw_bytes[12..]);
+                (Self::from(Address::from(bytes)), 32)
+            }
+            ParameterType::Bool => {
+                let mut bytes = [0u8; 32];
+                bytes.copy_from_slice(&raw_bytes);
+                (Self::Bool(H256::from(bytes)), 32)
+            }
+            ParameterType::Int(_) => {
+                let mut bytes = [0u8; 32];
+                bytes.copy_from_slice(&raw_bytes);
+                (Self::new_int(bytes, true), 32)
+            }
+            ParameterType::Uint(_) => {
+                let mut bytes = [0u8; 32];
+                bytes.copy_from_slice(&raw_bytes);
+                (Self::new_int(bytes, false), 32)
+            }
+            //ParameterType::String  => {
+            //    (Self::String(raw_bytes.to_vec()), )
+            //},
+            //ParameterType::Bytes  => {
+            //    Ok(Self::Bytes(raw_bytes.to_vec()))
+            //},
+            //ParameterType::FixedBytes(len) => {
+            //    Ok(Self::FixedBytes(raw_bytes.to_vec())
+            //},
+            //// TODO do we need more complicated types?
+            _ => unimplemented!(),
+        }
     }
 }
 
@@ -160,4 +187,7 @@ mod test {
         ])
         .is_dynamic());
     }
+
+    #[test]
+    fn decode_parameter() {}
 }

@@ -120,7 +120,7 @@ impl Abi {
             let mut parameters = Vec::<Parameter>::with_capacity(function.outputs.len());
             for output in &function.outputs {
                 let (parameter, i) =
-                    Parameter::decode(&output.parameter_type, &hash[start_index..])?;
+                    Parameter::decode(&output.parameter_type, &hash[start_index..]);
                 start_index += i;
                 parameters.push(parameter);
             }
