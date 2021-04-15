@@ -1,6 +1,6 @@
 use ethane::contract::{CallOpts, CallResult, Caller};
 use ethane::types::{Address, H256, U256};
-use ethane::{rpc, Connection, Http};
+use ethane::{Connection, Http};
 use ethane_abi::*;
 use std::path::Path;
 use std::str::FromStr;

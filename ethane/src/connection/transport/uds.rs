@@ -118,7 +118,7 @@ mod tests {
                         let _write = (&mut stream).write_all(buffer.as_slice()).unwrap();
                         let _flush = (&mut stream).flush().unwrap();
                     }
-                    Err(err) => panic!(err),
+                    Err(err) => panic!("{}", err),
                 }
             }
         });
