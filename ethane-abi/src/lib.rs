@@ -74,6 +74,12 @@ impl Abi {
         None
     }
 
+    /// Encodes a function call according to Solidity's contract [ABI
+    /// specification](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html#function-selector).
+    ///
+    /// If the given function is found in the parsed ABI file, the function
+    /// encodes the function signature and the input data provided in the form
+    /// of a [`Parameter`] vector.
     pub fn encode(
         &self,
         function_name: &str,

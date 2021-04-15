@@ -16,7 +16,8 @@ pub enum ParameterType {
     /// Contains an address (20 bytes) followed by a function selector (4
     /// bytes).
     ///
-    /// Encoded the same way as a [`FixedBytes`] parameter containing 24 bytes.
+    /// Encoded the same way as a [`FixedBytes`](Parameter::FixedBytes) parameter
+    /// containing 24 bytes.
     Function,
     /// A generic `n` bit signed integer type.
     Int(usize),

@@ -9,6 +9,8 @@ use utils::*;
 
 use ethereum_types::{Address, H256};
 
+/// An ABI function parameter type enclosing the underlying
+/// numeric data bytes.
 #[derive(Clone)]
 pub enum Parameter {
     Address(H256),
@@ -55,9 +57,10 @@ impl Parameter {
 
     /// Recursively checks wether a given parameter is dynamic.
     ///
-    /// For example, a [`Tuple`] can be dynamic if any of its contained types
-    /// are dynamic. Additionally, a [`FixedArray`] is static if it contains
-    /// values with static type and dynamic otherwise.
+    /// For example, a [`Tuple`](Parameter::Tuple) can be dynamic if any of its
+    /// contained types are dynamic. Additionally, a
+    /// [`FixedArray`](Parameter::FixedArray) is static if it contains values
+    /// with static type and dynamic otherwise.
     pub fn is_dynamic(&self) -> bool {
         match self {
             Self::Array(_) | Self::Bytes(_) | Self::String(_) => true,

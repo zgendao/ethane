@@ -14,12 +14,13 @@ impl Parameter {
         }
     }
 
-    /// Method for creating [`FixedBytes`] from a slice of bytes.
+    /// Creates a new [`FixedBytes`](Parameter::FixedBytes) parameter.
     #[inline]
     pub fn new_fixed_bytes(bytes: &[u8]) -> Self {
         Self::FixedBytes(bytes.to_vec())
     }
 
+    /// Creates a new [`Bytes`](Parameter::Bytes) parameter.
     #[inline]
     pub fn new_bytes(bytes: &[u8]) -> Self {
         Self::Bytes(bytes.to_vec())
