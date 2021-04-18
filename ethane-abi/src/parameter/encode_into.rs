@@ -223,10 +223,7 @@ mod test {
         for i in 0..20 {
             let start: usize = 4 + i * 32;
             let end: usize = start + 32;
-            println!("row = {}", i);
             assert_eq!(hash[start..end], expected[start..end]);
         }
-        //assert_eq!(hash[0..32], expected[0..32);
-        //assert_eq!(hash[68..], expected[0..32);
     }
 }
