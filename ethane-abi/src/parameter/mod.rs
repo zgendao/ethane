@@ -1,4 +1,5 @@
 mod construction;
+pub mod display;
 mod encode_into;
 mod parameter_type;
 mod utils;
