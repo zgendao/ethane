@@ -1,169 +1,109 @@
-mod decode;
-mod encode;
+mod construction;
+mod encode_into;
 mod parameter_type;
+mod utils;
 
+pub use encode_into::encode_into;
 pub use parameter_type::ParameterType;
+use utils::*;
 
-use byteorder::{BigEndian, ByteOrder};
-use ethereum_types::{Address, U128, U256, U64};
+use ethereum_types::{Address, H256};
 
-/// ABI function input/output parameter.
-///
-/// It wraps the actual value as a slice of bytes.
-#[derive(Debug, PartialEq)]
+/// An ABI function parameter type enclosing the underlying
+/// numeric data bytes.
+#[derive(Clone)]
 pub enum Parameter {
-    Address(Address),
-    Uint8([u8; 1]),
-    Uint16([u8; 2]),
-    Uint32([u8; 4]),
-    Uint64(U64),
-    Uint128(U128),
-    Uint256(U256),
-    Int8([u8; 1]),
-    Int16([u8; 2]),
-    Int32([u8; 4]),
-    Int64(U64),
-    Int128(U128),
-    Int256(U256),
-    Bool(bool),
-    // Vector of bytes with known size.
-    FixedBytes(Vec<u8>),
-    // dynamic sized byte sequence
+    Address(H256),
+    Bool(H256),
+    Int(H256, usize),
+    Uint(H256, usize),
+    String(Vec<u8>),
     Bytes(Vec<u8>),
-    // dynamic sized unicode string assumed to be UTF-8 encoded.
-    String(String),
+    FixedBytes(Vec<u8>),
+    Array(Vec<Parameter>),
+    FixedArray(Vec<Parameter>),
+    Tuple(Vec<Parameter>),
 }
 
 impl Parameter {
-    pub fn from_u8(param: u8) -> Self {
-        Self::Uint8([param])
-    }
-
-    pub fn to_u8(&self) -> Option<u8> {
+    /// Encodes strictly the data part of the underlying type.
+    ///
+    /// It will not check whether the parameter is dynamic or not, it simply
+    /// encodes the enclosed data in place. For some types, it first writes the
+    /// number of elements of the data in bytes. For further info, check the
+    /// Solidity [contract ABI
+    /// specification](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html#function-selector).
+    pub fn static_encode(&self) -> Vec<u8> {
         match self {
-            Parameter::Uint8(val) => Some(val[0]),
-            _ => None,
+            Self::Address(data) | Self::Bool(data) | Self::Int(data, _) | Self::Uint(data, _) => {
+                data.as_bytes().to_vec()
+            }
+            Self::FixedBytes(data) => right_pad_to_32_multiples(data).to_vec(),
+            Self::Bytes(data) | Self::String(data) => {
+                let mut encoded = left_pad_to_32_bytes(&data.len().to_be_bytes()).to_vec();
+                encoded.extend_from_slice(&right_pad_to_32_multiples(data));
+                encoded
+            }
+            Self::FixedArray(params) | Self::Tuple(params) => {
+                let mut encoded = Vec::<u8>::new();
+                for p in params {
+                    encoded.extend_from_slice(&p.static_encode());
+                }
+                encoded
+            }
+            Self::Array(_) => panic!("Array type cannot be statically encoded!"),
         }
     }
 
-    pub fn from_u16(param: u16) -> Self {
-        Self::Uint16(param.to_be_bytes())
-    }
-
-    pub fn to_u16(&self) -> Option<u16> {
+    /// Recursively checks wether a given parameter is dynamic.
+    ///
+    /// For example, a [`Tuple`](Parameter::Tuple) can be dynamic if any of its
+    /// contained types are dynamic. Additionally, a
+    /// [`FixedArray`](Parameter::FixedArray) is static if it contains values
+    /// with static type and dynamic otherwise.
+    pub fn is_dynamic(&self) -> bool {
         match self {
-            Parameter::Uint16(val) => Some(BigEndian::read_u16(val)),
-            _ => None,
+            Self::Array(_) | Self::Bytes(_) | Self::String(_) => true,
+            Self::FixedArray(parameters) | Self::Tuple(parameters) => {
+                parameters.iter().any(|x| x.is_dynamic())
+            }
+            _ => false,
         }
     }
 
-    pub fn from_u32(param: u32) -> Self {
-        Self::Uint32(param.to_be_bytes())
-    }
-
-    pub fn to_u32(&self) -> Option<u32> {
-        match self {
-            Parameter::Uint32(val) => Some(BigEndian::read_u32(val)),
-            _ => None,
-        }
-    }
-
-    pub fn from_u64(param: u64) -> Self {
-        Self::Uint64(U64::from(param))
-    }
-
-    pub fn to_u64(&self) -> Option<u64> {
-        match self {
-            Parameter::Uint64(val) => Some(val.as_u64()),
-            _ => None,
-        }
-    }
-
-    pub fn from_u128(param: u64) -> Self {
-        Self::Uint128(U128::from(param))
-    }
-
-    pub fn to_u128(&self) -> Option<u128> {
-        match self {
-            Parameter::Uint128(val) => Some(val.as_u128()),
-            _ => None,
-        }
-    }
-
-    pub fn from_u256(param: U256) -> Self {
-        Self::Uint256(U256::from(param))
-    }
-
-    pub fn to_u256(&self) -> Option<U256> {
-        match self {
-            Parameter::Uint256(val) => Some(*val),
-            _ => None,
-        }
-    }
-
-    pub fn from_i8(param: i8) -> Self {
-        Self::Int8([param as u8])
-    }
-
-    pub fn to_i8(&self) -> Option<i8> {
-        match self {
-            Parameter::Int8(val) => Some(val[0] as i8),
-            _ => None,
-        }
-    }
-
-    pub fn from_i16(param: i16) -> Self {
-        Self::Int16(param.to_be_bytes())
-    }
-
-    pub fn to_i16(&self) -> Option<i16> {
-        match self {
-            Parameter::Int16(val) => Some(BigEndian::read_i16(val)),
-            _ => None,
-        }
-    }
-
-    pub fn from_i32(param: i32) -> Self {
-        Self::Int32(param.to_be_bytes())
-    }
-
-    pub fn to_i32(&self) -> Option<i32> {
-        match self {
-            Parameter::Int32(val) => Some(BigEndian::read_i32(val)),
-            _ => None,
-        }
-    }
-
-    pub fn from_i64(param: i64) -> Self {
-        Self::Int64(U64::from(param))
-    }
-
-    pub fn to_i64(&self) -> Option<i64> {
-        match self {
-            Parameter::Int64(val) => Some(val.as_u64() as i64),
-            _ => None,
-        }
-    }
-
-    pub fn get_type(&self) -> ParameterType {
-        match self {
-            Self::Address(_) => ParameterType::Address,
-            Self::Bool(_) => ParameterType::Bool,
-            Self::Bytes(_) => ParameterType::Bytes,
-            Self::FixedBytes(data) => ParameterType::FixedBytes(data.len()),
-            Self::String(_) => ParameterType::String,
-            Self::Uint8(_) => ParameterType::Uint(8),
-            Self::Uint16(_) => ParameterType::Uint(16),
-            Self::Uint32(_) => ParameterType::Uint(32),
-            Self::Uint64(_) => ParameterType::Uint(64),
-            Self::Uint128(_) => ParameterType::Uint(128),
-            Self::Uint256(_) => ParameterType::Uint(256),
-            Self::Int8(_) => ParameterType::Int(8),
-            Self::Int16(_) => ParameterType::Int(16),
-            Self::Int32(_) => ParameterType::Int(32),
-            Self::Int64(_) => ParameterType::Int(64),
-            Self::Int128(_) => ParameterType::Int(128),
-            Self::Int256(_) => ParameterType::Int(256),
+    pub fn decode(parameter_type: &ParameterType, raw_bytes: &[u8]) -> (Self, usize) {
+        match parameter_type {
+            ParameterType::Address => {
+                let mut bytes = [0u8; 20];
+                bytes.copy_from_slice(&raw_bytes[12..]);
+                (Self::from(Address::from(bytes)), 32)
+            }
+            ParameterType::Bool => {
+                let mut bytes = [0u8; 32];
+                bytes.copy_from_slice(&raw_bytes);
+                (Self::Bool(H256::from(bytes)), 32)
+            }
+            ParameterType::Int(_) => {
+                let mut bytes = [0u8; 32];
+                bytes.copy_from_slice(&raw_bytes);
+                (Self::new_int(bytes, true), 32)
+            }
+            ParameterType::Uint(_) => {
+                let mut bytes = [0u8; 32];
+                bytes.copy_from_slice(&raw_bytes);
+                (Self::new_int(bytes, false), 32)
+            }
+            //ParameterType::String  => {
+            //    (Self::String(raw_bytes.to_vec()), )
+            //},
+            //ParameterType::Bytes  => {
+            //    Ok(Self::Bytes(raw_bytes.to_vec()))
+            //},
+            //ParameterType::FixedBytes(len) => {
+            //    Ok(Self::FixedBytes(raw_bytes.to_vec())
+            //},
+            //// TODO do we need more complicated types?
+            _ => unimplemented!(),
         }
     }
 }
@@ -173,68 +113,84 @@ mod test {
     use super::*;
 
     #[test]
-    fn correct_parameter_types() {
-        assert_eq!(
-            Parameter::Address(Address::zero()).get_type(),
-            ParameterType::Address
-        );
-        assert_eq!(Parameter::Bool(true).get_type(), ParameterType::Bool);
-        assert_eq!(
-            Parameter::Bytes(Vec::new()).get_type(),
-            ParameterType::Bytes
-        );
-        assert_eq!(
-            Parameter::FixedBytes(vec![0; 32]).get_type(),
-            ParameterType::FixedBytes(32)
-        );
-        assert_eq!(
-            Parameter::String("hello".to_owned()).get_type(),
-            ParameterType::String
-        );
-        assert_eq!(
-            Parameter::Uint8([0u8; 1]).get_type(),
-            ParameterType::Uint(8)
-        );
-        assert_eq!(
-            Parameter::Uint16([0u8; 2]).get_type(),
-            ParameterType::Uint(16)
-        );
-        assert_eq!(
-            Parameter::Uint32([0u8; 4]).get_type(),
-            ParameterType::Uint(32)
-        );
-        assert_eq!(
-            Parameter::Uint64(U64::zero()).get_type(),
-            ParameterType::Uint(64)
-        );
-        assert_eq!(
-            Parameter::Uint128(U128::zero()).get_type(),
-            ParameterType::Uint(128)
-        );
-        assert_eq!(
-            Parameter::Uint256(U256::zero()).get_type(),
-            ParameterType::Uint(256)
-        );
-        assert_eq!(Parameter::Int8([0u8; 1]).get_type(), ParameterType::Int(8));
-        assert_eq!(
-            Parameter::Int16([0u8; 2]).get_type(),
-            ParameterType::Int(16)
-        );
-        assert_eq!(
-            Parameter::Int32([0u8; 4]).get_type(),
-            ParameterType::Int(32)
-        );
-        assert_eq!(
-            Parameter::Int64(U64::zero()).get_type(),
-            ParameterType::Int(64)
-        );
-        assert_eq!(
-            Parameter::Int128(U128::zero()).get_type(),
-            ParameterType::Int(128)
-        );
-        assert_eq!(
-            Parameter::Int256(U256::zero()).get_type(),
-            ParameterType::Int(256)
-        );
+    #[rustfmt::skip]
+    fn parameter_encode() {
+        assert_eq!(Parameter::Address(H256::zero()).static_encode(), vec![0u8; 32]);
+        assert_eq!(Parameter::from("Hello, World!").static_encode(), vec![
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0x0d,
+            0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x57,
+            0x6f, 0x72, 0x6c, 0x64, 0x21, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ]); 
+        assert_eq!(Parameter::FixedArray(vec![
+                Parameter::Uint(H256::from_low_u64_be(0x4a), 8),
+                Parameter::Uint(H256::from_low_u64_be(0xff), 8),
+                Parameter::Uint(H256::from_low_u64_be(0xde), 8),
+        ]).static_encode(),
+        vec![
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0x4a, // first
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0xff, // second
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0xde, // third
+        ]);
     }
+
+    #[test]
+    fn parameter_is_dynamic() {
+        assert!(!Parameter::Address(H256::zero()).is_dynamic());
+        assert!(!Parameter::Bool(H256::zero()).is_dynamic());
+        assert!(Parameter::Bytes(Vec::new()).is_dynamic());
+        assert!(!Parameter::FixedBytes(Vec::new()).is_dynamic());
+        assert!(!Parameter::Uint(H256::zero(), 16).is_dynamic());
+        assert!(!Parameter::Int(H256::zero(), 32).is_dynamic());
+        assert!(Parameter::String(Vec::new()).is_dynamic());
+        assert!(Parameter::Array(vec![Parameter::Address(H256::zero()); 5]).is_dynamic());
+        assert!(Parameter::Array(vec![Parameter::Bytes(Vec::new())]).is_dynamic());
+        assert!(!Parameter::FixedArray(vec![Parameter::Uint(H256::zero(), 64); 3]).is_dynamic());
+        assert!(Parameter::FixedArray(vec![Parameter::String(Vec::new()); 2]).is_dynamic());
+        assert!(!Parameter::Tuple(vec![
+            Parameter::Address(H256::zero()),
+            Parameter::Uint(H256::zero(), 32),
+            Parameter::FixedBytes(Vec::new())
+        ])
+        .is_dynamic());
+        assert!(Parameter::Tuple(vec![
+            Parameter::FixedBytes(Vec::new()),
+            Parameter::Uint(H256::zero(), 32),
+            Parameter::String(Vec::new())
+        ])
+        .is_dynamic());
+        assert!(!Parameter::FixedArray(vec![
+            Parameter::FixedArray(vec![
+                Parameter::Int(
+                    H256::zero(),
+                    8
+                );
+                5
+            ]);
+            2
+        ])
+        .is_dynamic());
+        assert!(Parameter::Tuple(vec![
+            Parameter::FixedBytes(Vec::new()),
+            Parameter::Uint(H256::zero(), 32),
+            Parameter::FixedArray(vec![Parameter::String(Vec::new()); 3])
+        ])
+        .is_dynamic());
+    }
+
+    #[test]
+    fn decode_parameter() {}
 }

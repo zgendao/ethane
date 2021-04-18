@@ -6,11 +6,13 @@ use std::path::Path;
 use sha3::{Digest, Keccak256};
 use thiserror::Error;
 
-pub use function::{Function, StateMutability};
-pub use parameter::{Parameter, ParameterType};
-
 mod function;
 mod parameter;
+
+use function::Function;
+pub use function::StateMutability;
+pub use parameter::Parameter;
+use parameter::ParameterType;
 
 /// Parses a `.json` file containing ABI encoded Solidity functions.
 ///
@@ -64,56 +66,44 @@ impl Abi {
         self.parse_json(abi)
     }
 
-    pub fn get_state_mutability(&self, abi_call: &AbiCall) -> Option<StateMutability> {
-        if let Some(function) = self.functions.get(abi_call.function_name) {
+    pub fn get_state_mutability(&self, function_name: &str) -> Option<StateMutability> {
+        if let Some(function) = self.functions.get(function_name) {
             return function.state_mutability;
         }
 
         None
     }
 
-    /// Encodes a given [`AbiCall`] into a vector of bytes.
+    /// Encodes a function call according to Solidity's contract [ABI
+    /// specification](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html#function-selector).
     ///
-    /// The result's first 4 bytes are generated via a `Keccak256` hash of the
-    /// function signature. Check [Solidity's
-    /// documentation](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html)
-    /// for more info.
-    pub fn encode(&self, abi_call: &AbiCall) -> Result<Vec<u8>, AbiParserError> {
-        if let Some(function) = self.functions.get(abi_call.function_name) {
-            // Check whether the correct number of parameters were provided
-            if abi_call.parameters.len() != function.inputs.len() {
-                return Err(AbiParserError::MissingData(format!(
-                    "Wrong number of parameters were provided. Expected {}, found {}",
-                    function.inputs.len(),
-                    abi_call.parameters.len(),
-                )));
-            }
-
-            // Create function signature and hash
-            let input_type_str = function
-                .inputs
-                .iter()
-                .map(|input| input.parameter_type.as_abi_string())
-                .collect::<Vec<String>>()
-                .join(",");
-
-            let signature = format!("{}({})", abi_call.function_name, input_type_str);
-            let mut keccak = Keccak256::new();
-            keccak.update(signature);
-            // Take first 4 bytes of the Keccak hash
-            let mut hash = keccak.finalize()[0..4].to_vec();
-            // Append the encoded parameters to the hash
-            for (parameter, input) in abi_call.parameters.iter().zip(function.inputs.iter()) {
-                if parameter.get_type() != input.parameter_type {
+    /// If the given function is found in the parsed ABI file, the function
+    /// encodes the function signature and the input data provided in the form
+    /// of a [`Parameter`] vector.
+    pub fn encode(
+        &self,
+        function_name: &str,
+        parameters: Vec<Parameter>,
+    ) -> Result<Vec<u8>, AbiParserError> {
+        if let Some(function) = self.functions.get(function_name) {
+            let mut abi_arguments = Vec::<String>::with_capacity(parameters.len());
+            for (input, param) in function.inputs.iter().zip(parameters.iter()) {
+                if input.parameter_type.type_check(param) {
+                    abi_arguments.push(input.parameter_type.as_abi_string())
+                } else {
                     return Err(AbiParserError::InvalidAbiEncoding(format!(
-                        "Invalid parameter type supplied. Expected {:?}, found {:?}",
-                        input.parameter_type,
-                        parameter.get_type()
+                        "Invalid parameter type supplied. Expected {:?}",
+                        input.parameter_type
                     )));
                 }
-                hash.append(&mut parameter.encode());
             }
-
+            let signature = format!("{}({})", function_name, abi_arguments.join(","));
+            let mut hasher = Keccak256::new();
+            hasher.update(signature);
+            // Take first 4 bytes of the Keccak hash
+            let mut hash = hasher.finalize()[0..4].to_vec();
+            // Append the encoded parameters to the hash
+            parameter::encode_into(&mut hash, parameters);
             Ok(hash)
         } else {
             Err(AbiParserError::MissingData(
@@ -132,11 +122,12 @@ impl Abi {
         hash: &[u8],
     ) -> Result<Vec<Parameter>, AbiParserError> {
         if let Some(function) = self.functions.get(function_name) {
-            let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
+            //let mut start_index = 4_usize; // starting from 5th byte, since the first four is reserved
+            let mut start_index = 0;
             let mut parameters = Vec::<Parameter>::with_capacity(function.outputs.len());
             for output in &function.outputs {
                 let (parameter, i) =
-                    Parameter::decode(&output.parameter_type, &hash[start_index..])?;
+                    Parameter::decode(&output.parameter_type, &hash[start_index..]);
                 start_index += i;
                 parameters.push(parameter);
             }
@@ -150,103 +141,16 @@ impl Abi {
     }
 }
 
-/// An ABI call containing the called function's name and its input parameters.
-pub struct AbiCall<'a> {
-    pub function_name: &'a str,
-    pub parameters: Vec<Parameter>,
-}
-
 #[derive(Error, Debug)]
 pub enum AbiParserError {
     #[error("Couldn't open ABI file: {0}")]
-    FileIOError(#[from] std::io::Error),
+    FileIoError(#[from] std::io::Error),
     #[error("De-/Serialization error: {0}")]
     Serde(#[from] serde_json::Error),
     #[error("Missing data error: {0}")]
     MissingData(String),
     #[error("Invalid ABI encoding error: {0}")]
     InvalidAbiEncoding(String),
-}
-
-#[cfg(test)]
-mod tests {
-    use std::str::FromStr;
-
-    use ethereum_types::{Address, U256};
-    use hex_literal::hex;
-
-    use super::*;
-
-    #[test]
-    fn test_encode_bar() {
-        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
-
-        let mut abi = Abi::new();
-        abi.parse_file(path).expect("unable to parse abi");
-        let addr = Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap();
-        let hash = abi.encode(&AbiCall {
-            function_name: "bar",
-            parameters: vec![Parameter::Address(addr)],
-        });
-        let expected =
-            hex!("646ea56d00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a");
-        assert_eq!(hash.unwrap(), expected);
-    }
-
-    #[test]
-    fn test_encode_approve() {
-        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
-
-        let mut abi = Abi::new();
-        abi.parse_file(path).expect("unable to parse abi");
-        let hash = abi.encode(&AbiCall {
-            function_name: "approve",
-            parameters: vec![
-                Parameter::Address(
-                    Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
-                ),
-                Parameter::Uint256(U256::from_str("613").unwrap()),
-            ],
-        });
-        let expected =
-            hex!("095ea7b300000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a0000000000000000000000000000000000000000000000000000000000000613");
-        assert_eq!(hash.unwrap(), expected);
-    }
-
-    #[test]
-    fn test_encode_total_supply() {
-        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
-
-        let mut abi = Abi::new();
-        abi.parse_file(path).expect("unable to parse abi");
-        let hash = abi.encode(&AbiCall {
-            function_name: "totalSupply",
-            parameters: vec![],
-        });
-        let expected = hex!("18160DDD");
-        assert_eq!(hash.unwrap(), expected);
-    }
-
-    #[test]
-    fn test_encode_transfer_from() {
-        let path = Path::new("../ethane/test-helper/src/fixtures/foo.abi");
-
-        let mut abi = Abi::new();
-        abi.parse_file(path).expect("unable to parse abi");
-        let hash = abi.encode(&AbiCall {
-            function_name: "transferFrom",
-            parameters: vec![
-                Parameter::Address(
-                    Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
-                ),
-                Parameter::Address(
-                    Address::from_str("0x1A4C0439ba035DAcf0D573394107597CEEBF9FF8").unwrap(),
-                ),
-                Parameter::Uint256(U256::from_str("14DDD").unwrap()),
-            ],
-        });
-        let expected =
-            hex!("23b872dd00000000000000000000000095eda452256c1190947f9ba1fd19422f0120858a0000000000000000000000001a4c0439ba035dacf0d573394107597ceebf9ff80000000000000000000000000000000000000000000000000000000000014ddd");
-        assert_eq!(hash.unwrap(), expected);
-    }
+    #[error("Parameter type doesn't match the internal data type")]
+    TypeError,
 }

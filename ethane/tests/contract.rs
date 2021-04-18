@@ -1,5 +1,5 @@
 use ethane::contract::{CallOpts, CallResult, Caller};
-use ethane::types::{Address, U256};
+use ethane::types::{Address, H256, U256};
 use ethane::{Connection, Http};
 use ethane_abi::*;
 use std::path::Path;
@@ -31,13 +31,17 @@ fn test_eth_call_contract() {
         contract_address,
     );
 
-    let result = caller.call("balanceOf", vec![Parameter::Address(address)], None);
+    let result = caller.call(
+        "balanceOf",
+        vec![Parameter::from(Address::from(address))],
+        None,
+    );
     match result {
         CallResult::Transaction(_) => panic!("Should be eth_call"),
-        CallResult::Call(r) => {
-            assert_eq!(r[0].get_type(), ParameterType::Uint(256));
-            assert_eq!(r[0].to_u256().unwrap(), U256::from(1000000000));
-        }
+        CallResult::Call(r) => match r[0] {
+            Parameter::Uint(data, 256) => assert_eq!(data, H256::from_low_u64_be(1000000000_u64)),
+            _ => panic!("Invalid data received!"),
+        },
     }
 }
 
@@ -65,8 +69,8 @@ fn test_eth_call_contract_transfer() {
     let result = caller.call(
         "transfer",
         vec![
-            Parameter::Address(to_address),
-            Parameter::Uint256(U256::from(1000)),
+            Parameter::from(Address::from(to_address)),
+            Parameter::from(U256::from(1000)),
         ],
         Some(CallOpts {
             force_call_type: None,
@@ -77,14 +81,17 @@ fn test_eth_call_contract_transfer() {
         CallResult::Call(_) => panic!("Should be a transaction"),
         CallResult::Transaction(tx_hash) => {
             wait_for_transaction(&mut client, tx_hash);
-
-            let result = caller.call("balanceOf", vec![Parameter::Address(to_address)], None);
+            let result = caller.call(
+                "balanceOf",
+                vec![Parameter::from(Address::from(to_address))],
+                None,
+            );
             match result {
                 CallResult::Transaction(_) => panic!("Should be eth_call"),
-                CallResult::Call(r) => {
-                    assert_eq!(r[0].get_type(), ParameterType::Uint(256));
-                    assert_eq!(r[0].to_u256().unwrap(), U256::from(1000));
-                }
+                CallResult::Call(r) => match r[0] {
+                    Parameter::Uint(data, 256) => assert_eq!(data, H256::from_low_u64_be(1000_u64)),
+                    _ => panic!("Invalid data received!"),
+                },
             }
         }
     }

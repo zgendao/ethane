@@ -1,6 +1,6 @@
 use crate::types::{Address, Bytes, Call, TransactionRequest, H256};
 use crate::{rpc, Connection, Request};
-use ethane_abi::{Abi, AbiCall, Parameter, StateMutability};
+use ethane_abi::{Abi, Parameter, StateMutability};
 use std::path::Path;
 
 pub struct Caller<T: Request> {
@@ -63,12 +63,7 @@ where
         params: Vec<Parameter>,
         opts: Option<CallOpts>,
     ) -> CallResult {
-        let abi_call = &AbiCall {
-            function_name,
-            parameters: params,
-        };
-
-        let mut call_type = if let Some(m) = self.abi.get_state_mutability(abi_call) {
+        let mut call_type = if let Some(m) = self.abi.get_state_mutability(function_name) {
             match m {
                 StateMutability::Pure => CallType::Call,
                 StateMutability::View => CallType::Call,
@@ -87,7 +82,7 @@ where
             }
         }
 
-        let data = self.abi.encode(abi_call).unwrap();
+        let data = self.abi.encode(function_name, params).unwrap();
 
         match call_type {
             CallType::Transaction => self.eth_send_transaction(data, from_address),
