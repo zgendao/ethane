@@ -117,7 +117,7 @@ impl ConnectionNodeBundle<WebSocket> {
         let connection =
             Connection::new(WebSocket::new(&format!("ws://{}", process.address), None).unwrap());
         ConnectionNodeBundle {
-            connection: connection,
+            connection,
             process: Some(process),
         }
     }
@@ -128,7 +128,7 @@ impl ConnectionNodeBundle<Http> {
         let process = NodeProcess::new_http("0");
         let connection = Connection::new(Http::new(&format!("http://{}", process.address), None));
         ConnectionNodeBundle {
-            connection: connection,
+            connection,
             process: Some(process),
         }
     }
@@ -136,7 +136,7 @@ impl ConnectionNodeBundle<Http> {
     pub fn ganache() -> Self {
         let connection = Connection::new(Http::new("http://localhost:8545", None));
         ConnectionNodeBundle {
-            connection: connection,
+            connection,
             process: None,
         }
     }
@@ -148,7 +148,7 @@ impl ConnectionNodeBundle<Uds> {
         let process = NodeProcess::new_uds(None);
         let connection = Connection::new(Uds::new(&process.address).unwrap());
         ConnectionNodeBundle {
-            connection: connection,
+            connection,
             process: Some(process),
         }
     }
