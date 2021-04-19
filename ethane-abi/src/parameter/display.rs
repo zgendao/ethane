@@ -64,6 +64,17 @@ impl fmt::Display for Parameter {
                     bytes.copy_from_slice(&data[16..]);
                     write!(formatter, "{}", i128::from_be_bytes(bytes))
                 }
+                // TODO do some conversion based on 2's complement?
+                256 => write!(
+                    formatter,
+                    "signed: 0x{}",
+                    data.as_bytes()
+                        .iter()
+                        .map(|b| format!("{:02x}", b))
+                        .collect::<Vec<String>>()
+                        .join("")
+                ),
+
                 _ => panic!("Invalid number!"),
             },
             Self::Bytes(data) | Self::FixedBytes(data) => {
@@ -162,7 +173,10 @@ mod test {
         let expected = format!("{}", Parameter::from(i64::MIN));
         assert_eq!(&expected, "-9223372036854775808");
 
-        let expected = format!("{}", Parameter::new_int(&[1u8; 32], true));
-        assert_eq!(&expected, "-1");
+        let expected = format!("{}", Parameter::new_int([1u8; 32], true));
+        assert_eq!(
+            &expected,
+            "signed: 0x0101010101010101010101010101010101010101010101010101010101010101"
+        );
     }
 }
