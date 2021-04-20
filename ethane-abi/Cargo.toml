@@ -3,6 +3,7 @@ name = "ethane-abi"
 version = "1.0.0"
 authors = ["Mark Melczer <melczer7@gmail.com>", "PumpkinSeed <ferenc@ngen.ai>"]
 edition = "2018"
+description = "An alternative web3 abi parser library which aims the simplicity"
 repository = "https://github.com/zgendao/ethane"
 license = "MIT"
 keywords = ["web3", "ethereum", "jsonrpc", "rpc", "abi"]
