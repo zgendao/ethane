@@ -1,8 +1,13 @@
 [package]
 name = "ethane-abi"
-version = "0.1.0"
-authors = ["Mark Melczer <melczer7@gmail.com>"]
+version = "1.0.0"
+authors = ["Mark Melczer <melczer7@gmail.com>", "PumpkinSeed <ferenc@ngen.ai>"]
 edition = "2018"
+repository = "https://github.com/zgendao/ethane"
+license = "MIT"
+keywords = ["web3", "ethereum", "jsonrpc", "rpc", "abi"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
+readme = "README.md"
 
 [dependencies]
 byteorder = "1.4.3"

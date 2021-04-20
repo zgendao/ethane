@@ -1,10 +1,10 @@
 [package]
 name = "ethane"
-version = "0.1.1"
-authors = ["thojest <thojest@gmail.com>"]
+version = "1.0.0"
+authors = ["thojest <thojest@gmail.com>", "PumpkinSeed <ferenc@ngen.ai>"]
 edition = "2018"
 description = "An alternative web3 implementation with the aim of being slim and simple"
-repository = "https://github.com/thojest/ethane"
+repository = "https://github.com/zgendao/ethane"
 license = "MIT"
 keywords = ["web3", "ethereum", "jsonrpc", "rpc", "simple"]
 categories = ["cryptography::cryptocurrencies", "web-programming"]
