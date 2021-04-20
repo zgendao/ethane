@@ -8,7 +8,7 @@ repository = "https://github.com/zgendao/ethane"
 license = "MIT"
 keywords = ["web3", "ethereum", "jsonrpc", "rpc", "simple"]
 categories = ["cryptography::cryptocurrencies", "web-programming"]
-readme = "README.md"
+readme = "../README.md"
 
 [dependencies]
 ethane-abi = { path = "../ethane-abi"}
