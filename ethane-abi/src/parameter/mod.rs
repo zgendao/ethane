@@ -76,22 +76,24 @@ impl Parameter {
         match parameter_type {
             ParameterType::Address => {
                 let mut bytes = [0u8; 20];
-                bytes.copy_from_slice(&raw_bytes[12..]);
+                bytes.copy_from_slice(&raw_bytes[12..32]);
                 (Self::from(Address::from(bytes)), 32)
             }
             ParameterType::Bool => {
                 let mut bytes = [0u8; 32];
-                bytes.copy_from_slice(&raw_bytes);
+                bytes.copy_from_slice(&raw_bytes[..32]);
                 (Self::Bool(H256::from(bytes)), 32)
             }
             ParameterType::Int(_) => {
                 let mut bytes = [0u8; 32];
-                bytes.copy_from_slice(&raw_bytes);
+                bytes.copy_from_slice(&raw_bytes[..32]);
                 (Self::new_int(bytes, true), 32)
             }
             ParameterType::Uint(_) => {
                 let mut bytes = [0u8; 32];
-                bytes.copy_from_slice(&raw_bytes);
+                bytes.copy_from_slice(&raw_bytes[..32]);
+                println!("bytes len = {}", bytes.len());
+                println!("bytes = {:?}", bytes);
                 (Self::new_int(bytes, false), 32)
             }
             //ParameterType::String  => {
@@ -193,5 +195,29 @@ mod test {
     }
 
     #[test]
-    fn decode_parameter() {}
+    #[rustfmt::skip]
+    fn decode_parameter() {
+        let result = vec![
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0a, 0xff,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0b, 0xff,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0c, 0xff,
+        ];
+
+        let mut index = 0;
+        let (addr, bytes_read) = Parameter::decode(&ParameterType::Address, &result);
+        index += bytes_read;
+        let (a, bytes_read) = Parameter::decode(&ParameterType::Uint(16), &result[index..]);
+        index += bytes_read;
+        let (b, bytes_read) = Parameter::decode(&ParameterType::Uint(16), &result[index..]);
+        index += bytes_read;
+        let (c, bytes_read) = Parameter::decode(&ParameterType::Uint(16), &result[index..]);
+        index += bytes_read;
+
+        assert_eq!(index, 128);
+        assert_eq!(addr.to_string(), String::from("0xffffffffffffffffffffffffffffffffffffffff"));
+        assert_eq!(a.to_string(), String::from("2815"));
+        assert_eq!(b.to_string(), String::from("3071"));
+        assert_eq!(c.to_string(), String::from("3327"));
+    }
 }
