@@ -53,4 +53,14 @@ fn test_abi_encode() {
         0000000000000000000000000000000000000000000000000000000000014ddd"
     );
     assert_eq!(hash.unwrap(), expected);
+
+    let returned_parameters = abi.decode("getPrices", &[
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0a, 0xff,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0b, 0xff,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0c, 0xff,
+    ]).unwrap();
+
+    assert_eq!(returned_parameters[0].to_string(), String::from("2815"));
+    assert_eq!(returned_parameters[1].to_string(), String::from("3071"));
+    assert_eq!(returned_parameters[2].to_string(), String::from("3327"));
 }
