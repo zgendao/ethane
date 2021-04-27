@@ -9,7 +9,7 @@ impl fmt::Display for Parameter {
         match self {
             Self::Address(data) => write!(
                 formatter,
-                "Address(0x{})",
+                "0x{}",
                 data.as_bytes()[12..]
                     .iter()
                     .map(|c| format!("{:02x}", c))
@@ -67,7 +67,7 @@ impl fmt::Display for Parameter {
                 // TODO do some conversion based on 2's complement?
                 256 => write!(
                     formatter,
-                    "signed: 0x{}",
+                    "0x{}",
                     data.as_bytes()
                         .iter()
                         .map(|b| format!("{:02x}", b))
@@ -112,10 +112,7 @@ mod test {
                 Address::from_str("0x99429f64cf4d5837620dcc293c1a537d58729b68").unwrap()
             )
         );
-        assert_eq!(
-            &expected,
-            "Address(0x99429f64cf4d5837620dcc293c1a537d58729b68)"
-        );
+        assert_eq!(&expected, "0x99429f64cf4d5837620dcc293c1a537d58729b68");
 
         let expected = format!("{}", Parameter::from(true));
         assert_eq!(&expected, "true");
@@ -176,7 +173,7 @@ mod test {
         let expected = format!("{}", Parameter::new_int([1u8; 32], true));
         assert_eq!(
             &expected,
-            "signed: 0x0101010101010101010101010101010101010101010101010101010101010101"
+            "0x0101010101010101010101010101010101010101010101010101010101010101"
         );
     }
 }

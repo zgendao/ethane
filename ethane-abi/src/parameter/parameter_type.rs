@@ -98,19 +98,19 @@ impl ParameterType {
                 "uint" => Self::Uint(256),
                 "string" => Self::String,
                 param_type if param_type.starts_with("int") => {
-                    let len = usize::from_str_radix(&param_type[3..], 10).map_err(|e| {
+                    let len = (&param_type[3..]).parse::<usize>().map_err(|e| {
                         AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
                     })?;
                     Self::Int(len)
                 }
                 param_type if param_type.starts_with("uint") => {
-                    let len = usize::from_str_radix(&param_type[4..], 10).map_err(|e| {
+                    let len = (&param_type[4..]).parse::<usize>().map_err(|e| {
                         AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
                     })?;
                     Self::Uint(len)
                 }
                 param_type if param_type.starts_with("bytes") => {
-                    let len = usize::from_str_radix(&param_type[5..], 10).map_err(|e| {
+                    let len = (&param_type[5..]).parse::<usize>().map_err(|e| {
                         AbiParserError::InvalidAbiEncoding(format!("{}: {}", parsed_str, e))
                     })?;
                     Self::FixedBytes(len)

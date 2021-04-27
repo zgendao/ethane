@@ -73,5 +73,25 @@
             }
         ],
         "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [],
+        "name": "getPrices",
+        "outputs": [
+            {
+            	"name": "price0",
+            	"type": "uint256"
+            },
+            {
+            	"name": "price1",
+            	"type": "uint256"
+            },
+            {
+            	"name": "timestamp",
+            	"type": "uint256"
+            }
+        ],
+        "type": "function"
     }
 ]
