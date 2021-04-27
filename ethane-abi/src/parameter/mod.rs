@@ -92,8 +92,6 @@ impl Parameter {
             ParameterType::Uint(_) => {
                 let mut bytes = [0u8; 32];
                 bytes.copy_from_slice(&raw_bytes[..32]);
-                println!("bytes len = {}", bytes.len());
-                println!("bytes = {:?}", bytes);
                 (Self::new_int(bytes, false), 32)
             }
             //ParameterType::String  => {
