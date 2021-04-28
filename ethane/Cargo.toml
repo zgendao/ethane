@@ -1,6 +1,6 @@
 [package]
 name = "ethane"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["thojest <thojest@gmail.com>", "PumpkinSeed <ferenc@ngen.ai>"]
 edition = "2018"
 description = "An alternative web3 implementation with the aim of being slim and simple"
@@ -11,7 +11,7 @@ categories = ["cryptography::cryptocurrencies", "web-programming"]
 readme = "../README.md"
 
 [dependencies]
-ethane-abi = { path = "../ethane-abi", version = "1.0.0" }
+ethane-abi = { path = "../ethane-abi", version = "1.0.1" }
 ethereum-types = "0.11"
 funty = "~1.1.0"
 http = "0.2"
