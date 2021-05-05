@@ -1,3 +1,6 @@
-import * as wasm from "hello-wasm-pack";
+import * as wasm from "ethane-wasm";
 
-wasm.greet();
+// let ethane = wasm.new();
+let ethane = wasm.Ethane.new()
+ethane.ethRequestAccounts();
+// console.log(wasm);
