@@ -16,24 +16,12 @@ impl Ethane {
         }
     }
 
-    pub fn eth_request_accounts(&self, args: RequestArguments) -> Promise {
-        let req = <JsFuture as From<T: dyn Future>>>::from(self.provider.request(args));
-        future_to_promise(
-            async move {
-                let output = match req.await {
-                    Ok(_resolved) => {
-                        // match resolved.into_serde::<Info>() {
-                        //     Ok(val) => format!("{:?}", &val),
-                        //     Err(_) => "Deserialize error".to_string(),
-                        // }
-                        "response".to_string()
-                    }
-                    Err(_) => "Promise error".to_string(),
-                };
-                Ok(JsValue::from(output))
-            }
-        )
-        // let _res = self.provider.request(args).await;
+    pub fn eth_request_accounts(&self) -> Promise {
+        let args = RequestArguments {
+            method: "eth_requestAccounts".to_string(),
+            params: js_sys::Array::new(),
+        };
+        self.provider.request(args)
     }
 }
 
@@ -49,12 +37,12 @@ extern "C" {
     /// An EIP-1193 provider object. Available by convention at `window.ethereum`
     pub type Provider;
 
-    #[wasm_bindgen(catch, method)]
-    async fn request(_: &Provider, args: RequestArguments) -> Result<JsValue, JsValue>;
+    #[wasm_bindgen(method)]
+    fn request(_: &Provider, args: RequestArguments) -> Promise;
 }
 
 #[wasm_bindgen]
-struct RequestArguments {
+pub struct RequestArguments {
     method: String,
     params: js_sys::Array,
 }
