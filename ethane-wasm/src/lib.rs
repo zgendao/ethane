@@ -16,11 +16,11 @@ impl Ethane {
         }
     }
 
-    pub fn eth_request_accounts(&self) -> Promise {
-        let args = RequestArguments {
-            method: "eth_requestAccounts".to_string(),
-            params: js_sys::Array::new(),
-        };
+    pub fn eth_request_accounts(&self, args: RequestArguments) -> Promise {
+        // let args = RequestArguments {
+        //     method: "eth_requestAccounts".into(),
+        //     params: js_sys::Array::new(),
+        // };
         self.provider.request(args)
     }
 }
@@ -44,5 +44,26 @@ extern "C" {
 #[wasm_bindgen]
 pub struct RequestArguments {
     method: String,
-    params: js_sys::Array,
+    // pub method: js_sys::JsString,
+    // pub params: js_sys::Array,
+}
+
+#[wasm_bindgen]
+impl RequestArguments {
+    #[wasm_bindgen(getter)]
+    pub fn method(&self) -> String {
+        self.method.clone()
+    }
+
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        RequestArguments {
+            method: "eth_requestAccounts".to_string(),
+            // params: js_sys::Array::new(),
+        }
+    }
+
+    // pub fn set(&mut self, method: js_sys::JsString) {
+    //     self.method = method;
+    // }
 }
