@@ -1,9 +1,12 @@
 [package]
 name = "ethane-wasm"
 version = "0.1.0"
-authors = ["Mark Melczer <melczer7@gmail.com>"]
+authors = ["ZGEN <info@zgen.hu>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+getrandom = { version = "0.2.2", features = ["js"] }
+wasm-bindgen = "0.2.63"

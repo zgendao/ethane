@@ -4,3 +4,6 @@ Cargo.lock
 /test-helper/target
 /test-helper/Cargo.lock
 .env
+
+node_modules
+dist
