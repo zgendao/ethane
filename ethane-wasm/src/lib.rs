@@ -1,7 +1,8 @@
-use wasm_bindgen::{JsCast, prelude::*};
-use js_sys::Promise;
-use wasm_bindgen_futures::{future_to_promise, JsFuture};
 use std::future::Future;
+
+use js_sys::Promise;
+use wasm_bindgen::{JsCast, prelude::*};
+use wasm_bindgen_futures::{future_to_promise, JsFuture};
 
 #[wasm_bindgen]
 pub struct Ethane {
@@ -16,11 +17,11 @@ impl Ethane {
         }
     }
 
-    pub fn eth_request_accounts(&self, args: RequestArguments) -> Promise {
-        // let args = RequestArguments {
-        //     method: "eth_requestAccounts".into(),
-        //     params: js_sys::Array::new(),
-        // };
+    pub fn eth_request_accounts(&self) -> Promise {
+        let args = RequestArguments {
+            method: "eth_requestAccounts".to_string(),
+            params: js_sys::Array::new(),
+        };
         self.provider.request(args)
     }
 }
@@ -44,8 +45,7 @@ extern "C" {
 #[wasm_bindgen]
 pub struct RequestArguments {
     method: String,
-    // pub method: js_sys::JsString,
-    // pub params: js_sys::Array,
+    params: js_sys::Array,
 }
 
 #[wasm_bindgen]
@@ -55,15 +55,8 @@ impl RequestArguments {
         self.method.clone()
     }
 
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
-        RequestArguments {
-            method: "eth_requestAccounts".to_string(),
-            // params: js_sys::Array::new(),
-        }
+    #[wasm_bindgen(getter)]
+    pub fn params(&self) -> js_sys::Array {
+        self.params.clone()
     }
-
-    // pub fn set(&mut self, method: js_sys::JsString) {
-    //     self.method = method;
-    // }
 }
