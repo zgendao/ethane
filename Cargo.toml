@@ -2,6 +2,7 @@
 members = [
 	"ethane",
 	"ethane-abi",
+	"ethane-wasm",
 ]
 
 [profile.dev]
