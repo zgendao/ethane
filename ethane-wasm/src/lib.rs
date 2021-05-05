@@ -1,9 +1,6 @@
-use std::future::Future;
+use wasm_bindgen::prelude::*;
 
-use js_sys::Promise;
-use wasm_bindgen::{JsCast, prelude::*};
-use wasm_bindgen_futures::{future_to_promise, JsFuture};
-
+/*
 #[wasm_bindgen]
 pub struct Ethane {
     provider: Provider
@@ -58,5 +55,28 @@ impl RequestArguments {
     #[wasm_bindgen(getter)]
     pub fn params(&self) -> js_sys::Array {
         self.params.clone()
+    }
+}
+*/
+#[wasm_bindgen]
+pub struct EthaneClient {
+    client: ethane::Connection<ethane::Http>,
+}
+
+// TODO it seems we need a wrapper around each function :(
+#[wasm_bindgen]
+impl EthaneClient {
+    pub fn eth_protocol_version(&mut self) -> String {
+        self.client
+            .call(ethane::rpc::eth_protocol_version())
+            .unwrap()
+    }
+
+    pub fn eth_syncing(&mut self) -> bool {
+        let result = self.client.call(ethane::rpc::eth_syncing()).unwrap();
+        match result {
+            ethane::types::SyncInfo::Syncing(_) => true,
+            ethane::types::SyncInfo::NotSyncing(_) => false,
+        }
     }
 }

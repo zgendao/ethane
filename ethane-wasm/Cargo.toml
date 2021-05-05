@@ -8,6 +8,7 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+ethane = { path = "../ethane" }
 getrandom = { version = "0.2.2", features = ["js"] }
 wasm-bindgen = "0.2.63"
 wasm-bindgen-futures = "0.4.23"

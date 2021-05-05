@@ -38,6 +38,7 @@ mod web3;
 ///
 /// This is usually not directly needed and returned by the [functions](crate::rpc) which
 /// wrap the different namespaces. However, it is also possible to create custom Rpc structs.
+#[repr(C)]
 #[derive(Serialize, Debug)]
 pub struct Rpc<T: DeserializeOwned + Debug> {
     #[serde(rename = "jsonrpc")]
