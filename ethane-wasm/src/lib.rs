@@ -1,3 +1,4 @@
+use serde::de::DeserializeOwned;
 use wasm_bindgen::prelude::*;
 
 /*
@@ -38,7 +39,7 @@ extern "C" {
     #[wasm_bindgen(method)]
     fn request(_: &Provider, args: RequestArguments) -> Promise;
 }
-
+*/
 #[wasm_bindgen]
 pub struct RequestArguments {
     method: String,
@@ -57,26 +58,16 @@ impl RequestArguments {
         self.params.clone()
     }
 }
-*/
+
 #[wasm_bindgen]
-pub struct EthaneClient {
+pub struct Web3 {
     client: ethane::Connection<ethane::Http>,
 }
 
-// TODO it seems we need a wrapper around each function :(
 #[wasm_bindgen]
-impl EthaneClient {
-    pub fn eth_protocol_version(&mut self) -> String {
-        self.client
-            .call(ethane::rpc::eth_protocol_version())
-            .unwrap()
-    }
-
-    pub fn eth_syncing(&mut self) -> bool {
-        let result = self.client.call(ethane::rpc::eth_syncing()).unwrap();
-        match result {
-            ethane::types::SyncInfo::Syncing(_) => true,
-            ethane::types::SyncInfo::NotSyncing(_) => false,
-        }
+impl Web3 {
+    fn call(&mut self) {
+        // TODO: convert Request arguments to an RPC string.
+        self.client.call_raw("test");
     }
 }

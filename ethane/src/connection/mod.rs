@@ -58,6 +58,14 @@ where
             Err(ConnectionError::NoTicketId)
         }
     }
+
+    pub fn call_raw(&mut self, rpc_json: &str) -> Result<String, String> {
+        let result_data = self
+            .transport
+            .request(rpc_json.to_owned())
+            .map_err(|e| format!("Error: {}", e));
+        result_data
+    }
 }
 
 impl<T> Connection<T>
