@@ -48,6 +48,13 @@ pub struct RequestArguments {
 
 #[wasm_bindgen]
 impl RequestArguments {
+    #[wasm_bindgen(constructor)]
+    pub fn new(method: String, params: js_sys::Array) -> Self {
+        Self {
+            method,
+            params,
+        }
+    }
     #[wasm_bindgen(getter)]
     pub fn method(&self) -> String {
         self.method.clone()

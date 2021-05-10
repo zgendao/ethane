@@ -1,11 +1,5 @@
-import * as wasm from "ethane-wasm";
+import { RequestArguments, Web3 } from "ethane-wasm";
 
-let ethane = wasm.Ethane.new()
+let web3 = Web3.new("eth_someCall", ["0x1234567890123456789", "hello", "world"]);
 
-let res = async () =>  {
-    let resp = await ethane.eth_request_accounts()
-    return resp
-}
-
-console.log(res());
-
+console.log(web3.as_json_string())
