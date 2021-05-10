@@ -11,6 +11,5 @@ crate-type = ["cdylib", "rlib"]
 ethane = { path = "../ethane" }
 getrandom = { version = "0.2.2", features = ["js"] }
 js-sys = { version = "0.3.45" }
-serde = {version = "1", features = ["derive"]}
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"

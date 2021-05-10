@@ -1,4 +1,4 @@
-use serde::de::DeserializeOwned;
+use ethane::Request;
 use wasm_bindgen::prelude::*;
 
 /*
@@ -43,7 +43,7 @@ extern "C" {
 #[wasm_bindgen]
 pub struct RequestArguments {
     method: String,
-    params: js_sys::Array,
+    params: js_sys::Array, // NOTE Serialize is not implemented for js_sys::Array
 }
 
 #[wasm_bindgen]
@@ -57,17 +57,38 @@ impl RequestArguments {
     pub fn params(&self) -> js_sys::Array {
         self.params.clone()
     }
+
+    pub fn as_json_string(&self) -> String {
+        let id = 64; // TODO how to assign id
+        let param_vec = self
+            .params
+            .iter()
+            .map(|val| {
+                val.as_string()
+                    .unwrap_or_else(|| "Error: couldn't turn JsValue into String".to_owned())
+            })
+            .collect::<Vec<String>>();
+
+        format!(
+            "{{\"jsonrpc\":\"2.0\",\"method\":{:?},\"params\":{:?},\"id\":{}}}",
+            self.method, param_vec, id
+        )
+    }
 }
 
 #[wasm_bindgen]
 pub struct Web3 {
-    client: ethane::Connection<ethane::Http>,
+    client: ethane::Http,
 }
 
 #[wasm_bindgen]
 impl Web3 {
-    fn call(&mut self) {
-        // TODO: convert Request arguments to an RPC string.
-        self.client.call_raw("test");
+    pub fn call(&mut self, args: RequestArguments) -> String {
+        let result = self.client.request(args.as_json_string());
+        if let Ok(response) = result {
+            response
+        } else {
+            format!("Error: {:?}", result.err().unwrap())
+        }
     }
 }
