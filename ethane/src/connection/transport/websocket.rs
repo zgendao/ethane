@@ -2,7 +2,6 @@
 
 use super::super::{ConnectionError, Credentials, Request, Subscribe};
 
-use std::str::FromStr;
 use thiserror::Error;
 
 /// Wraps a websocket connection
@@ -14,20 +13,27 @@ pub struct WebSocket {
 
 impl WebSocket {
     pub fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, WebSocketError> {
-        let uri = http::Uri::from_str(address)?;
-
-        let mut request_builder = http::Request::get(&uri);
+        let mut request = reqwest::blocking::Request::new(
+            reqwest::Method::GET,
+            reqwest::Url::parse(address).map_err(|e| WebSocketError::Http(e.to_string()))?,
+        );
+        println!("{:?}", request.body());
 
         if let Some(ref credentials) = credentials {
-            let headers = request_builder
-                .headers_mut()
-                .ok_or(WebSocketError::Handshake)?;
-            headers.insert("Authorization", credentials.to_auth_string().parse()?);
+            request.headers_mut().insert(
+                "Authorization",
+                reqwest::header::HeaderValue::from_str(&credentials.to_auth_string())
+                    .map_err(|e| WebSocketError::Http(format!("parse error: {:?}", e)))?,
+            );
         }
-
-        let handshake_request = request_builder.body(())?;
-
-        let ws = tungstenite::connect(handshake_request)?;
+        let body = std::str::from_utf8(
+            request
+                .body()
+                .ok_or_else(|| WebSocketError::Http("failed to get request body".to_owned()))?
+                .as_bytes()
+                .ok_or_else(|| WebSocketError::Http("failed to read body as bytes".to_owned()))?,
+        ).unwrap();
+        let ws = tungstenite::connect(body)?;
         Ok(Self {
             address: address.to_owned(),
             credentials,
@@ -96,13 +102,13 @@ pub enum WebSocketError {
     #[error("WebSocket Error: {0}")]
     Tungstenite(#[from] tungstenite::Error),
     #[error("WebSocket Invalid Handshake Request Error: {0}")]
-    Http(#[from] http::Error),
+    Http(String),
     #[error("WebSocket Invalid Address Error: {0}")]
-    Url(#[from] http::uri::InvalidUri),
+    Url(String),
     #[error("WebSocket Handshake Header Error")]
     Handshake,
     #[error("WebSocket Error. Unable to parse credentials {0}")]
-    InvalidHeader(#[from] http::header::InvalidHeaderValue),
+    InvalidHeader(String),
 }
 
 #[cfg(test)]

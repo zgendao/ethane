@@ -15,7 +15,7 @@ ethane-abi = { path = "../ethane-abi", version = "1.0.1" }
 ethereum-types = "0.11"
 funty = "~1.1.0"
 hex = "0.4"
-http = "0.2"
+reqwest = { version = "0.11.3", features = ["blocking"] }
 serde = {version = "1", features = ["derive"]}
 serde_json = "1"
 thiserror = "1"
