@@ -3,6 +3,7 @@
 use super::super::{ConnectionError, Credentials, Request, Subscribe};
 
 use thiserror::Error;
+use tungstenite::handshake::client::Request as TungsteniteRequest;
 
 /// Wraps a websocket connection
 pub struct WebSocket {
@@ -13,27 +14,8 @@ pub struct WebSocket {
 
 impl WebSocket {
     pub fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, WebSocketError> {
-        let mut request = reqwest::blocking::Request::new(
-            reqwest::Method::GET,
-            reqwest::Url::parse(address).map_err(|e| WebSocketError::Http(e.to_string()))?,
-        );
-        println!("{:?}", request.body());
-
-        if let Some(ref credentials) = credentials {
-            request.headers_mut().insert(
-                "Authorization",
-                reqwest::header::HeaderValue::from_str(&credentials.to_auth_string())
-                    .map_err(|e| WebSocketError::Http(format!("parse error: {:?}", e)))?,
-            );
-        }
-        let body = std::str::from_utf8(
-            request
-                .body()
-                .ok_or_else(|| WebSocketError::Http("failed to get request body".to_owned()))?
-                .as_bytes()
-                .ok_or_else(|| WebSocketError::Http("failed to read body as bytes".to_owned()))?,
-        ).unwrap();
-        let ws = tungstenite::connect(body)?;
+        let request = create_handshake_request(address, &credentials).unwrap();
+        let ws = tungstenite::connect(request)?;
         Ok(Self {
             address: address.to_owned(),
             credentials,
@@ -96,6 +78,25 @@ impl Drop for WebSocket {
     }
 }
 
+fn create_handshake_request(
+    address: &str,
+    credentials: &Option<Credentials>,
+) -> Result<TungsteniteRequest, WebSocketError> {
+    let mut request = TungsteniteRequest::get(address)
+        .body(())
+        .map_err(|_| WebSocketError::Http(format!("Couldn't bind WS to address {}", address)))?;
+    if let Some(cred) = credentials {
+        request.headers_mut().insert(
+            "Authorization",
+            cred.to_auth_string()
+                .parse()
+                .map_err(|_| WebSocketError::Http("Couldn't parse auth string".to_string()))?,
+        );
+    }
+
+    Ok(request)
+}
+
 /// An error type collecting what can go wrong with a websocket
 #[derive(Debug, Error)]
 pub enum WebSocketError {
@@ -116,20 +117,6 @@ mod tests {
     use super::*;
     use std::net::{SocketAddr, TcpStream};
     use tungstenite::{accept, Message};
-
-    fn create_handshake_request(
-        uri: &http::Uri,
-        credentials: Option<Credentials>,
-    ) -> Result<http::Request<()>, WebSocketError> {
-        let mut req_builder = http::Request::get(uri);
-        if let Some(ref credentials) = credentials {
-            let headers = req_builder.headers_mut().ok_or(WebSocketError::Handshake)?;
-            headers.insert("Authorization", credentials.to_auth_string().parse()?);
-        }
-
-        let request = req_builder.body(())?;
-        Ok(request)
-    }
 
     fn spawn_websocket_server<F>(mut handle_ws_stream: F, port: u16)
     where
@@ -166,9 +153,9 @@ mod tests {
 
     #[test]
     fn handshake_request_with_credentials() {
-        let uri = http::Uri::from_static("localhost");
         let credentials = Credentials::Basic(String::from("YWJjOjEyMw=="));
-        let request = create_handshake_request(&uri, Some(credentials)).unwrap();
+        let request =
+            create_handshake_request("http://localhost:8000", &Some(credentials)).unwrap();
         assert_eq!(
             request.headers().get("Authorization").unwrap(),
             "Basic YWJjOjEyMw=="
@@ -177,10 +164,8 @@ mod tests {
 
     #[test]
     fn handshake_request_without_credentials() {
-        let uri = http::Uri::from_static("localhost");
-        let request = create_handshake_request(&uri, None).unwrap();
-        assert_eq!(request.method(), http::method::Method::GET);
-        assert_eq!(request.uri(), &uri);
+        let request = create_handshake_request("ws://localhost:8000", &None).unwrap();
+        assert_eq!(request.uri(), "ws://localhost:8000/");
     }
 
     #[test]
