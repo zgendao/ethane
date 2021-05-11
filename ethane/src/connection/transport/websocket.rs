@@ -2,7 +2,6 @@
 
 use super::super::{ConnectionError, Credentials, Request, Subscribe};
 
-use log::{debug, error, trace};
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -15,7 +14,6 @@ pub struct WebSocket {
 
 impl WebSocket {
     pub fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, WebSocketError> {
-        debug!("Initiating websocket connection to {}", address);
         let uri = http::Uri::from_str(address)?;
 
         let mut request_builder = http::Request::get(&uri);
@@ -28,13 +26,8 @@ impl WebSocket {
         }
 
         let handshake_request = request_builder.body(())?;
-        trace!(
-            "Built websocket handshake request: {:?}",
-            &handshake_request
-        );
 
         let ws = tungstenite::connect(handshake_request)?;
-        trace!("Handshake Response: {:?}", ws.1);
         Ok(Self {
             address: address.to_owned(),
             credentials,
@@ -52,19 +45,16 @@ impl WebSocket {
 
     fn read(&mut self) -> Result<tungstenite::Message, WebSocketError> {
         let message = self.websocket.read_message()?;
-        trace!("Reading from websocket: {}", &message);
         Ok(message)
     }
 
     fn write(&mut self, message: tungstenite::Message) -> Result<(), WebSocketError> {
-        trace!("Writing to websocket: {}", &message);
         self.websocket.write_message(message)?;
         Ok(())
     }
 
     fn close(&mut self) -> Result<(), WebSocketError> {
         use tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
-        debug!("Closing websocket connection");
         let close_frame = CloseFrame {
             code: CloseCode::Normal,
             reason: std::borrow::Cow::from("Finished"),
@@ -94,9 +84,8 @@ impl Subscribe for WebSocket {
 
 impl Drop for WebSocket {
     fn drop(&mut self) {
-        let close = self.close();
-        if let Err(err) = close {
-            error!("{}", err);
+        if self.close().is_err() {
+            println!("Error while closing websocket");
         }
     }
 }
@@ -133,7 +122,6 @@ mod tests {
         }
 
         let request = req_builder.body(())?;
-        trace!("Built websocket handshake request: {:?}", &request);
         Ok(request)
     }
 

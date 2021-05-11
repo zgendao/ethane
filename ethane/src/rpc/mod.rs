@@ -13,7 +13,6 @@
 //! Use these functions to generate [Rpc](Rpc) objects and pass them to the
 //! [call](crate::Connection::call) function of a [connection](crate::Connection).
 
-use log::error;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -76,9 +75,8 @@ impl<T: DeserializeOwned + Debug> Rpc<T> {
     }
 
     pub(crate) fn add_param<U: Serialize + Debug>(&mut self, parameter: U) {
-        match serde_json::to_value(&parameter) {
-            Ok(serialized_param) => self.params.push(serialized_param),
-            Err(err) => error!("Error during serialization: {}", err),
+        if let Ok(serialized_param) = serde_json::to_value(&parameter) {
+            self.params.push(serialized_param);
         }
     }
 }

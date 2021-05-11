@@ -2,7 +2,6 @@
 
 use super::super::{ConnectionError, Credentials, Request};
 
-use log::{debug, trace};
 use thiserror::Error;
 
 /// Wraps a http client
@@ -15,7 +14,6 @@ pub struct Http {
 
 impl Http {
     pub fn new(address: &str, credentials: Option<Credentials>) -> Self {
-        debug!("Binding http client to {}", address);
         Self {
             address: address.to_owned(),
             credentials,
@@ -37,14 +35,10 @@ impl Http {
 impl Request for Http {
     fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
         let request = self.prepare_json_request();
-        trace!("Sending request {:?} with body {}", &request, &cmd);
         let response = request.send_string(&cmd).map_err(HttpError::from)?;
         response
             .into_string()
-            .map(|resp| {
-                trace!("Received http response: {}", &resp);
-                resp
-            })
+            .map(|resp| resp)
             .map_err(|err| HttpError::from(err).into())
     }
 }

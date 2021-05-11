@@ -11,7 +11,6 @@ pub use transport::websocket::{WebSocket, WebSocketError};
 
 use crate::rpc::{sub::SubscriptionRequest, Rpc, RpcResponse};
 
-use log::{debug, info, trace};
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
@@ -47,9 +46,7 @@ where
         U: DeserializeOwned + std::fmt::Debug,
     {
         if let Some(id) = self.id_pool.pop_front() {
-            trace!("Using id {} for request", id);
             rpc.id = id;
-            debug!("Calling rpc method: {:?}", &rpc);
             self.id_pool.push_back(id);
             let result_data = self.transport.request(serde_json::to_string(&rpc)?)?;
             let result = serde_json::from_str::<RpcResponse<U>>(&result_data)?;
@@ -71,7 +68,6 @@ where
         &mut self,
         sub_request: SubscriptionRequest<U>,
     ) -> Result<Subscription<T, U>, ConnectionError> {
-        info!("Starting a new subscription");
         let mut connection = Connection {
             transport: self.transport.fork()?,
             id_pool: self.id_pool.clone(),

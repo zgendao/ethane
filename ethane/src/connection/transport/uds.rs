@@ -1,7 +1,6 @@
 //! Implementation of Unix domain socket transport (Unix only)
 
 use super::super::{ConnectionError, Request, Subscribe};
-use log::{debug, error, trace};
 use std::io::{BufRead, BufReader, Write};
 use std::net::Shutdown;
 use std::os::unix::net::UnixStream;
@@ -17,7 +16,6 @@ pub struct Uds {
 
 impl Uds {
     pub fn new(path: &str) -> Result<Self, UdsError> {
-        debug!("Opening connection to unix domain socket: {}", path);
         let write_stream = UnixStream::connect(path).map_err(UdsError::UdsInit)?;
         let read_stream = write_stream.try_clone().map_err(UdsError::UdsInit)?;
         Ok(Self {
@@ -36,14 +34,12 @@ impl Uds {
                 .map_err(UdsError::Read)?;
             let utf8_slice = str::from_utf8(&buffer).map_err(UdsError::Utf8)?;
             if utf8_slice.matches('{').count() == utf8_slice.matches('}').count() {
-                trace!("Reading from Unix domain socket: {}", utf8_slice);
                 break Ok(utf8_slice.to_string());
             }
         }
     }
 
     fn write(&mut self, message: String) -> Result<(), UdsError> {
-        trace!("Writing to Unix domain socket: {}", &message);
         let _write = self
             .write_stream
             .write_all(message.as_bytes())
@@ -75,10 +71,8 @@ impl Subscribe for Uds {
 
 impl Drop for Uds {
     fn drop(&mut self) {
-        debug!("Closing unix domain socket connection");
-        let close = self.write_stream.shutdown(Shutdown::Both);
-        if let Err(err) = close {
-            error!("{}", err);
+        if self.write_stream.shutdown(Shutdown::Both).is_err() {
+            println!("Error while closing UDS");
         }
     }
 }
