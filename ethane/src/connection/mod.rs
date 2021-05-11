@@ -4,7 +4,7 @@ mod transport;
 
 pub use credentials::Credentials;
 pub use subscription::{Subscription, SubscriptionError};
-pub use transport::http::{Http, HttpError};
+pub use transport::http::Http;
 #[cfg(target_family = "unix")]
 pub use transport::uds::{Uds, UdsError};
 pub use transport::websocket::{WebSocket, WebSocketError};
@@ -96,7 +96,7 @@ pub enum ConnectionError {
     #[error("{0}")]
     WebSocketError(#[from] WebSocketError),
     #[error("{0}")]
-    HttpError(#[from] HttpError),
+    HttpError(String),
     #[cfg(target_family = "unix")]
     #[error("{0}")]
     UdsError(#[from] UdsError),

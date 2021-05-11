@@ -1,15 +1,16 @@
 //! Implementation of http transport
 
-use super::super::{ConnectionError, Credentials, Request};
+use super::super::{ConnectionError, Credentials, Request as EthaneRequest};
 
-use thiserror::Error;
+use reqwest::blocking::Client;
+use reqwest::header::HeaderMap;
 
 /// Wraps a http client
 pub struct Http {
     /// The domain where requests are sent
     address: String,
     credentials: Option<Credentials>,
-    agent: ureq::Agent,
+    client: Client,
 }
 
 impl Http {
@@ -17,42 +18,35 @@ impl Http {
         Self {
             address: address.to_owned(),
             credentials,
-            agent: ureq::Agent::new(),
+            client: Client::new(),
         }
     }
 
-    fn prepare_json_request(&self) -> ureq::Request {
-        let mut request = self.agent.request("POST", &self.address);
+    fn json_request_headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
         if let Some(credentials) = &self.credentials {
-            request = request.set("Authorization", &credentials.to_auth_string());
+            headers.insert(
+                "Authorization",
+                credentials.to_auth_string().parse().unwrap(),
+            );
         }
-        request = request.set("Content-Type", "application/json");
-        request = request.set("Accept", "application/json");
-        request
+        headers.insert("Content-Type", "application/json".parse().unwrap());
+        headers.insert("Accept", "application/json".parse().unwrap());
+        headers
     }
 }
 
-impl Request for Http {
+impl EthaneRequest for Http {
     fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
-        let request = self.prepare_json_request();
-        let response = request.send_string(&cmd).map_err(HttpError::from)?;
-        response
-            .into_string()
-            .map(|resp| resp)
-            .map_err(|err| HttpError::from(err).into())
+        self.client
+            .post(&self.address)
+            .headers(self.json_request_headers())
+            .body(cmd)
+            .send()
+            .map_err(|e| ConnectionError::HttpError(e.to_string()))?
+            .text()
+            .map_err(|e| ConnectionError::HttpError(e.to_string()))
     }
-}
-
-/// An error type collecting what can go wrong with http requests
-#[allow(clippy::large_enum_variant)]
-#[derive(Debug, Error)]
-pub enum HttpError {
-    #[error("Http URI Error: {0}")]
-    Uri(String),
-    #[error("Http Response Parsing Error: {0}")]
-    Conversion(#[from] std::io::Error),
-    #[error("Http Send Request Error: {0}")]
-    UreqError(#[from] ureq::Error),
 }
 
 #[cfg(test)]
@@ -64,10 +58,10 @@ mod tests {
         let address = "http://127.0.0.1";
         let credentials = Credentials::Basic(String::from("check!"));
         let client = Http::new(address, Some(credentials));
-        let request = client.prepare_json_request();
+        let headers = client.json_request_headers();
 
-        assert_eq!(request.header("Authorization").unwrap(), "Basic check!");
-        assert_eq!(request.header("Content-Type").unwrap(), "application/json");
-        assert_eq!(request.header("Accept").unwrap(), "application/json");
+        assert_eq!(headers.get("Authorization").unwrap(), "Basic check!");
+        assert_eq!(headers.get("Content-Type").unwrap(), "application/json");
+        assert_eq!(headers.get("Accept").unwrap(), "application/json");
     }
 }

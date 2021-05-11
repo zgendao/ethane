@@ -10,8 +10,8 @@ pub enum Credentials {
 impl Credentials {
     pub fn to_auth_string(&self) -> String {
         match self {
-            Self::Bearer(token) => String::from("Bearer ") + &token,
-            Self::Basic(token) => String::from("Basic ") + &token,
+            Self::Bearer(token) => format!("Bearer {}", token),
+            Self::Basic(token) => format!("Basic {}", token),
         }
     }
 }
