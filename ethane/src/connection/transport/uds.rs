@@ -33,7 +33,7 @@ impl Uds {
             let _read_bytes = self
                 .read_stream
                 .read_until(b'}', &mut buffer)
-                .map_err(ConnectionError::Read)?;
+                .map_err(|e| ConnectionError::UdsError(e.to_string()))?;
             let utf8_slice =
                 str::from_utf8(&buffer).map_err(|e| ConnectionError::UdsError(e.to_string()))?;
             if utf8_slice.matches('{').count() == utf8_slice.matches('}').count() {
@@ -46,7 +46,7 @@ impl Uds {
         let _write = self
             .write_stream
             .write_all(message.as_bytes())
-            .map_err(ConnectionError::Write)?;
+            .map_err(|e| ConnectionError::UdsError(e.to_string()))?;
         let _flush = self
             .write_stream
             .flush()
@@ -59,21 +59,19 @@ impl Request for Uds {
     fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
         let _write = self.write(cmd)?;
         self.read_json()
-            .map_err(|e| ConnectionError::UdsError(e.to_string()))
     }
 }
 
 impl Subscribe for Uds {
     fn read_next(&mut self) -> Result<String, ConnectionError> {
         self.read_json()
-            .map_err(|e| ConnectionError::UdsError(e.to_string()))
     }
 
     fn fork(&self) -> Result<Self, ConnectionError>
     where
         Self: Sized,
     {
-        Self::new(&self.path).map_err(|e| ConnectionError::UdsError(e.to_string()))
+        Self::new(&self.path)
     }
 }
 

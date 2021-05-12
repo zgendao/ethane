@@ -22,11 +22,7 @@ pub struct Subscription<T: Subscribe + Request, U: DeserializeOwned + Debug> {
 impl<T: Subscribe + Request, U: DeserializeOwned + Debug> Subscription<T, U> {
     /// Yields the next item of this subscription.
     pub fn next_item(&mut self) -> Result<U, ConnectionError> {
-        let response = self
-            .connection
-            .transport
-            .read_next()
-            .map_err(|e| ConnectionError::SubscriptionError(e.to_string()))?;
+        let response = self.connection.transport.read_next()?;
         deserialize_from_sub(&response)
     }
 
@@ -41,15 +37,14 @@ impl<T: Subscribe + Request, U: DeserializeOwned + Debug> Drop for Subscription<
         match self.connection.call(eth_unsubscribe(self.id)) {
             Ok(true) => (),
             Ok(_) => println!("Unable to cancel subscription"),
-            Err(err) => println!("{}", err),
+            Err(err) => println!("{:?}", err),
         }
     }
 }
 
-fn deserialize_from_sub<U: DeserializeOwned + Debug>(
-    response: &str,
-) -> Result<U, SubscriptionError> {
-    let value: serde_json::Value = serde_json::from_str(response)?;
+fn deserialize_from_sub<U: DeserializeOwned + Debug>(response: &str) -> Result<U, ConnectionError> {
+    let value: serde_json::Value =
+        serde_json::from_str(response).map_err(|e| ConnectionError::Serde(e.to_string()))?;
     serde_json::from_value::<U>(value["params"]["result"].clone())
         .map_err(|e| ConnectionError::SubscriptionError(e.to_string()))
 }

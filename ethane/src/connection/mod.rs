@@ -3,7 +3,7 @@ mod subscription;
 mod transport;
 
 pub use credentials::Credentials;
-pub use subscription::{Subscription, SubscriptionError};
+pub use subscription::Subscription;
 pub use transport::http::Http;
 #[cfg(target_family = "unix")]
 pub use transport::uds::Uds;
@@ -47,8 +47,11 @@ where
         if let Some(id) = self.id_pool.pop_front() {
             rpc.id = id;
             self.id_pool.push_back(id);
-            let result_data = self.transport.request(serde_json::to_string(&rpc)?)?;
-            let result = serde_json::from_str::<RpcResponse<U>>(&result_data)?;
+            let result_data = self.transport.request(
+                serde_json::to_string(&rpc).map_err(|e| ConnectionError::Serde(e.to_string()))?,
+            )?;
+            let result = serde_json::from_str::<RpcResponse<U>>(&result_data)
+                .map_err(|e| ConnectionError::Serde(e.to_string()))?;
             Ok(result.result)
         } else {
             Err(ConnectionError::NoTicketId)

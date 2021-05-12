@@ -1,6 +1,6 @@
 use ethane::rpc::{sub::SubscriptionRequest, Rpc};
 use ethane::{
-    Connection, ConnectionError, Http, Request, Subscribe, Subscription, SubscriptionError,
+    Connection, ConnectionError, Http, Request, Subscribe, Subscription,
     WebSocket,
 };
 use regex::{Regex, RegexBuilder};
@@ -66,25 +66,16 @@ impl ConnectionWrapper {
             _ => panic!("Subscription not supported for this transport"),
         }
     }
-
-    //pub fn get<T: Request>(self) -> Connection<T> {
-    //    match self {
-    //        Self::Websocket(connection) => connection.connection,
-    //        Self::Http(connection) => connection.connection,
-    //        #[cfg(target_family = "unix")]
-    //        Self::Uds(connection) => connection.connection,
-    //    }
-    //}
 }
 
 pub trait DynSubscription<U: DeserializeOwned + Debug> {
-    fn next_item(&mut self) -> Result<U, SubscriptionError>;
+    fn next_item(&mut self) -> Result<U, ConnectionError>;
 }
 
 impl<T: Subscribe + Request, U: DeserializeOwned + Debug> DynSubscription<U>
     for Subscription<T, U>
 {
-    fn next_item(&mut self) -> Result<U, SubscriptionError> {
+    fn next_item(&mut self) -> Result<U, ConnectionError> {
         self.next_item()
     }
 }

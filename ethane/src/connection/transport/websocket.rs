@@ -13,7 +13,8 @@ pub struct WebSocket {
 impl WebSocket {
     pub fn new(address: &str, credentials: Option<Credentials>) -> Result<Self, ConnectionError> {
         let request = create_handshake_request(address, &credentials).unwrap();
-        let ws = tungstenite::connect(request)?;
+        let ws = tungstenite::connect(request)
+            .map_err(|e| ConnectionError::WebSocketError(e.to_string()))?;
         Ok(Self {
             address: address.to_owned(),
             credentials,
@@ -30,12 +31,17 @@ impl WebSocket {
     }
 
     fn read(&mut self) -> Result<tungstenite::Message, ConnectionError> {
-        let message = self.websocket.read_message()?;
+        let message = self
+            .websocket
+            .read_message()
+            .map_err(|e| ConnectionError::WebSocketError(e.to_string()))?;
         Ok(message)
     }
 
     fn write(&mut self, message: tungstenite::Message) -> Result<(), ConnectionError> {
-        self.websocket.write_message(message)?;
+        self.websocket
+            .write_message(message)
+            .map_err(|e| ConnectionError::WebSocketError(e.to_string()))?;
         Ok(())
     }
 
@@ -45,10 +51,12 @@ impl WebSocket {
             code: CloseCode::Normal,
             reason: std::borrow::Cow::from("Finished"),
         };
-        self.websocket.close(Some(close_frame))?;
+        self.websocket
+            .close(Some(close_frame))
+            .map_err(|e| ConnectionError::WebSocketError(e.to_string()))?;
         self.websocket
             .write_pending()
-            .map_err(ConnectionError::from)
+            .map_err(|e| ConnectionError::WebSocketError(e.to_string()))
     }
 }
 
@@ -57,7 +65,6 @@ impl Request for WebSocket {
         let write_msg = tungstenite::Message::Text(cmd);
         self.write(write_msg)?;
         self.read_message()
-            .map_err(|e| ConnectionError::WebSocketError(e.to_string()))
     }
 }
 
@@ -68,7 +75,6 @@ impl Subscribe for WebSocket {
 
     fn fork(&self) -> Result<Self, ConnectionError> {
         Self::new(&self.address, self.credentials.clone())
-            .map_err(|e| ConnectionError::WebSocketError(e.to_string()))
     }
 }
 
