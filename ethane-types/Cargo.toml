@@ -1,9 +1,5 @@
 [package]
 name = "ethane-types"
 version = "0.1.0"
-authors = ["Mark Melczer <melczer7@gmail.com>"]
+authors = ["ZGEN <info@zgen.hu>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
