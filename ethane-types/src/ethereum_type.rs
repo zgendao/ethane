@@ -1,7 +1,7 @@
 use std::array::TryFromSliceError;
 use std::convert::{From, TryFrom, TryInto};
 
-//use crate::be_bytes::BeBytes;
+use crate::be_bytes::BeBytes;
 
 pub struct EthereumType<const N: usize>([u8; N]);
 
@@ -27,107 +27,14 @@ impl<const N: usize> EthereumType<N> {
     pub fn into_bytes(self) -> [u8; N] {
         self.0
     }
-}
 
-/*
-impl<const N: usize, const L: usize> TryFrom<&dyn BeBytes<L>> for EthereumType<N> {
-    type Error = TryFromPrimitiveError;
-
-    fn try_from(value: &dyn BeBytes<L>) -> Result<Self, Self::Error> {
+    #[inline]
+    pub fn try_from_int<const L: usize>(
+        value: &dyn BeBytes<L>,
+    ) -> Result<Self, TryFromPrimitiveError> {
         if N >= L {
             let mut data = [0_u8; N];
             data[N - L..].copy_from_slice(&value.be_bytes()[..]);
-            Ok(Self(data))
-        } else {
-            Err(TryFromPrimitiveError(format!(
-                "Data does not fit into {} bytes",
-                N
-            )))
-        }
-    }
-}
-*/
-
-impl<const N: usize> TryFrom<u8> for EthereumType<N> {
-    type Error = TryFromPrimitiveError;
-
-    #[inline]
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        if N >= 1 {
-            let mut data = [0_u8; N];
-            data[N - 1..].copy_from_slice(&value.to_be_bytes()[..]);
-            Ok(Self(data))
-        } else {
-            Err(TryFromPrimitiveError(format!(
-                "Data does not fit into {} bytes",
-                N
-            )))
-        }
-    }
-}
-
-impl<const N: usize> TryFrom<u16> for EthereumType<N> {
-    type Error = TryFromPrimitiveError;
-
-    #[inline]
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
-        if N >= 2 {
-            let mut data = [0_u8; N];
-            data[N - 2..].copy_from_slice(&value.to_be_bytes()[..]);
-            Ok(Self(data))
-        } else {
-            Err(TryFromPrimitiveError(format!(
-                "Data does not fit into {} bytes",
-                N
-            )))
-        }
-    }
-}
-
-impl<const N: usize> TryFrom<u32> for EthereumType<N> {
-    type Error = TryFromPrimitiveError;
-
-    #[inline]
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        if N >= 4 {
-            let mut data = [0_u8; N];
-            data[N - 4..].copy_from_slice(&value.to_be_bytes()[..]);
-            Ok(Self(data))
-        } else {
-            Err(TryFromPrimitiveError(format!(
-                "Data does not fit into {} bytes",
-                N
-            )))
-        }
-    }
-}
-
-impl<const N: usize> TryFrom<u64> for EthereumType<N> {
-    type Error = TryFromPrimitiveError;
-
-    #[inline]
-    fn try_from(value: u64) -> Result<Self, Self::Error> {
-        if N >= 8 {
-            let mut data = [0_u8; N];
-            data[N - 8..].copy_from_slice(&value.to_be_bytes()[..]);
-            Ok(Self(data))
-        } else {
-            Err(TryFromPrimitiveError(format!(
-                "Data does not fit into {} bytes",
-                N
-            )))
-        }
-    }
-}
-
-impl<const N: usize> TryFrom<u128> for EthereumType<N> {
-    type Error = TryFromPrimitiveError;
-
-    #[inline]
-    fn try_from(value: u128) -> Result<Self, Self::Error> {
-        if N >= 16 {
-            let mut data = [0_u8; N];
-            data[N - 16..].copy_from_slice(&value.to_be_bytes()[..]);
             Ok(Self(data))
         } else {
             Err(TryFromPrimitiveError(format!(
@@ -235,31 +142,49 @@ mod test {
 
     #[test]
     fn try_u256_from_primitives() {
-        let uint = EthereumType::<32>::try_from(123_u8).unwrap();
+        let uint = EthereumType::<32>::try_from_int(&123_u8).unwrap();
         assert_eq!(
             uint.to_string(),
             "0x000000000000000000000000000000000000000000000000000000000000007b"
         );
 
-        let uint = EthereumType::<32>::try_from(0x45fa_u16).unwrap();
+        let int = EthereumType::<32>::try_from_int(&-123_i8).unwrap();
+        assert_eq!(
+            int.to_string(),
+            "0x0000000000000000000000000000000000000000000000000000000000000085"
+        );
+
+        let uint = EthereumType::<32>::try_from_int(&0x45fa_u16).unwrap();
         assert_eq!(
             uint.to_string(),
             "0x00000000000000000000000000000000000000000000000000000000000045fa"
         );
 
-        let uint = EthereumType::<32>::try_from(0x2bc45fa_u32).unwrap();
+        let int = EthereumType::<32>::try_from_int(&-0x45fa_i16).unwrap();
+        assert_eq!(
+            int.to_string(),
+            "0x000000000000000000000000000000000000000000000000000000000000ba06"
+        );
+
+        let uint = EthereumType::<32>::try_from_int(&0x2bc45fa_u32).unwrap();
         assert_eq!(
             uint.to_string(),
             "0x0000000000000000000000000000000000000000000000000000000002bc45fa"
         );
 
-        let uint = EthereumType::<32>::try_from(0xfff2bc45fa_u64).unwrap();
+        let int = EthereumType::<32>::try_from_int(&-0x2bc45fa_i32).unwrap();
+        assert_eq!(
+            int.to_string(),
+            "0x00000000000000000000000000000000000000000000000000000000fd43ba06"
+        );
+
+        let uint = EthereumType::<32>::try_from_int(&0xfff2bc45fa_u64).unwrap();
         assert_eq!(
             uint.to_string(),
             "0x000000000000000000000000000000000000000000000000000000fff2bc45fa"
         );
 
-        let uint = EthereumType::<32>::try_from(0xbbdeccaafff2bc45fa_u128).unwrap();
+        let uint = EthereumType::<32>::try_from_int(&0xbbdeccaafff2bc45fa_u128).unwrap();
         assert_eq!(
             uint.to_string(),
             "0x0000000000000000000000000000000000000000000000bbdeccaafff2bc45fa"
@@ -268,10 +193,10 @@ mod test {
 
     #[test]
     fn try_from_too_large_primitive() {
-        let uint = EthereumType::<0>::try_from(123_u8);
+        let uint = EthereumType::<0>::try_from_int(&123_u8);
         assert!(uint.is_err());
 
-        let uint = EthereumType::<8>::try_from(0xbbdeccaafff2bc45fa_u128);
+        let uint = EthereumType::<8>::try_from_int(&0xbbdeccaafff2bc45fa_u128);
         assert!(uint.is_err());
         assert_eq!(
             uint.err().unwrap().0,
