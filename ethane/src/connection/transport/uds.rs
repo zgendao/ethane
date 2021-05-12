@@ -5,7 +5,6 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::Shutdown;
 use std::os::unix::net::UnixStream;
 use std::str;
-use thiserror::Error;
 
 /// An interprocess connection using a unix domain socket (Unix only)
 pub struct Uds {
@@ -15,9 +14,12 @@ pub struct Uds {
 }
 
 impl Uds {
-    pub fn new(path: &str) -> Result<Self, UdsError> {
-        let write_stream = UnixStream::connect(path).map_err(UdsError::UdsInit)?;
-        let read_stream = write_stream.try_clone().map_err(UdsError::UdsInit)?;
+    pub fn new(path: &str) -> Result<Self, ConnectionError> {
+        let write_stream =
+            UnixStream::connect(path).map_err(|e| ConnectionError::UdsError(e.to_string()))?;
+        let read_stream = write_stream
+            .try_clone()
+            .map_err(|e| ConnectionError::UdsError(e.to_string()))?;
         Ok(Self {
             path: path.to_owned(),
             read_stream: BufReader::new(read_stream),
@@ -25,26 +27,30 @@ impl Uds {
         })
     }
 
-    fn read_json(&mut self) -> Result<String, UdsError> {
+    fn read_json(&mut self) -> Result<String, ConnectionError> {
         let mut buffer = Vec::<u8>::new();
         loop {
             let _read_bytes = self
                 .read_stream
                 .read_until(b'}', &mut buffer)
-                .map_err(UdsError::Read)?;
-            let utf8_slice = str::from_utf8(&buffer).map_err(UdsError::Utf8)?;
+                .map_err(ConnectionError::Read)?;
+            let utf8_slice =
+                str::from_utf8(&buffer).map_err(|e| ConnectionError::UdsError(e.to_string()))?;
             if utf8_slice.matches('{').count() == utf8_slice.matches('}').count() {
                 break Ok(utf8_slice.to_string());
             }
         }
     }
 
-    fn write(&mut self, message: String) -> Result<(), UdsError> {
+    fn write(&mut self, message: String) -> Result<(), ConnectionError> {
         let _write = self
             .write_stream
             .write_all(message.as_bytes())
-            .map_err(UdsError::Write)?;
-        let _flush = self.write_stream.flush().map_err(UdsError::Write)?;
+            .map_err(ConnectionError::Write)?;
+        let _flush = self
+            .write_stream
+            .flush()
+            .map_err(|e| ConnectionError::UdsError(e.to_string()))?;
         Ok(())
     }
 }
@@ -52,20 +58,22 @@ impl Uds {
 impl Request for Uds {
     fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
         let _write = self.write(cmd)?;
-        self.read_json().map_err(ConnectionError::UdsError)
+        self.read_json()
+            .map_err(|e| ConnectionError::UdsError(e.to_string()))
     }
 }
 
 impl Subscribe for Uds {
     fn read_next(&mut self) -> Result<String, ConnectionError> {
-        self.read_json().map_err(ConnectionError::UdsError)
+        self.read_json()
+            .map_err(|e| ConnectionError::UdsError(e.to_string()))
     }
 
     fn fork(&self) -> Result<Self, ConnectionError>
     where
         Self: Sized,
     {
-        Self::new(&self.path).map_err(ConnectionError::from)
+        Self::new(&self.path).map_err(|e| ConnectionError::UdsError(e.to_string()))
     }
 }
 
@@ -75,21 +83,6 @@ impl Drop for Uds {
             println!("Error while closing UDS");
         }
     }
-}
-
-/// An error type collecting what can go wrong with unix domain sockets
-#[derive(Debug, Error)]
-pub enum UdsError {
-    #[error("Unix Domain Socket Init Error: {0}")]
-    UdsInit(std::io::Error),
-    #[error("Unix Domain Socket Close Error: {0}")]
-    UdsClose(std::io::Error),
-    #[error("Unix Domain Socket Read Error: {0}")]
-    Read(std::io::Error),
-    #[error("Unix Domain Socket Utf8 Error: {0}")]
-    Utf8(std::str::Utf8Error),
-    #[error("Unix Domain Socket Write Error: {0}")]
-    Write(std::io::Error),
 }
 
 #[cfg(test)]

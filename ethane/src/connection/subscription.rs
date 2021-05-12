@@ -6,7 +6,6 @@ use crate::types::U128;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use thiserror::Error;
 
 /// An active subscription
 ///
@@ -22,8 +21,12 @@ pub struct Subscription<T: Subscribe + Request, U: DeserializeOwned + Debug> {
 
 impl<T: Subscribe + Request, U: DeserializeOwned + Debug> Subscription<T, U> {
     /// Yields the next item of this subscription.
-    pub fn next_item(&mut self) -> Result<U, SubscriptionError> {
-        let response = self.connection.transport.read_next()?;
+    pub fn next_item(&mut self) -> Result<U, ConnectionError> {
+        let response = self
+            .connection
+            .transport
+            .read_next()
+            .map_err(|e| ConnectionError::SubscriptionError(e.to_string()))?;
         deserialize_from_sub(&response)
     }
 
@@ -47,17 +50,6 @@ fn deserialize_from_sub<U: DeserializeOwned + Debug>(
     response: &str,
 ) -> Result<U, SubscriptionError> {
     let value: serde_json::Value = serde_json::from_str(response)?;
-    serde_json::from_value::<U>(value["params"]["result"].clone()).map_err(SubscriptionError::from)
-}
-
-/// An error type collecting what can go wrong during a subscription
-#[allow(clippy::large_enum_variant)]
-#[derive(Debug, Error)]
-pub enum SubscriptionError {
-    #[error("Subscription Transport Error {0}")]
-    Read(#[from] ConnectionError),
-    #[error("Subscription Error during canceling subscription")]
-    Cancel,
-    #[error("Subscription De-/Serialization Error: {0}")]
-    Serde(#[from] serde_json::Error),
+    serde_json::from_value::<U>(value["params"]["result"].clone())
+        .map_err(|e| ConnectionError::SubscriptionError(e.to_string()))
 }
