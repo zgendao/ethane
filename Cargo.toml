@@ -2,6 +2,7 @@
 members = [
 	"ethane",
 	"ethane-abi",
+	"ethane-types",
 	"ethane-wasm",
 ]
 
