@@ -194,7 +194,8 @@ mod test {
     #[test]
     fn try_address_from_str() {
         let test_str = "0x1234567890abcdeffedcba098765432100007777";
-        let non_prefixed_address = EthereumType::<20>::try_from(test_str.strip_prefix("0x").unwrap()).unwrap();
+        let non_prefixed_address =
+            EthereumType::<20>::try_from(test_str.strip_prefix("0x").unwrap()).unwrap();
         let zerox_prefixed_address = EthereumType::<20>::try_from(test_str).unwrap();
 
         let non_prefixed_string = non_prefixed_address.to_string();
@@ -269,9 +270,22 @@ mod test {
     fn try_from_too_large_primitive() {
         let uint = EthereumType::<0>::try_from(123_u8);
         assert!(uint.is_err());
-        
+
         let uint = EthereumType::<8>::try_from(0xbbdeccaafff2bc45fa_u128);
         assert!(uint.is_err());
-        assert_eq!(uint.err().unwrap().0, "Data does not fit into 8 bytes".to_owned());
+        assert_eq!(
+            uint.err().unwrap().0,
+            "Data does not fit into 8 bytes".to_owned()
+        );
+    }
+
+    #[test]
+    fn from_valid_fixed_array() {
+        EthereumType::<1>::from([12_u8]);
+        EthereumType::<2>::from([12_u8; 2]);
+        EthereumType::<20>::from([12_u8; 20]);
+        EthereumType::<32>::from([12_u8; 32]);
+        EthereumType::<64>::from([12_u8; 64]);
+        assert!(true);
     }
 }
