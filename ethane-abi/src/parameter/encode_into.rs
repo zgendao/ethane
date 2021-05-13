@@ -40,9 +40,8 @@ pub fn encode_into(hash: &mut Vec<u8>, parameters: Vec<Parameter>) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use ethereum_types::U256;
+    use ethane_types::U256;
     use hex_literal::hex;
-    use std::str::FromStr;
 
     #[test]
     #[rustfmt::skip]
@@ -103,9 +102,9 @@ mod test {
             Parameter::new_bytes(b"dave"),
             Parameter::from(true),
             Parameter::Array(vec![
-                Parameter::from(U256::from_dec_str("1").unwrap()),
-                Parameter::from(U256::from_dec_str("2").unwrap()),
-                Parameter::from(U256::from_dec_str("3").unwrap()),
+                Parameter::from(U256::from_int_unchecked(1_u8)),
+                Parameter::from(U256::from_int_unchecked(2_u8)),
+                Parameter::from(U256::from_int_unchecked(3_u8)),
             ])
         ]);
         assert_eq!(hash, vec![
@@ -154,10 +153,10 @@ mod test {
     fn fourth_contract_abi() {
         let mut hash = vec![0x8b, 0xe6, 0x52, 0x46];
         encode_into(&mut hash, vec![
-            Parameter::from(U256::from_str("123").unwrap()),
+            Parameter::from(U256::from_int_unchecked(123_u16)),
             Parameter::Array(vec![
-               Parameter::from(U256::from_str("456").unwrap()), // hex
-               Parameter::from(U256::from_str("789").unwrap()), // hex
+               Parameter::from(U256::from_int_unchecked(456_u16)), // hex
+               Parameter::from(U256::from_int_unchecked(789_u16)), // hex
             ]),
             Parameter::new_fixed_bytes(b"1234567890"),
             Parameter::new_bytes(b"Hello, world!"),
@@ -184,11 +183,11 @@ mod test {
         encode_into(&mut hash, vec![
             Parameter::Array(vec![
                 Parameter::Array(vec![
-                    Parameter::from(U256::from_dec_str("1").unwrap()),
-                    Parameter::from(U256::from_dec_str("2").unwrap()),
+                    Parameter::from(U256::from_int_unchecked(1_u8)),
+                    Parameter::from(U256::from_int_unchecked(2_u8)),
                 ]),
                 Parameter::Array(vec![
-                    Parameter::from(U256::from_dec_str("3").unwrap()),
+                    Parameter::from(U256::from_int_unchecked(3_u8)),
                 ]),
             ]),
             Parameter::Array(vec![
