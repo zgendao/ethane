@@ -75,8 +75,8 @@ fn test_eth_accounts() {
 fn test_eth_block_number() {
     let mut client = ConnectionWrapper::new_from_env(None);
     let block_number = rpc_call_with_return(&mut client, rpc::eth_block_number());
-    if !block_number.ge(&U64::zero()) {
-        panic!("Invalid block number, it's {}", block_number);
+    if !block_number.as_bytes().ge(U64::zero().as_bytes()) {
+        panic!("Invalid block number, it's {:?}", block_number);
     }
 }
 
@@ -87,7 +87,10 @@ fn test_eth_get_balance() {
         &mut client,
         rpc::eth_get_balance(Address::try_from(ADDRESS1).unwrap(), None),
     );
-    if !balance.gt(&U256::from_int_unchecked(900000000000000000_u64)) {
+    if !balance
+        .as_bytes()
+        .gt(U256::from_int_unchecked(900000000000000000_u64).as_bytes())
+    {
         panic!("Invalid balance should be bigger than 900 ETH");
     }
 }
@@ -526,11 +529,20 @@ fn test_eth_get_block_by_hash() {
     )
     .unwrap();
     assert_eq!(
-        block.gas_limit.gt(&U256::from_int_unchecked(10000_u16)),
+        block
+            .gas_limit
+            .as_bytes()
+            .gt(U256::from_int_unchecked(10000_u16).as_bytes()),
         true
     );
     // assert_eq!(block.gas_used, U256::from_int_unchecked(21000_u16));
-    assert_eq!(block.size.gt(&U256::from_int_unchecked(400_u16)), true);
+    assert_eq!(
+        block
+            .size
+            .as_bytes()
+            .gt(U256::from_int_unchecked(400_u16).as_bytes()),
+        true
+    );
 }
 
 #[test]
