@@ -1,4 +1,3 @@
-use std::array::TryFromSliceError;
 use std::convert::{From, TryFrom, TryInto};
 
 use crate::be_bytes::BeBytes;
@@ -29,6 +28,11 @@ impl<const N: usize> EthereumType<N> {
     }
 
     #[inline]
+    pub fn zero() -> Self {
+        Self([0_u8; N])
+    }
+
+    #[inline]
     pub fn try_from_int<const L: usize>(value: impl BeBytes<L>) -> Result<Self, ConversionError> {
         if N >= L {
             let mut data = [0_u8; N];
@@ -36,7 +40,7 @@ impl<const N: usize> EthereumType<N> {
             Ok(Self(data))
         } else {
             Err(ConversionError::TryFromIntError(format!(
-                "Input does not fit into {} bytes",
+                "input does not fit into {} bytes",
                 N
             )))
         }
@@ -44,10 +48,16 @@ impl<const N: usize> EthereumType<N> {
 }
 
 impl<const N: usize> TryFrom<&[u8]> for EthereumType<N> {
-    type Error = TryFromSliceError;
+    type Error = ConversionError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        Ok(Self(value.try_into()?))
+        Ok(Self(value.try_into().map_err(|_| {
+            ConversionError::TryFromSliceError(format!(
+                "input length was {}, expected {}",
+                value.len(),
+                N
+            ))
+        })?))
     }
 }
 
@@ -79,9 +89,9 @@ impl<const N: usize> TryFrom<&str> for EthereumType<N> {
             Ok(Self(data))
         } else {
             Err(ConversionError::TryFromStrError(format!(
-                "Expected input length was {}, found {}",
-                2 * N,
-                stripped.len()
+                "input length was {}, expected {}",
+                stripped.len(),
+                2 * N
             )))
         }
     }
@@ -89,6 +99,7 @@ impl<const N: usize> TryFrom<&str> for EthereumType<N> {
 
 #[derive(Debug)]
 pub enum ConversionError {
+    TryFromSliceError(String),
     TryFromStrError(String),
     TryFromIntError(String),
 }
@@ -117,9 +128,9 @@ mod test {
         let address = EthereumType::<20>::try_from(test_str);
         assert!(address.is_err());
         if let Err(ConversionError::TryFromStrError(err_msg)) = address {
-            assert_eq!(err_msg, "Expected input length was 40, found 39".to_owned());
+            assert_eq!(err_msg, "input length was 39, expected 40".to_owned());
         } else {
-            panic!("Should be an error!")
+            panic!("should be a TryFromStrError!")
         }
 
         // data too long
@@ -127,9 +138,9 @@ mod test {
         let address = EthereumType::<20>::try_from(test_str);
         assert!(address.is_err());
         if let Err(ConversionError::TryFromStrError(err_msg)) = address {
-            assert_eq!(err_msg, "Expected input length was 40, found 41".to_owned());
+            assert_eq!(err_msg, "input length was 41, expected 40".to_owned());
         } else {
-            panic!("Should be an error!")
+            panic!("should be a TryFromStrError!")
         }
 
         // cannot parse `zz` into a hexadecimal number
@@ -139,7 +150,7 @@ mod test {
         if let Err(ConversionError::TryFromStrError(err_msg)) = address {
             assert_eq!(err_msg, "invalid digit found in string".to_owned());
         } else {
-            panic!("Should be an error!")
+            panic!("should be a TryFromStrError!")
         }
     }
 
@@ -195,6 +206,16 @@ mod test {
     }
 
     #[test]
+    fn try_from_slice() {
+        let eth = EthereumType::<16>::try_from(vec![1_u8, 2, 3, 4, 5, 6].as_slice());
+        if let Err(ConversionError::TryFromSliceError(err_msg)) = eth {
+            assert_eq!(err_msg, "input length was 6, expected 16");
+        } else {
+            panic!("should be a TryFromSliceError");
+        }
+    }
+
+    #[test]
     fn try_from_too_large_integer() {
         let uint = EthereumType::<0>::try_from_int(123_u8);
         assert!(uint.is_err());
@@ -202,10 +223,15 @@ mod test {
         let uint = EthereumType::<8>::try_from_int(0xbbdeccaafff2bc45fa_u128);
         assert!(uint.is_err());
         if let Err(ConversionError::TryFromIntError(err_msg)) = uint {
-            assert_eq!(err_msg, "Input does not fit into 8 bytes".to_owned());
+            assert_eq!(err_msg, "input does not fit into 8 bytes".to_owned());
         } else {
-            panic!("Should be an error!")
+            panic!("should be a TryFromIntError!")
         }
+    }
+
+    #[test]
+    fn zero_array() {
+        assert_eq!(EthereumType::<8>::zero().into_bytes(), [0_u8; 8]);
     }
 
     #[test]

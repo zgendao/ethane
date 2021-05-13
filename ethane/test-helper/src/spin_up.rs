@@ -1,8 +1,5 @@
 use ethane::rpc::{sub::SubscriptionRequest, Rpc};
-use ethane::{
-    Connection, ConnectionError, Http, Request, Subscribe, Subscription,
-    WebSocket,
-};
+use ethane::{Connection, ConnectionError, Http, Request, Subscribe, Subscription, WebSocket};
 use regex::{Regex, RegexBuilder};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
