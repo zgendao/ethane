@@ -99,23 +99,34 @@ impl<const N: usize> TryFrom<&str> for EthereumType<N> {
     type Error = ConversionError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let mut stripped = if let Some(s) = value.strip_prefix("0x") {
-            s
-        } else {
-            value
-        };
-
-        if stripped.len() <= 2 * N {
+        let stripped = value.trim_start_matches("0x");
+        let length = stripped.len();
+        if length <= 2 * N {
             let mut data = [0_u8; N];
-            let end = if stripped.len() % 2 == 0 { stripped.len() / 2 } else { stripped.len() / 2 + 1 };
-            for i in (0..end).rev() {
-                data[i] = u8::from_str_radix(dbg!(&stripped[2 * i..2 * i + 2]), 16)
-                    .map_err(|e| ConversionError::TryFromStrError(e.to_string()))?;
+            let end = if length % 2 == 0 {
+                length / 2
+            } else {
+                length / 2 + 1
+            };
+            let mut stripped_rev = stripped.chars().rev();
+            for i in 0..end {
+                let first = stripped_rev.next().unwrap().to_digit(16).ok_or_else(|| {
+                    ConversionError::TryFromStrError("invalid digit found in string".to_owned())
+                })?;
+                let second = if let Some(sec) = stripped_rev.next() {
+                    sec.to_digit(16).ok_or_else(|| {
+                        ConversionError::TryFromStrError("invalid digit found in string".to_owned())
+                    })?
+                } else {
+                    0
+                };
+                data[N - 1 - i] = (first + second * 16) as u8;
             }
             Ok(Self(data))
         } else {
             Err(ConversionError::TryFromStrError(format!(
-                "input does not fit into {} bytes", N
+                "input does not fit into {} bytes",
+                N
             )))
         }
     }
@@ -133,26 +144,31 @@ mod test {
     use super::*;
     #[test]
     fn try_from_str() {
-        //let test_str = "0x1234567890abcdeffedcba098765432100007777";
-        //let non_prefixed_string =
-        //    EthereumType::<20>::try_from(test_str.strip_prefix("0x").unwrap()).unwrap().to_string();
-        //let zerox_prefixed_string = EthereumType::<20>::try_from(test_str).unwrap().to_string();
+        let test_str = "0x1234567890abcdeffedcba098765432100007777";
+        let non_prefixed_string =
+            EthereumType::<20>::try_from(test_str.strip_prefix("0x").unwrap())
+                .unwrap()
+                .to_string();
+        let zerox_prefixed_string = EthereumType::<20>::try_from(test_str).unwrap().to_string();
 
-        //assert_eq!(non_prefixed_string, test_str.to_owned());
-        //assert_eq!(zerox_prefixed_string, test_str.to_owned());
+        assert_eq!(non_prefixed_string, test_str.to_owned());
+        assert_eq!(zerox_prefixed_string, test_str.to_owned());
 
         let test_str = "1234567890abcdeffedcba09876543210000777";
         let eth = EthereumType::<20>::try_from(test_str).unwrap().to_string();
         assert_eq!(eth, "0x01234567890abcdeffedcba09876543210000777");
 
-        //let test_str = "1234567";
-        //let eth = EthereumType::<8>::try_from(test_str).unwrap().to_string();
-        //assert_eq!(eth, "0x0000000001234567");
+        let test_str = "1234567";
+        let eth = EthereumType::<8>::try_from(test_str).unwrap().to_string();
+        assert_eq!(eth, "0x0000000001234567");
+
+        let test_str = "7";
+        let eth = EthereumType::<1>::try_from(test_str).unwrap().to_string();
+        assert_eq!(eth, "0x07");
     }
 
     #[test]
     fn try_from_invalid_str() {
-
         // data too long
         let test_str = "0x1234567890abcdeffedcba0987654321000077778";
         let eth = EthereumType::<20>::try_from(test_str);
@@ -231,10 +247,7 @@ mod test {
         );
 
         let uint = EthereumType::<4>::from_int_unchecked(0x5fa_u16);
-        assert_eq!(
-            uint.to_string(),
-            "0x000005fa"
-        );
+        assert_eq!(uint.to_string(), "0x000005fa");
     }
 
     #[test]
