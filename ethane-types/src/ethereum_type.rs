@@ -1,8 +1,10 @@
+use serde::{Deserialize, Serialize};
 use std::convert::{From, TryFrom, TryInto};
 
 use crate::be_bytes::BeBytes;
 
-pub struct EthereumType<const N: usize>([u8; N]);
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
+pub struct EthereumType<const N: usize>(#[serde(with = "serde_arrays")] [u8; N]);
 
 impl<const N: usize> EthereumType<N> {
     #[inline]
@@ -45,6 +47,22 @@ impl<const N: usize> EthereumType<N> {
             )))
         }
     }
+
+    /// # Panics
+    ///
+    /// Panics if the input data doesn't fit into the type, i.e. `N < L`.
+    #[inline]
+    pub fn from_int_unchecked<const L: usize>(value: impl BeBytes<L>) -> Self {
+        let mut data = [0_u8; N];
+        data[N - L..].copy_from_slice(&value.be_bytes()[..]);
+        Self(data)
+    }
+}
+
+impl<const N: usize> Default for EthereumType<N> {
+    fn default() -> Self {
+        Self::zero()
+    }
 }
 
 impl<const N: usize> TryFrom<&[u8]> for EthereumType<N> {
@@ -65,6 +83,15 @@ impl<const N: usize> From<[u8; N]> for EthereumType<N> {
     #[inline]
     fn from(value: [u8; N]) -> Self {
         Self(value)
+    }
+}
+
+impl<const N: usize> From<&[u8; N]> for EthereumType<N> {
+    #[inline]
+    fn from(value: &[u8; N]) -> Self {
+        let mut data = [0u8; N];
+        data.copy_from_slice(value);
+        Self(data)
     }
 }
 
@@ -203,6 +230,18 @@ mod test {
             uint.to_string(),
             "0x0000000000000000000000000000000000000000000000bbdeccaafff2bc45fa"
         );
+
+        let uint = EthereumType::<32>::from_int_unchecked(0xbbdeccaafff2bc45fa_u128);
+        assert_eq!(
+            uint.to_string(),
+            "0x0000000000000000000000000000000000000000000000bbdeccaafff2bc45fa"
+        );
+
+        let uint = EthereumType::<4>::from_int_unchecked(0x5fa_u16);
+        assert_eq!(
+            uint.to_string(),
+            "0x000005fa"
+        );
     }
 
     #[test]
@@ -230,6 +269,12 @@ mod test {
     }
 
     #[test]
+    #[should_panic]
+    fn from_invalid_unchecked() {
+        EthereumType::<8>::from_int_unchecked(0xbbdeccaafff2bc45fa_u128);
+    }
+
+    #[test]
     fn zero_array() {
         assert_eq!(EthereumType::<8>::zero().into_bytes(), [0_u8; 8]);
     }
@@ -240,7 +285,10 @@ mod test {
         EthereumType::<2>::from([12_u8; 2]);
         EthereumType::<20>::from([12_u8; 20]);
         EthereumType::<32>::from([12_u8; 32]);
-        EthereumType::<64>::from([12_u8; 64]);
-        assert!(true);
+        EthereumType::<32>::from(&[12_u8; 32]);
+        let eth = EthereumType::<64>::from([12_u8; 64]);
+        assert_eq!(eth.into_bytes(), [12_u8; 64]);
+        let eth = EthereumType::<64>::from(&[12_u8; 64]);
+        assert_eq!(eth.into_bytes(), [12_u8; 64]);
     }
 }
