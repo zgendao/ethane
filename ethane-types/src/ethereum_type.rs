@@ -139,7 +139,7 @@ mod test {
     }
 
     #[test]
-    fn try_u256_from_primitives() {
+    fn try_u256_from_integer() {
         let uint = EthereumType::<32>::try_from_int(123_u8).unwrap();
         assert_eq!(
             uint.to_string(),
@@ -189,18 +189,18 @@ mod test {
         );
     }
 
-    //#[test]
-    //fn try_from_too_large_primitive() {
-    //    let uint = EthereumType::<0>::try_from_int(123_u8);
-    //    assert!(uint.is_err());
+    #[test]
+    fn try_from_too_large_integer() {
+        let uint = EthereumType::<0>::try_from_int(123_u8);
+        assert!(uint.is_err());
 
-    //    let uint = EthereumType::<8>::try_from_int(0xbbdeccaafff2bc45fa_u128);
-    //    assert!(uint.is_err());
-    //    assert_eq!(
-    //        uint.err().unwrap().0,
-    //        "Data does not fit into 8 bytes".to_owned()
-    //    );
-    //}
+        let uint = EthereumType::<8>::try_from_int(0xbbdeccaafff2bc45fa_u128);
+        assert!(uint.is_err());
+        assert_eq!(
+            uint.err().unwrap().0,
+            "Data does not fit into 8 bytes".to_owned()
+        );
+    }
 
     #[test]
     fn from_valid_fixed_array() {
