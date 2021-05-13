@@ -1,5 +1,5 @@
 use super::Rpc;
-use ethereum_types::U64;
+use crate::types::U64;
 
 pub fn net_version() -> Rpc<String> {
     Rpc::new("net_version")

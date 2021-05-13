@@ -238,10 +238,7 @@ mod test {
         );
 
         let uint = EthereumType::<4>::from_int_unchecked(0x5fa_u16);
-        assert_eq!(
-            uint.to_string(),
-            "0x000005fa"
-        );
+        assert_eq!(uint.to_string(), "0x000005fa");
     }
 
     #[test]

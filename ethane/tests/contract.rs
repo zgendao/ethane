@@ -2,8 +2,8 @@ use ethane::contract::{CallOpts, CallResult, Caller};
 use ethane::types::{Address, H256, U256};
 use ethane::{Connection, Http};
 use ethane_abi::*;
+use std::convert::TryFrom;
 use std::path::Path;
-use std::str::FromStr;
 use test_helper::{
     deploy_contract, wait_for_transaction, ConnectionWrapper, TEST_ERC20_NAME, TEST_ERC20_PATH,
 };
@@ -15,7 +15,7 @@ const ADDRESS2: &str = "0x99429f64cf4d5837620dcc293c1a537d58729b68";
 fn test_eth_call_contract() {
     // deploy contract
     let mut client = ConnectionWrapper::new_from_env(None);
-    let address = Address::from_str(ADDRESS1).unwrap();
+    let address = Address::try_from(ADDRESS1).unwrap();
     let (contract_address, _) = deploy_contract(
         &mut client,
         address,
@@ -31,15 +31,13 @@ fn test_eth_call_contract() {
         contract_address,
     );
 
-    let result = caller.call(
-        "balanceOf",
-        vec![Parameter::from(Address::from(address))],
-        None,
-    );
+    let result = caller.call("balanceOf", vec![Parameter::from(address)], None);
     match result {
         CallResult::Transaction(_) => panic!("Should be eth_call"),
         CallResult::Call(r) => match r[0] {
-            Parameter::Uint(data, 256) => assert_eq!(data, H256::from_low_u64_be(1000000000_u64)),
+            Parameter::Uint(data, 256) => {
+                assert_eq!(data, H256::from_int_unchecked(1000000000_u64))
+            }
             _ => panic!("Invalid data received!"),
         },
     }
@@ -49,8 +47,8 @@ fn test_eth_call_contract() {
 fn test_eth_call_contract_transfer() {
     // deploy contract
     let mut client = ConnectionWrapper::new_from_env(None);
-    let address = Address::from_str(ADDRESS1).unwrap();
-    let to_address = Address::from_str(ADDRESS2).unwrap();
+    let address = Address::try_from(ADDRESS1).unwrap();
+    let to_address = Address::try_from(ADDRESS2).unwrap();
     let (contract_address, _) = deploy_contract(
         &mut client,
         address,
@@ -69,8 +67,8 @@ fn test_eth_call_contract_transfer() {
     let result = caller.call(
         "transfer",
         vec![
-            Parameter::from(Address::from(to_address)),
-            Parameter::from(U256::from(1000)),
+            Parameter::from(to_address),
+            Parameter::from(U256::from_int_unchecked(1000_u16)),
         ],
         Some(CallOpts {
             force_call_type: None,
@@ -81,15 +79,13 @@ fn test_eth_call_contract_transfer() {
         CallResult::Call(_) => panic!("Should be a transaction"),
         CallResult::Transaction(tx_hash) => {
             wait_for_transaction(&mut client, tx_hash);
-            let result = caller.call(
-                "balanceOf",
-                vec![Parameter::from(Address::from(to_address))],
-                None,
-            );
+            let result = caller.call("balanceOf", vec![Parameter::from(to_address)], None);
             match result {
                 CallResult::Transaction(_) => panic!("Should be eth_call"),
                 CallResult::Call(r) => match r[0] {
-                    Parameter::Uint(data, 256) => assert_eq!(data, H256::from_low_u64_be(1000_u64)),
+                    Parameter::Uint(data, 256) => {
+                        assert_eq!(data, H256::from_int_unchecked(1000_u64))
+                    }
                     _ => panic!("Invalid data received!"),
                 },
             }

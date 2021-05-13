@@ -2,7 +2,7 @@
 //!
 //! This module provides custom types, but also re-exports some types from [ethereum_types].
 
-pub use ethereum_types::{Address, Bloom, H256, H64, U128, U256, U64};
+pub use ethane_types::{Address, Bloom, H256, H64, U128, U256, U64};
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
@@ -24,7 +24,7 @@ impl Serialize for BlockParameter {
             BlockParameter::Latest => serializer.serialize_str("latest"),
             BlockParameter::Earliest => serializer.serialize_str("earliest"),
             BlockParameter::Pending => serializer.serialize_str("pending"),
-            BlockParameter::Custom(num) => serializer.serialize_str(&format!("{:#x}", num)),
+            BlockParameter::Custom(num) => serializer.serialize_str(&num.to_string()), // TODO non-prefixed string?
         }
     }
 }
@@ -193,7 +193,7 @@ impl Serialize for PrivateKey {
     fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
         match *self {
             PrivateKey::ZeroXPrefixed(pk) => pk.serialize(serializer),
-            PrivateKey::NonPrefixed(pk) => serializer.serialize_str(&hex::encode(pk.0)),
+            PrivateKey::NonPrefixed(pk) => serializer.serialize_str(&hex::encode(pk.into_bytes())),
         }
     }
 }
@@ -407,6 +407,7 @@ pub struct SignedTransaction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::convert::TryFrom;
 
     #[test]
     fn test_types_bytes() {
@@ -435,7 +436,7 @@ mod tests {
     #[test]
     fn test_types_block_parameter() {
         let block_param_default = BlockParameter::default();
-        let block_param_custom = BlockParameter::Custom(U64::from(11827902));
+        let block_param_custom = BlockParameter::Custom(U64::from_int_unchecked(11827902_u64));
 
         assert_eq!(
             serde_json::to_string(&block_param_default).unwrap(),
@@ -450,9 +451,9 @@ mod tests {
     #[test]
     fn test_types_private_key() {
         let raw_hex_key = "0xe4745d1287b67412ce806746e83d49efe5cec53f5a27aa666fb9e8092a8dbd43";
-        let private_key_prefixed = PrivateKey::ZeroXPrefixed(H256::from_str(raw_hex_key).unwrap());
+        let private_key_prefixed = PrivateKey::ZeroXPrefixed(H256::try_from(raw_hex_key).unwrap());
         let private_key_non_prefixed =
-            PrivateKey::NonPrefixed(H256::from_str(raw_hex_key).unwrap());
+            PrivateKey::NonPrefixed(H256::try_from(raw_hex_key).unwrap());
 
         assert_eq!(
             serde_json::to_string(&private_key_prefixed).unwrap(),

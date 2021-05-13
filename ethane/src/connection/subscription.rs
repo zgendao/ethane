@@ -28,7 +28,7 @@ impl<T: Subscribe + Request, U: DeserializeOwned + Debug> Subscription<T, U> {
 
     /// Cancel the subscription. This will first unsubscribe and then close the underlying connection.
     pub fn close(self) {
-        println!("Closing subscription with id {}", self.id);
+        println!("Closing subscription with id {:?}", self.id);
     }
 }
 

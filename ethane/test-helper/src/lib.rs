@@ -4,6 +4,7 @@ use ethane::types::{Address, Bytes, PrivateKey, TransactionRequest, H256, U256};
 use rand::Rng;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::path::Path;
 use std::process::Command;
@@ -39,7 +40,7 @@ pub fn create_secret() -> H256 {
             HEX_CHARSET[idx] as char
         })
         .collect();
-    H256::from_str(&secret).unwrap()
+    H256::try_from(secret.as_str()).unwrap()
 }
 
 pub fn import_account(
@@ -67,7 +68,7 @@ pub fn prefund_account(client: &mut ConnectionWrapper, address: Address) -> H256
     let tx = TransactionRequest {
         from: coinbase,
         to: Some(address),
-        value: Some(U256::exp10(20)),
+        value: Some(U256::from_int_unchecked(10_u128.pow(20))),
         ..Default::default()
     };
     let tx_hash = client.call(rpc::eth_send_transaction(tx)).unwrap();
@@ -108,7 +109,7 @@ pub fn deploy_contract(
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),
-        gas: Some(U256::from(1000000 as u64)),
+        gas: Some(U256::from_int_unchecked(1000000_u64)),
         ..Default::default()
     };
     let transaction_hash = client.call(rpc::eth_send_transaction(transaction)).unwrap();
@@ -130,7 +131,7 @@ pub fn simulate_transaction(
 ) -> H256 {
     let transaction = TransactionRequest {
         from,
-        to: Some(to.parse().unwrap()),
+        to: Some(Address::try_from(to).unwrap()),
         value: Some(value),
         ..Default::default()
     };

@@ -1,5 +1,6 @@
 use ethane::rpc;
 use ethane::types::{Address, Bytes, PrivateKey, TransactionRequest, H256};
+use std::convert::TryFrom;
 use std::str::FromStr;
 
 use test_helper::*;
@@ -70,9 +71,9 @@ fn test_personal_send_transaction() {
 #[test]
 fn test_personal_sign() {
     let mut client = ConnectionWrapper::new_from_env(None);
-    let address = match import_account(&mut client, H256::from_str(FIX_SECRET).unwrap()) {
+    let address = match import_account(&mut client, H256::try_from(FIX_SECRET).unwrap()) {
         Ok(a) => a,
-        Err(_) => Address::from_str("0xdc677f7c5060b0b441d30f361d0c8529ac04e099").unwrap(),
+        Err(_) => Address::try_from("0xdc677f7c5060b0b441d30f361d0c8529ac04e099").unwrap(),
     };
     let message = Bytes::from_slice("checkmate".as_bytes());
     let expected_signature = Bytes::from_str(
@@ -100,6 +101,6 @@ fn test_personal_ec_recover() {
     rpc_call_test_expected(
         &mut client,
         rpc::personal_ec_recover(message, signature),
-        Address::from_str(FIX_ADDRESS).unwrap(),
+        Address::try_from(FIX_ADDRESS).unwrap(),
     )
 }
