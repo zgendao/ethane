@@ -153,15 +153,16 @@ mod test {
     fn fourth_contract_abi() {
         let mut hash = vec![0x8b, 0xe6, 0x52, 0x46];
         encode_into(&mut hash, vec![
-            Parameter::from(U256::from_int_unchecked(123_u16)),
+            Parameter::from(U256::from_int_unchecked(0x123_u16)),
             Parameter::Array(vec![
-               Parameter::from(U256::from_int_unchecked(456_u16)), // hex
-               Parameter::from(U256::from_int_unchecked(789_u16)), // hex
+               Parameter::from(U256::from_int_unchecked(0x456_u16)), // hex
+               Parameter::from(U256::from_int_unchecked(0x789_u16)), // hex
             ]),
             Parameter::new_fixed_bytes(b"1234567890"),
             Parameter::new_bytes(b"Hello, world!"),
         ]);
-        assert_eq!(hash, hex!(
+        //assert_eq!(hash, hex!(
+        let expected = hex!(
             "8be65246
             0000000000000000000000000000000000000000000000000000000000000123
             0000000000000000000000000000000000000000000000000000000000000080
@@ -172,7 +173,12 @@ mod test {
             0000000000000000000000000000000000000000000000000000000000000789
             000000000000000000000000000000000000000000000000000000000000000d
             48656c6c6f2c20776f726c642100000000000000000000000000000000000000"
-            ));
+            );
+        for i in 0..9 {
+            let start: usize = 4 + i * 32;
+            let end: usize = start + 32;
+            assert_eq!(hash[start..end], expected[start..end]);
+        }
     }
 
     #[test]

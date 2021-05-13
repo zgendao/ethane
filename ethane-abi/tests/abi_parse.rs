@@ -25,7 +25,7 @@ fn test_abi_encode() {
     let address = Address::try_from("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap();
     let hash = abi.encode("approve", vec![
     	Parameter::from(address),
-    	Parameter::from(U256::try_from("613").unwrap())
+    	Parameter::from(U256::from_int_unchecked(0x613_u16))
     ]);
     let expected = hex!("
         095ea7b3
@@ -60,7 +60,7 @@ fn test_abi_encode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0c, 0xff,
     ]).unwrap();
 
-    assert_eq!(returned_parameters[0].to_string(), String::from("2815"));
-    assert_eq!(returned_parameters[1].to_string(), String::from("3071"));
-    assert_eq!(returned_parameters[2].to_string(), String::from("3327"));
+    assert_eq!(returned_parameters[0].to_string(), String::from("0x0000000000000000000000000000000000000000000000000000000000000aff"));
+    assert_eq!(returned_parameters[1].to_string(), String::from("0x0000000000000000000000000000000000000000000000000000000000000bff"));
+    assert_eq!(returned_parameters[2].to_string(), String::from("0x0000000000000000000000000000000000000000000000000000000000000cff"));
 }

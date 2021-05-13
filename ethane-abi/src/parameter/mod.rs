@@ -214,8 +214,8 @@ mod test {
 
         assert_eq!(index, 128);
         assert_eq!(addr.to_string(), String::from("0xffffffffffffffffffffffffffffffffffffffff"));
-        assert_eq!(a.to_string(), String::from("2815"));
-        assert_eq!(b.to_string(), String::from("3071"));
-        assert_eq!(c.to_string(), String::from("3327"));
+        assert_eq!(a.to_string(), String::from("0x0000000000000000000000000000000000000000000000000000000000000aff"));
+        assert_eq!(b.to_string(), String::from("0x0000000000000000000000000000000000000000000000000000000000000bff"));
+        assert_eq!(c.to_string(), String::from("0x0000000000000000000000000000000000000000000000000000000000000cff"));
     }
 }
