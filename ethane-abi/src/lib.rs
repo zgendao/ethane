@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::BufReader;
 use std::path::Path;
 
 use sha3::{Digest, Keccak256};
-use thiserror::Error;
 
 mod function;
 mod parameter;
@@ -59,9 +57,8 @@ impl Abi {
 
     /// Parses an ABI `.json` file into the `Abi` instance.
     pub fn parse_file(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
-        let file = File::open(path_to_abi)?;
-        let reader = BufReader::new(file);
-        let abi: serde_json::Value = serde_json::from_reader(reader)?;
+        let reader = File::open(path_to_abi).map_err(|e| AbiParserError::FileIoError(e.to_string()))?;
+        let abi: serde_json::Value = serde_json::from_reader(reader).map_err(|e| AbiParserError::Serde(e.to_string()))?;
 
         self.parse_json(abi)
     }
@@ -140,16 +137,11 @@ impl Abi {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum AbiParserError {
-    #[error("Couldn't open ABI file: {0}")]
-    FileIoError(#[from] std::io::Error),
-    #[error("De-/Serialization error: {0}")]
-    Serde(#[from] serde_json::Error),
-    #[error("Missing data error: {0}")]
+    FileIoError(String),
+    Serde(String),
     MissingData(String),
-    #[error("Invalid ABI encoding error: {0}")]
     InvalidAbiEncoding(String),
-    #[error("Parameter type doesn't match the internal data type")]
     TypeError,
 }
