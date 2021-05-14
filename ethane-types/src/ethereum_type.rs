@@ -53,23 +53,6 @@ impl<const N: usize> EthereumType<N> {
         &self.0
     }
 
-    /// Returns the hex string representation of the internal bytes with
-    /// leading zeros removed.
-    #[inline]
-    pub fn to_string(&self) -> String {
-        format!(
-            "0x{}",
-            self.0
-                .iter()
-                .skip_while(|&x| x == &0_u8)
-                .map(|b| format!("{:02x}", b))
-                .collect::<Vec<String>>()
-                .join("")
-                .as_str()
-                .trim_start_matches('0')
-        )
-    }
-
     #[inline]
     pub fn into_bytes(self) -> [u8; N] {
         self.0
@@ -102,6 +85,29 @@ impl<const N: usize> EthereumType<N> {
         let mut data = [0_u8; N];
         data[N - L..].copy_from_slice(&value.be_bytes()[..]);
         Self(data)
+    }
+}
+
+impl<const N: usize> std::fmt::Display for EthereumType<N> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let hex_string = self
+            .0
+            .iter()
+            .skip_while(|&x| N != 20 && x == &0_u8) // address should not have its leading zeros removed
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<String>>()
+            .join("");
+
+        write!(
+            formatter,
+            "0x{}",
+            if N != 20 {
+                // remove remaining leading zero (e.g. 7 will be formatted as 0x07)
+                hex_string.as_str().trim_start_matches('0')
+            } else {
+                hex_string.as_str()
+            }
+        )
     }
 }
 
@@ -201,8 +207,11 @@ mod test {
         assert_eq!(zerox_prefixed_string, test_str.to_owned());
 
         let test_str = "1234567890abcdeffedcba09876543210000777";
-        let eth = EthereumType::<20>::try_from(test_str).unwrap().to_string();
-        assert_eq!(eth, "0x1234567890abcdeffedcba09876543210000777");
+        let address = EthereumType::<20>::try_from(test_str).unwrap().to_string();
+        assert_eq!(address, "0x01234567890abcdeffedcba09876543210000777"); // note the leading zero
+
+        let address = EthereumType::<20>::try_from("0x12345").unwrap().to_string();
+        assert_eq!(address, "0x0000000000000000000000000000000000012345"); // note the leading zero
 
         let test_str = "1234567";
         let eth = EthereumType::<8>::try_from(test_str).unwrap().to_string();
