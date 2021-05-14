@@ -5,9 +5,9 @@ use std::convert::{From, TryFrom, TryInto};
 use crate::be_bytes::BeBytes;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct EthereumType<const N: usize>([u8; N]);
+pub struct EthereumType<const N: usize, const H: bool>([u8; N]);
 
-impl<const N: usize> Serialize for EthereumType<N> {
+impl<const N: usize, const H: bool> Serialize for EthereumType<N, H> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -16,19 +16,19 @@ impl<const N: usize> Serialize for EthereumType<N> {
     }
 }
 
-impl<'de, const N: usize> Deserialize<'de> for EthereumType<N> {
-    fn deserialize<D>(deserializer: D) -> Result<EthereumType<N>, D::Error>
+impl<'de, const N: usize, const H: bool> Deserialize<'de> for EthereumType<N, H> {
+    fn deserialize<D>(deserializer: D) -> Result<EthereumType<N, H>, D::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_str(EthereumTypeVisitor::<N>)
+        deserializer.deserialize_str(EthereumTypeVisitor::<N, H>)
     }
 }
 
-struct EthereumTypeVisitor<const N: usize>;
+struct EthereumTypeVisitor<const N: usize, const H: bool>;
 
-impl<'de, const N: usize> Visitor<'de> for EthereumTypeVisitor<N> {
-    type Value = EthereumType<N>;
+impl<'de, const N: usize, const H: bool> Visitor<'de> for EthereumTypeVisitor<N, H> {
+    type Value = EthereumType<N, H>;
 
     fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "a hex string")
@@ -47,7 +47,7 @@ impl<'de, const N: usize> Visitor<'de> for EthereumTypeVisitor<N> {
     }
 }
 
-impl<const N: usize> EthereumType<N> {
+impl<const N: usize, const H: bool> EthereumType<N, H> {
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         &self.0
@@ -88,12 +88,12 @@ impl<const N: usize> EthereumType<N> {
     }
 }
 
-impl<const N: usize> std::fmt::Display for EthereumType<N> {
+impl<const N: usize, const H: bool> std::fmt::Display for EthereumType<N, H> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let hex_string = self
             .0
             .iter()
-            .skip_while(|&x| N != 20 && x == &0_u8) // address should not have its leading zeros removed
+            .skip_while(|&x| !H && x == &0_u8) // hash types should not have their leading zeros removed
             .map(|b| format!("{:02x}", b))
             .collect::<Vec<String>>()
             .join("");
@@ -101,13 +101,9 @@ impl<const N: usize> std::fmt::Display for EthereumType<N> {
         write!(
             formatter,
             "0x{}",
-            if N != 20 && !hex_string.is_empty() {
-                // remove remaining leading zero (e.g. 7 will be formatted as 0x07)
+            if !H {
+                // remove remaining leading zero from integer types (e.g. 7 will be formatted as 0x07)
                 hex_string.as_str().trim_start_matches('0')
-            } else if hex_string.is_empty() {
-                // address (N = 20) cannot be empty by default
-                // if we have EthereumType::zero(), just add a 0
-                "0"
             } else {
                 hex_string.as_str()
             }
@@ -115,13 +111,13 @@ impl<const N: usize> std::fmt::Display for EthereumType<N> {
     }
 }
 
-impl<const N: usize> Default for EthereumType<N> {
+impl<const N: usize, const H: bool> Default for EthereumType<N, H> {
     fn default() -> Self {
         Self::zero()
     }
 }
 
-impl<const N: usize> TryFrom<&[u8]> for EthereumType<N> {
+impl<const N: usize, const H: bool> TryFrom<&[u8]> for EthereumType<N, H> {
     type Error = ConversionError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
@@ -135,14 +131,14 @@ impl<const N: usize> TryFrom<&[u8]> for EthereumType<N> {
     }
 }
 
-impl<const N: usize> From<[u8; N]> for EthereumType<N> {
+impl<const N: usize, const H: bool> From<[u8; N]> for EthereumType<N, H> {
     #[inline]
     fn from(value: [u8; N]) -> Self {
         Self(value)
     }
 }
 
-impl<const N: usize> From<&[u8; N]> for EthereumType<N> {
+impl<const N: usize, const H: bool> From<&[u8; N]> for EthereumType<N, H> {
     #[inline]
     fn from(value: &[u8; N]) -> Self {
         let mut data = [0u8; N];
@@ -151,7 +147,7 @@ impl<const N: usize> From<&[u8; N]> for EthereumType<N> {
     }
 }
 
-impl<const N: usize> TryFrom<&str> for EthereumType<N> {
+impl<const N: usize, const H: bool> TryFrom<&str> for EthereumType<N, H> {
     type Error = ConversionError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
@@ -202,27 +198,37 @@ mod test {
     fn try_from_str() {
         let test_str = "0x1234567890abcdeffedcba098765432100007777";
         let non_prefixed_string =
-            EthereumType::<20>::try_from(test_str.strip_prefix("0x").unwrap())
+            EthereumType::<20, true>::try_from(test_str.strip_prefix("0x").unwrap())
                 .unwrap()
                 .to_string();
-        let zerox_prefixed_string = EthereumType::<20>::try_from(test_str).unwrap().to_string();
+        let zerox_prefixed_string = EthereumType::<20, true>::try_from(test_str)
+            .unwrap()
+            .to_string();
 
         assert_eq!(non_prefixed_string, test_str.to_owned());
         assert_eq!(zerox_prefixed_string, test_str.to_owned());
 
         let test_str = "1234567890abcdeffedcba09876543210000777";
-        let address = EthereumType::<20>::try_from(test_str).unwrap().to_string();
+        let address = EthereumType::<20, true>::try_from(test_str)
+            .unwrap()
+            .to_string();
         assert_eq!(address, "0x01234567890abcdeffedcba09876543210000777"); // note the leading zero
 
-        let address = EthereumType::<20>::try_from("0x12345").unwrap().to_string();
+        let address = EthereumType::<20, true>::try_from("0x12345")
+            .unwrap()
+            .to_string();
         assert_eq!(address, "0x0000000000000000000000000000000000012345"); // note the leading zero
 
         let test_str = "1234567";
-        let eth = EthereumType::<8>::try_from(test_str).unwrap().to_string();
+        let eth = EthereumType::<8, false>::try_from(test_str)
+            .unwrap()
+            .to_string();
         assert_eq!(eth, "0x1234567");
 
         let test_str = "7";
-        let eth = EthereumType::<1>::try_from(test_str).unwrap().to_string();
+        let eth = EthereumType::<1, false>::try_from(test_str)
+            .unwrap()
+            .to_string();
         assert_eq!(eth, "0x7");
     }
 
@@ -230,7 +236,7 @@ mod test {
     fn try_from_invalid_str() {
         // data too long
         let test_str = "0x1234567890abcdeffedcba0987654321000077778";
-        let eth = EthereumType::<20>::try_from(test_str);
+        let eth = EthereumType::<20, true>::try_from(test_str);
         assert!(eth.is_err());
         if let Err(ConversionError::TryFromStrError(err_msg)) = eth {
             assert_eq!(err_msg, "input does not fit into 20 bytes".to_owned());
@@ -240,7 +246,7 @@ mod test {
 
         // cannot parse `zz` into a hexadecimal number
         let test_str = "0x1234567890abcdeffedcba0987654321000077zz";
-        let eth = EthereumType::<20>::try_from(test_str);
+        let eth = EthereumType::<20, true>::try_from(test_str);
         assert!(eth.is_err());
         if let Err(ConversionError::TryFromStrError(err_msg)) = eth {
             assert_eq!(err_msg, "invalid digit found in string".to_owned());
@@ -251,40 +257,40 @@ mod test {
 
     #[test]
     fn try_u256_from_integer() {
-        let uint = EthereumType::<32>::try_from_int(123_u8).unwrap();
+        let uint = EthereumType::<32, false>::try_from_int(123_u8).unwrap();
         assert_eq!(uint.to_string(), "0x7b");
 
-        let int = EthereumType::<32>::try_from_int(-123_i8).unwrap();
+        let int = EthereumType::<32, false>::try_from_int(-123_i8).unwrap();
         assert_eq!(int.to_string(), "0x85");
 
-        let uint = EthereumType::<32>::try_from_int(0x45fa_u16).unwrap();
+        let uint = EthereumType::<32, false>::try_from_int(0x45fa_u16).unwrap();
         assert_eq!(uint.to_string(), "0x45fa");
 
-        let int = EthereumType::<32>::try_from_int(-0x45fa_i16).unwrap();
+        let int = EthereumType::<32, false>::try_from_int(-0x45fa_i16).unwrap();
         assert_eq!(int.to_string(), "0xba06");
 
-        let uint = EthereumType::<32>::try_from_int(0x2bc45fa_u32).unwrap();
+        let uint = EthereumType::<32, false>::try_from_int(0x2bc45fa_u32).unwrap();
         assert_eq!(uint.to_string(), "0x2bc45fa");
 
-        let int = EthereumType::<32>::try_from_int(-0x2bc45fa_i32).unwrap();
+        let int = EthereumType::<32, false>::try_from_int(-0x2bc45fa_i32).unwrap();
         assert_eq!(int.to_string(), "0xfd43ba06");
 
-        let uint = EthereumType::<32>::try_from_int(0xfff2bc45fa_u64).unwrap();
+        let uint = EthereumType::<32, false>::try_from_int(0xfff2bc45fa_u64).unwrap();
         assert_eq!(uint.to_string(), "0xfff2bc45fa");
 
-        let uint = EthereumType::<32>::try_from_int(0xbbdeccaafff2bc45fa_u128).unwrap();
+        let uint = EthereumType::<32, false>::try_from_int(0xbbdeccaafff2bc45fa_u128).unwrap();
         assert_eq!(uint.to_string(), "0xbbdeccaafff2bc45fa");
 
-        let uint = EthereumType::<32>::from_int_unchecked(0xbbdeccaafff2bc45fa_u128);
+        let uint = EthereumType::<32, false>::from_int_unchecked(0xbbdeccaafff2bc45fa_u128);
         assert_eq!(uint.to_string(), "0xbbdeccaafff2bc45fa");
 
-        let uint = EthereumType::<4>::from_int_unchecked(0x5fa_u16);
+        let uint = EthereumType::<4, false>::from_int_unchecked(0x5fa_u16);
         assert_eq!(uint.to_string(), "0x5fa");
     }
 
     #[test]
     fn try_from_slice() {
-        let eth = EthereumType::<16>::try_from(vec![1_u8, 2, 3, 4, 5, 6].as_slice());
+        let eth = EthereumType::<16, false>::try_from(vec![1_u8, 2, 3, 4, 5, 6].as_slice());
         if let Err(ConversionError::TryFromSliceError(err_msg)) = eth {
             assert_eq!(err_msg, "input length was 6, expected 16");
         } else {
@@ -294,10 +300,10 @@ mod test {
 
     #[test]
     fn try_from_too_large_integer() {
-        let uint = EthereumType::<0>::try_from_int(123_u8);
+        let uint = EthereumType::<0, false>::try_from_int(123_u8);
         assert!(uint.is_err());
 
-        let uint = EthereumType::<8>::try_from_int(0xbbdeccaafff2bc45fa_u128);
+        let uint = EthereumType::<8, false>::try_from_int(0xbbdeccaafff2bc45fa_u128);
         assert!(uint.is_err());
         if let Err(ConversionError::TryFromIntError(err_msg)) = uint {
             assert_eq!(err_msg, "input does not fit into 8 bytes".to_owned());
@@ -309,47 +315,60 @@ mod test {
     #[test]
     #[should_panic]
     fn from_invalid_unchecked() {
-        EthereumType::<8>::from_int_unchecked(0xbbdeccaafff2bc45fa_u128);
+        EthereumType::<8, false>::from_int_unchecked(0xbbdeccaafff2bc45fa_u128);
     }
 
     #[test]
     fn zero_array() {
-        assert_eq!(EthereumType::<8>::zero().into_bytes(), [0_u8; 8]);
+        assert_eq!(EthereumType::<8, false>::zero().into_bytes(), [0_u8; 8]);
     }
 
     #[test]
     fn from_valid_fixed_array() {
-        EthereumType::<1>::from([12_u8]);
-        EthereumType::<2>::from([12_u8; 2]);
-        EthereumType::<20>::from([12_u8; 20]);
-        EthereumType::<32>::from([12_u8; 32]);
-        EthereumType::<32>::from(&[12_u8; 32]);
-        let eth = EthereumType::<64>::from([12_u8; 64]);
+        EthereumType::<1, false>::from([12_u8]);
+        EthereumType::<2, false>::from([12_u8; 2]);
+        EthereumType::<20, false>::from([12_u8; 20]);
+        EthereumType::<32, false>::from([12_u8; 32]);
+        EthereumType::<32, false>::from(&[12_u8; 32]);
+        let eth = EthereumType::<64, true>::from([12_u8; 64]);
         assert_eq!(eth.into_bytes(), [12_u8; 64]);
-        let eth = EthereumType::<64>::from(&[12_u8; 64]);
+        let eth = EthereumType::<64, true>::from(&[12_u8; 64]);
         assert_eq!(eth.into_bytes(), [12_u8; 64]);
     }
 
     #[test]
     fn serde_tests() {
-        let eth = EthereumType::<8>::try_from("0x456abcf").unwrap();
-        let expected = "0x456abcf";
+        let eth = EthereumType::<8, true>::try_from("0x456abcf").unwrap();
+        let expected = "0x000000000456abcf";
         serde_test::assert_tokens(&eth, &[serde_test::Token::BorrowedStr(expected)]);
 
-        let eth = EthereumType::<4>::try_from("0xffaabb1").unwrap();
+        let eth = EthereumType::<4, false>::try_from("0xffaabb1").unwrap();
         let expected = "0xffaabb1";
         serde_test::assert_tokens(&eth, &[serde_test::Token::BorrowedStr(expected)]);
     }
 
     #[test]
+    #[rustfmt::skip]
     fn zero_bloom() {
-        let bloom = EthereumType::<256>::zero();
-        assert_eq!(bloom.to_string(), "0x0".to_owned());
+        let bloom = EthereumType::<256, true>::zero();
+        assert_eq!(bloom.to_string(), 
+"0x
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000
+000000000000".split("\n").collect::<String>()); // 512 zeros
     }
 
     #[test]
     fn zero_address() {
-        let address = EthereumType::<20>::zero();
+        let address = EthereumType::<20, true>::zero();
         assert_eq!(
             address.to_string(),
             "0x0000000000000000000000000000000000000000".to_owned()
