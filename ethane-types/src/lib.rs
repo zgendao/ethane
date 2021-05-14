@@ -4,8 +4,8 @@ use ethereum_type::EthereumType;
 
 /// A 160 bit (20 bytes) type.
 pub type Address = EthereumType<20_usize>;
-/// A 256 bit (32 bytes) Bloom hash type.
-pub type Bloom = EthereumType<32_usize>;
+/// A 2048 bit (256 bytes) Bloom hash type.
+pub type Bloom = EthereumType<256_usize>;
 /// A 256 bit (32 bytes) hash type.
 pub type H256 = EthereumType<32_usize>;
 /// A 64 bit (8 bytes) hash type.
