@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
 
-use sha3::{Digest, Keccak256};
+use tiny_keccak::{Hasher, Keccak};
 
 mod function;
 mod parameter;
@@ -57,8 +57,10 @@ impl Abi {
 
     /// Parses an ABI `.json` file into the `Abi` instance.
     pub fn parse_file(&mut self, path_to_abi: &Path) -> Result<(), AbiParserError> {
-        let reader = File::open(path_to_abi).map_err(|e| AbiParserError::FileIoError(e.to_string()))?;
-        let abi: serde_json::Value = serde_json::from_reader(reader).map_err(|e| AbiParserError::Serde(e.to_string()))?;
+        let reader =
+            File::open(path_to_abi).map_err(|e| AbiParserError::FileIoError(e.to_string()))?;
+        let abi: serde_json::Value =
+            serde_json::from_reader(reader).map_err(|e| AbiParserError::Serde(e.to_string()))?;
 
         self.parse_json(abi)
     }
@@ -95,10 +97,12 @@ impl Abi {
                 }
             }
             let signature = format!("{}({})", function_name, abi_arguments.join(","));
-            let mut hasher = Keccak256::new();
-            hasher.update(signature);
+            let mut hasher = Keccak::v256();
+            hasher.update(signature.as_bytes());
             // Take first 4 bytes of the Keccak hash
-            let mut hash = hasher.finalize()[0..4].to_vec();
+            let mut out = [0_u8; 32];
+            hasher.finalize(&mut out);
+            let mut hash = out[0..4].to_vec();
             // Append the encoded parameters to the hash
             parameter::encode_into(&mut hash, parameters);
             Ok(hash)

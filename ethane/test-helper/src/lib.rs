@@ -4,12 +4,12 @@ use ethane::types::{Address, Bytes, PrivateKey, TransactionRequest, H256, U256};
 use rand::Rng;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use sha3::{Digest, Keccak256};
 use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::path::Path;
 use std::process::Command;
 use std::str::FromStr;
+use tiny_keccak::{Hasher, Keccak};
 
 mod spin_up;
 pub use spin_up::{ConnectionNodeBundle, ConnectionWrapper, NodeProcess};
@@ -149,10 +149,10 @@ pub fn abi(contract_input: Value) -> Value {
 }
 
 pub fn keccak(input: &[u8]) -> [u8; 32] {
-    let mut hasher = Keccak256::new();
+    let mut hasher = Keccak::v256();
     hasher.update(input);
     let mut out = [0_u8; 32];
-    out.copy_from_slice(&hasher.finalize()[0..32]);
+    hasher.finalize(&mut out);
     out
 }
 
