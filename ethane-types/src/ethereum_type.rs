@@ -101,9 +101,13 @@ impl<const N: usize> std::fmt::Display for EthereumType<N> {
         write!(
             formatter,
             "0x{}",
-            if N != 20 {
+            if N != 20 && !hex_string.is_empty() {
                 // remove remaining leading zero (e.g. 7 will be formatted as 0x07)
                 hex_string.as_str().trim_start_matches('0')
+            } else if hex_string.is_empty() {
+                // address (N = 20) cannot be empty by default
+                // if we have EthereumType::zero(), just add a 0
+                "0"
             } else {
                 hex_string.as_str()
             }
@@ -335,5 +339,20 @@ mod test {
         let eth = EthereumType::<4>::try_from("0xffaabb1").unwrap();
         let expected = "0xffaabb1";
         serde_test::assert_tokens(&eth, &[serde_test::Token::BorrowedStr(expected)]);
+    }
+
+    #[test]
+    fn zero_bloom() {
+        let bloom = EthereumType::<256>::zero();
+        assert_eq!(bloom.to_string(), "0x0".to_owned());
+    }
+
+    #[test]
+    fn zero_address() {
+        let address = EthereumType::<20>::zero();
+        assert_eq!(
+            address.to_string(),
+            "0x0000000000000000000000000000000000000000".to_owned()
+        );
     }
 }
