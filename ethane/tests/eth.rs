@@ -1,11 +1,7 @@
 use ethane::rpc;
-use ethane::types::{
-    Address, BlockParameter, Bytes, Call, Filter, GasCall, SyncInfo, TransactionRequest,
-    ValueOrVec, H256, U256, U64,
-};
+use ethane::types::*;
 use std::convert::TryFrom;
 use std::path::Path;
-use std::str::FromStr;
 
 use test_helper::*;
 
@@ -98,7 +94,7 @@ fn test_eth_get_balance() {
 #[test]
 fn test_eth_send_transaction_to_address() {
     let mut client = ConnectionWrapper::new_from_env(None);
-    let value = 1000000000000000000 as u64;
+    let value = 1000000000000000000_u64;
     let transaction = TransactionRequest {
         from: Address::try_from(ADDRESS1).unwrap(),
         to: Some(Address::try_from(ADDRESS2).unwrap()),
@@ -128,7 +124,7 @@ fn test_eth_send_transaction_contract_creation() {
         &Path::new(TEST_CONTRACT_PATH),
         TEST_CONTRACT_NAME,
     ));
-    let contract_bytes = Bytes::from_str(&bin).unwrap();
+    let contract_bytes = Bytes::try_from(bin.as_str()).unwrap();
     let transaction = TransactionRequest {
         from: Address::try_from(ADDRESS1).unwrap(),
         data: Some(contract_bytes),
@@ -152,7 +148,7 @@ fn test_eth_send_transaction_contract_creation() {
 
 #[test]
 fn test_eth_get_transaction_by_hash() {
-    let value = 2000000000000000000 as u64;
+    let value = 2000000000000000000_u64;
     let mut client = ConnectionWrapper::new_from_env(None);
     let transaction = TransactionRequest {
         from: Address::try_from(ADDRESS1).unwrap(),
@@ -172,7 +168,7 @@ fn test_eth_get_transaction_by_hash() {
 
 #[test]
 fn test_eth_get_transaction_receipt() {
-    let value = 1000000000000000000 as u64;
+    let value = 1000000000000000000_u64;
     let mut client = ConnectionWrapper::new_from_env(None);
     unlock_account(&mut client, Address::try_from(ADDRESS2).unwrap());
     prefund_account(&mut client, Address::try_from(ADDRESS2).unwrap());
@@ -382,7 +378,7 @@ fn test_eth_get_code_missing() {
     rpc_call_test_expected(
         &mut client,
         rpc::eth_get_code(address, None),
-        Bytes::from_str("0x").unwrap(),
+        Bytes::try_from("0x").unwrap(),
     )
 }
 
@@ -412,7 +408,7 @@ fn test_eth_sign() {
     };
     println!("{:?}", address);
     let message = Bytes::from_slice("checkmate".as_bytes());
-    let expected_signature = Bytes::from_str(
+    let expected_signature = Bytes::try_from(
         "67e4a4cf3b8cfb7d9a568482e9b6deb6350bc7701ae0448b92752b463e7dc97\
         c09c424607fbcf1cb4f6ec1c6a6c60a3527dcfe11412a3bff26218ca9f0bdef9d1b",
     )

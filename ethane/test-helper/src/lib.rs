@@ -8,7 +8,6 @@ use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::path::Path;
 use std::process::Command;
-use std::str::FromStr;
 use tiny_keccak::{Hasher, Keccak};
 
 mod spin_up;
@@ -105,7 +104,7 @@ pub fn deploy_contract(
     let raw_contract = compile_contract(path, contract_name);
     let bin = bin(raw_contract.clone());
     let abi = abi(raw_contract);
-    let contract_bytes = Bytes::from_str(&bin).unwrap();
+    let contract_bytes = Bytes::try_from(bin.as_str()).unwrap();
     let transaction = TransactionRequest {
         from: address,
         data: Some(contract_bytes),

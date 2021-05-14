@@ -131,7 +131,9 @@ impl Serialize for PrivateKey {
     fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
         match *self {
             PrivateKey::ZeroXPrefixed(pk) => pk.serialize(serializer),
-            PrivateKey::NonPrefixed(pk) => serializer.serialize_str(&hex::encode(pk.into_bytes())),
+            PrivateKey::NonPrefixed(pk) => {
+                serializer.serialize_str(&pk.to_string().trim_start_matches("0x"))
+            }
         }
     }
 }
