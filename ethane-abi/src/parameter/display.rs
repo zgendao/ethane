@@ -160,10 +160,7 @@ mod test {
             "{}",
             Parameter::from(U256::try_from("1234567890123456789012345678901234567890").unwrap())
         );
-        assert_eq!(
-            &expected,
-            "0x0000000000000000000000001234567890123456789012345678901234567890"
-        );
+        assert_eq!(&expected, "0x1234567890123456789012345678901234567890");
 
         let expected = format!("{}", Parameter::from(-89i8));
         assert_eq!(&expected, "-89");
