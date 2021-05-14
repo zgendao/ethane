@@ -143,13 +143,8 @@ impl FromStr for Bytes {
     type Err = hex::FromHexError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let inner = if value.len() >= 2 && &value[0..2] == "0x" {
-            hex::decode(&value[2..])
-        } else {
-            hex::decode(value)
-        }?;
-
-        Ok(Bytes(inner))
+        let trimmed = value.trim_start_matches("0x");
+        Ok(Bytes(hex::decode(trimmed)?))
     }
 }
 
