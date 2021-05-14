@@ -1,10 +1,51 @@
-use serde::{Deserialize, Serialize};
+use serde::de::Visitor;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::{From, TryFrom, TryInto};
 
 use crate::be_bytes::BeBytes;
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
-pub struct EthereumType<const N: usize>(#[serde(with = "serde_arrays")] [u8; N]);
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct EthereumType<const N: usize>([u8; N]);
+
+impl<const N: usize> Serialize for EthereumType<N> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de, const N: usize> Deserialize<'de> for EthereumType<N> {
+    fn deserialize<D>(deserializer: D) -> Result<EthereumType<N>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(EthereumTypeVisitor::<N>)
+    }
+}
+
+struct EthereumTypeVisitor<const N: usize>;
+
+impl<'de, const N: usize> Visitor<'de> for EthereumTypeVisitor<N> {
+    type Value = EthereumType<N>;
+
+    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "a hex string")
+    }
+
+    fn visit_str<T: serde::de::Error>(self, value: &str) -> Result<Self::Value, T> {
+        let result = Self::Value::try_from(value)
+            .map_err(|e| T::custom(format!("Deserialization error: {:?}", e)))?;
+        Ok(result)
+    }
+
+    fn visit_string<T: serde::de::Error>(self, value: String) -> Result<Self::Value, T> {
+        let result = Self::Value::try_from(value.as_str())
+            .map_err(|e| T::custom(format!("Deserialization error: {:?}", e)))?;
+        Ok(result)
+    }
+}
 
 impl<const N: usize> EthereumType<N> {
     #[inline]
@@ -296,5 +337,16 @@ mod test {
         assert_eq!(eth.into_bytes(), [12_u8; 64]);
         let eth = EthereumType::<64>::from(&[12_u8; 64]);
         assert_eq!(eth.into_bytes(), [12_u8; 64]);
+    }
+
+    #[test]
+    fn serde_tests() {
+        let eth = EthereumType::<8>::try_from("0x456abcf").unwrap();
+        let expected = "0x000000000456abcf";
+        serde_test::assert_tokens(&eth, &[serde_test::Token::BorrowedStr(expected)]);
+
+        let eth = EthereumType::<4>::try_from("0xffaabb1").unwrap();
+        let expected = "0x0ffaabb1";
+        serde_test::assert_tokens(&eth, &[serde_test::Token::BorrowedStr(expected)]);
     }
 }
