@@ -101,11 +101,13 @@ impl<const N: usize, const H: bool> std::fmt::Display for EthereumType<N, H> {
         write!(
             formatter,
             "0x{}",
-            if !H {
+            if H {
+                hex_string.as_str()
+            } else if hex_string.is_empty() {
+                "0"
+            } else {
                 // remove remaining leading zero from integer types (e.g. 7 will be formatted as 0x07)
                 hex_string.as_str().trim_start_matches('0')
-            } else {
-                hex_string.as_str()
             }
         )
     }
@@ -373,5 +375,15 @@ mod test {
             address.to_string(),
             "0x0000000000000000000000000000000000000000".to_owned()
         );
+    }
+
+    #[test]
+    fn zero_uints() {
+        let uint = EthereumType::<4, false>::zero();
+        assert_eq!(uint.to_string(), "0x0".to_owned());
+        let uint = EthereumType::<4, false>::from_int_unchecked(0x11e65_u32);
+        assert_eq!(uint.to_string(), "0x11e65".to_owned());
+        let uint = EthereumType::<1, false>::from_int_unchecked(0x5_u8);
+        assert_eq!(uint.to_string(), "0x5".to_owned());
     }
 }

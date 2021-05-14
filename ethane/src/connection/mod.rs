@@ -50,6 +50,7 @@ where
             let result_data = self.transport.request(
                 serde_json::to_string(&rpc).map_err(|e| ConnectionError::Serde(e.to_string()))?,
             )?;
+            println!("{:?}", result_data);
             let result = serde_json::from_str::<RpcResponse<U>>(&result_data)
                 .map_err(|e| ConnectionError::Serde(e.to_string()))?;
             Ok(result.result)
