@@ -53,15 +53,20 @@ impl<const N: usize> EthereumType<N> {
         &self.0
     }
 
+    /// Returns the hex string representation of the internal bytes with
+    /// leading zeros removed.
     #[inline]
     pub fn to_string(&self) -> String {
         format!(
             "0x{}",
             self.0
                 .iter()
+                .skip_while(|&x| x == &0_u8)
                 .map(|b| format!("{:02x}", b))
                 .collect::<Vec<String>>()
                 .join("")
+                .as_str()
+                .trim_start_matches('0')
         )
     }
 
@@ -197,15 +202,15 @@ mod test {
 
         let test_str = "1234567890abcdeffedcba09876543210000777";
         let eth = EthereumType::<20>::try_from(test_str).unwrap().to_string();
-        assert_eq!(eth, "0x01234567890abcdeffedcba09876543210000777");
+        assert_eq!(eth, "0x1234567890abcdeffedcba09876543210000777");
 
         let test_str = "1234567";
         let eth = EthereumType::<8>::try_from(test_str).unwrap().to_string();
-        assert_eq!(eth, "0x0000000001234567");
+        assert_eq!(eth, "0x1234567");
 
         let test_str = "7";
         let eth = EthereumType::<1>::try_from(test_str).unwrap().to_string();
-        assert_eq!(eth, "0x07");
+        assert_eq!(eth, "0x7");
     }
 
     #[test]
@@ -234,61 +239,34 @@ mod test {
     #[test]
     fn try_u256_from_integer() {
         let uint = EthereumType::<32>::try_from_int(123_u8).unwrap();
-        assert_eq!(
-            uint.to_string(),
-            "0x000000000000000000000000000000000000000000000000000000000000007b"
-        );
+        assert_eq!(uint.to_string(), "0x7b");
 
         let int = EthereumType::<32>::try_from_int(-123_i8).unwrap();
-        assert_eq!(
-            int.to_string(),
-            "0x0000000000000000000000000000000000000000000000000000000000000085"
-        );
+        assert_eq!(int.to_string(), "0x85");
 
         let uint = EthereumType::<32>::try_from_int(0x45fa_u16).unwrap();
-        assert_eq!(
-            uint.to_string(),
-            "0x00000000000000000000000000000000000000000000000000000000000045fa"
-        );
+        assert_eq!(uint.to_string(), "0x45fa");
 
         let int = EthereumType::<32>::try_from_int(-0x45fa_i16).unwrap();
-        assert_eq!(
-            int.to_string(),
-            "0x000000000000000000000000000000000000000000000000000000000000ba06"
-        );
+        assert_eq!(int.to_string(), "0xba06");
 
         let uint = EthereumType::<32>::try_from_int(0x2bc45fa_u32).unwrap();
-        assert_eq!(
-            uint.to_string(),
-            "0x0000000000000000000000000000000000000000000000000000000002bc45fa"
-        );
+        assert_eq!(uint.to_string(), "0x2bc45fa");
 
         let int = EthereumType::<32>::try_from_int(-0x2bc45fa_i32).unwrap();
-        assert_eq!(
-            int.to_string(),
-            "0x00000000000000000000000000000000000000000000000000000000fd43ba06"
-        );
+        assert_eq!(int.to_string(), "0xfd43ba06");
 
         let uint = EthereumType::<32>::try_from_int(0xfff2bc45fa_u64).unwrap();
-        assert_eq!(
-            uint.to_string(),
-            "0x000000000000000000000000000000000000000000000000000000fff2bc45fa"
-        );
+        assert_eq!(uint.to_string(), "0xfff2bc45fa");
 
         let uint = EthereumType::<32>::try_from_int(0xbbdeccaafff2bc45fa_u128).unwrap();
-        assert_eq!(
-            uint.to_string(),
-            "0x0000000000000000000000000000000000000000000000bbdeccaafff2bc45fa"
-        );
+        assert_eq!(uint.to_string(), "0xbbdeccaafff2bc45fa");
 
         let uint = EthereumType::<32>::from_int_unchecked(0xbbdeccaafff2bc45fa_u128);
-        assert_eq!(
-            uint.to_string(),
-            "0x0000000000000000000000000000000000000000000000bbdeccaafff2bc45fa"
-        );
+        assert_eq!(uint.to_string(), "0xbbdeccaafff2bc45fa");
 
         let uint = EthereumType::<4>::from_int_unchecked(0x5fa_u16);
-        assert_eq!(uint.to_string(), "0x000005fa");
+        assert_eq!(uint.to_string(), "0x5fa");
     }
 
     #[test]
@@ -342,11 +320,11 @@ mod test {
     #[test]
     fn serde_tests() {
         let eth = EthereumType::<8>::try_from("0x456abcf").unwrap();
-        let expected = "0x000000000456abcf";
+        let expected = "0x456abcf";
         serde_test::assert_tokens(&eth, &[serde_test::Token::BorrowedStr(expected)]);
 
         let eth = EthereumType::<4>::try_from("0xffaabb1").unwrap();
-        let expected = "0x0ffaabb1";
+        let expected = "0xffaabb1";
         serde_test::assert_tokens(&eth, &[serde_test::Token::BorrowedStr(expected)]);
     }
 }
