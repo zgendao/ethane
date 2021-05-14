@@ -1,7 +1,9 @@
 mod be_bytes;
+mod bytes;
 mod ethereum_type;
 use ethereum_type::EthereumType;
 
+pub use bytes::Bytes;
 /// A 160 bit (20 bytes) special Address type.
 pub type Address = EthereumType<20_usize, true>;
 /// A 2048 bit (256 bytes) Bloom hash type.

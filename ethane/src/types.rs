@@ -2,12 +2,9 @@
 //!
 //! This module provides custom types, but also re-exports some types from [ethereum_types].
 
-pub use ethane_types::{Address, Bloom, H256, H64, U128, U256, U64};
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+pub use ethane_types::*;
+use serde::{Deserialize, Serialize, Serializer};
 use std::collections::HashMap;
-use std::fmt::Debug;
-use std::str::FromStr;
 
 /// Information about block number, defaults to `BlockParameter::Latest`
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
@@ -121,60 +118,6 @@ pub struct Log {
     #[serde(rename = "transactionLogIndex")]
     pub transaction_log_index: Option<U256>,
     pub removed: bool,
-}
-
-/// A type for hex values of arbitrary length
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct Bytes(pub Vec<u8>);
-
-impl Bytes {
-    pub fn from_slice(slice: &[u8]) -> Self {
-        Bytes(slice.to_vec())
-    }
-}
-
-impl Serialize for Bytes {
-    fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
-        serializer.serialize_str(&(String::from("0x") + &hex::encode(&self.0)))
-    }
-}
-
-impl FromStr for Bytes {
-    type Err = hex::FromHexError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let trimmed = value.trim_start_matches("0x");
-        Ok(Bytes(hex::decode(trimmed)?))
-    }
-}
-
-impl<'de> Deserialize<'de> for Bytes {
-    fn deserialize<T>(deserializer: T) -> Result<Bytes, T::Error>
-    where
-        T: Deserializer<'de>,
-    {
-        deserializer.deserialize_identifier(BytesVisitor)
-    }
-}
-
-struct BytesVisitor;
-
-impl<'de> Visitor<'de> for BytesVisitor {
-    type Value = Bytes;
-
-    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "a hex string")
-    }
-
-    fn visit_str<T: serde::de::Error>(self, value: &str) -> Result<Self::Value, T> {
-        let result = Self::Value::from_str(value)
-            .map_err(|err| serde::de::Error::custom(format!("Invalid hex string: {}", err)))?;
-        Ok(result)
-    }
-
-    fn visit_string<T: serde::de::Error>(self, value: String) -> Result<Self::Value, T> {
-        self.visit_str(&value)
-    }
 }
 
 /// Wrapper for private keys to allow for 0x-prefixed and plain serialization
@@ -403,30 +346,6 @@ pub struct SignedTransaction {
 mod tests {
     use super::*;
     use std::convert::TryFrom;
-
-    #[test]
-    fn test_types_bytes() {
-        let bytes_0 = Bytes::from_slice(&[]);
-        let bytes_1 = Bytes::from_slice(&[0, 0]);
-        let bytes_2 = Bytes::from_slice(&[17, 234]);
-        let bytes_3 = Bytes::from_str("0x").unwrap();
-        let bytes_4 = Bytes::from_str("0x00").unwrap();
-        let bytes_5 = Bytes::from_str("00421100").unwrap();
-
-        let expected_0 = "\"0x\"";
-        let expected_1 = "\"0x0000\"";
-        let expected_2 = "\"0x11ea\"";
-        let expected_3 = Bytes(vec![]);
-        let expected_4 = Bytes(vec![0]);
-        let expected_5 = Bytes(vec![0, 66, 17, 0]);
-
-        assert_eq!(serde_json::to_string(&bytes_0).unwrap(), expected_0);
-        assert_eq!(serde_json::to_string(&bytes_1).unwrap(), expected_1);
-        assert_eq!(serde_json::to_string(&bytes_2).unwrap(), expected_2);
-        assert_eq!(bytes_3, expected_3);
-        assert_eq!(bytes_4, expected_4);
-        assert_eq!(bytes_5, expected_5);
-    }
 
     #[test]
     fn test_types_block_parameter() {
