@@ -48,21 +48,28 @@ impl<'de, const N: usize, const H: bool> Visitor<'de> for EthereumTypeVisitor<N,
 }
 
 impl<const N: usize, const H: bool> EthereumType<N, H> {
+    /// Represents inner data as a byte slice.
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 
+    /// Consumes `self` to uncover the underlying fixed array.
     #[inline]
     pub fn into_bytes(self) -> [u8; N] {
         self.0
     }
 
+    /// Creates a zero instance of the type.
     #[inline]
     pub fn zero() -> Self {
         Self([0_u8; N])
     }
 
+    /// Tries to parse an integer type that implements the `BeBytes` trait.
+    ///
+    /// Checks whether the integer can be safely casted into the given type
+    /// and returns an error if it doesn't fit.
     #[inline]
     pub fn try_from_int<const L: usize>(value: impl BeBytes<L>) -> Result<Self, ConversionError> {
         if N >= L {
@@ -77,6 +84,9 @@ impl<const N: usize, const H: bool> EthereumType<N, H> {
         }
     }
 
+    /// Parses an integer type without checking whether it can be safely casted
+    /// into the given type.
+    ///
     /// # Panics
     ///
     /// Panics if the input data doesn't fit into the type, i.e. `N < L`.
@@ -153,8 +163,8 @@ impl<const N: usize, const H: bool> TryFrom<&str> for EthereumType<N, H> {
     type Error = ConversionError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let stripped = value.trim_start_matches("0x");
-        let length = stripped.len();
+        let trimmed = value.trim_start_matches("0x");
+        let length = trimmed.len();
         if length <= 2 * N {
             let mut data = [0_u8; N];
             let end = if length % 2 == 0 {
@@ -162,12 +172,12 @@ impl<const N: usize, const H: bool> TryFrom<&str> for EthereumType<N, H> {
             } else {
                 length / 2 + 1
             };
-            let mut stripped_rev = stripped.chars().rev();
+            let mut trimmed_rev = trimmed.chars().rev();
             for i in 0..end {
-                let first = stripped_rev.next().unwrap().to_digit(16).ok_or_else(|| {
+                let first = trimmed_rev.next().unwrap().to_digit(16).ok_or_else(|| {
                     ConversionError::TryFromStrError("invalid digit found in string".to_owned())
                 })?;
-                let second = if let Some(sec) = stripped_rev.next() {
+                let second = if let Some(sec) = trimmed_rev.next() {
                     sec.to_digit(16).ok_or_else(|| {
                         ConversionError::TryFromStrError("invalid digit found in string".to_owned())
                     })?

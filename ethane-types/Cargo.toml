@@ -5,7 +5,6 @@ authors = ["ZGEN <info@zgen.hu>"]
 edition = "2018"
 
 [dependencies]
-hex = "0.4"
 serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]

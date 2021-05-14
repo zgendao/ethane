@@ -1,6 +1,6 @@
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::str::FromStr;
+use std::convert::TryFrom;
 
 /// A type for hex values of arbitrary length
 #[derive(Clone, Debug, PartialEq, Default)]
@@ -12,18 +12,54 @@ impl Bytes {
     }
 }
 
-impl Serialize for Bytes {
-    fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
-        serializer.serialize_str(&(String::from("0x") + &hex::encode(&self.0)))
+impl TryFrom<&str> for Bytes {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let trimmed = value.trim_start_matches("0x");
+        let length = trimmed.len();
+        let end = if length % 2 == 0 {
+            length / 2
+        } else {
+            length / 2 + 1
+        };
+        let mut data = Vec::<u8>::with_capacity(end);
+        let mut trimmed_chars = trimmed.chars();
+        for _ in 0..end {
+            let first = trimmed_chars
+                .next()
+                .unwrap()
+                .to_digit(16)
+                .ok_or_else(|| String::from("invalid digit found in string"))?;
+            let second = if let Some(sec) = trimmed_chars.next() {
+                sec.to_digit(16)
+                    .ok_or_else(|| String::from("invalid digit found in string"))?
+            } else {
+                0
+            };
+            data.push((first * 16 + second) as u8)
+        }
+        Ok(Self(data))
     }
 }
 
-impl FromStr for Bytes {
-    type Err = hex::FromHexError;
+impl std::fmt::Display for Bytes {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "0x{}",
+            self.0
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<Vec<String>>()
+                .join("")
+        )
+    }
+}
 
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let trimmed = value.trim_start_matches("0x");
-        Ok(Bytes(hex::decode(trimmed)?))
+impl Serialize for Bytes {
+    fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -46,7 +82,7 @@ impl<'de> Visitor<'de> for BytesVisitor {
     }
 
     fn visit_str<T: serde::de::Error>(self, value: &str) -> Result<Self::Value, T> {
-        let result = Self::Value::from_str(value)
+        let result = Self::Value::try_from(value)
             .map_err(|err| serde::de::Error::custom(format!("Invalid hex string: {}", err)))?;
         Ok(result)
     }
@@ -61,9 +97,9 @@ fn test_bytes() {
     let bytes_0 = Bytes::from_slice(&[]);
     let bytes_1 = Bytes::from_slice(&[0, 0]);
     let bytes_2 = Bytes::from_slice(&[17, 234]);
-    let bytes_3 = Bytes::from_str("0x").unwrap();
-    let bytes_4 = Bytes::from_str("0x00").unwrap();
-    let bytes_5 = Bytes::from_str("00421100").unwrap();
+    let bytes_3 = Bytes::try_from("0x").unwrap();
+    let bytes_4 = Bytes::try_from("0x00").unwrap();
+    let bytes_5 = Bytes::try_from("00421100").unwrap();
 
     let expected_0 = "0x";
     let expected_1 = "0x0000";
