@@ -6,4 +6,6 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-serde_arrays = "0.1.0"
+
+[dev-dependencies]
+serde_test = "1"
