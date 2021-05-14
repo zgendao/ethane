@@ -10,12 +10,8 @@ impl fmt::Display for Parameter {
         match self {
             Self::Address(data) => write!(
                 formatter,
-                "0x{}",
-                data.as_bytes()[12..]
-                    .iter()
-                    .map(|c| format!("{:02x}", c))
-                    .collect::<Vec<String>>()
-                    .join("")
+                "{}",
+                data
             ),
             Self::Bool(data) => write!(formatter, "{}", data.as_bytes()[31] != 0),
             Self::Uint(data, len) => match len {
