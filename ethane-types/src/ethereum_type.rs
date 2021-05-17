@@ -129,20 +129,6 @@ impl<const N: usize, const H: bool> Default for EthereumType<N, H> {
     }
 }
 
-impl<const N: usize, const H: bool> TryFrom<&[u8]> for EthereumType<N, H> {
-    type Error = ConversionError;
-
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        Ok(Self(value.try_into().map_err(|_| {
-            ConversionError::TryFromSliceError(format!(
-                "input length was {}, expected {}",
-                value.len(),
-                N
-            ))
-        })?))
-    }
-}
-
 impl<const N: usize, const H: bool> From<[u8; N]> for EthereumType<N, H> {
     #[inline]
     fn from(value: [u8; N]) -> Self {
@@ -156,6 +142,20 @@ impl<const N: usize, const H: bool> From<&[u8; N]> for EthereumType<N, H> {
         let mut data = [0u8; N];
         data.copy_from_slice(value);
         Self(data)
+    }
+}
+
+impl<const N: usize, const H: bool> TryFrom<&[u8]> for EthereumType<N, H> {
+    type Error = ConversionError;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        Ok(Self(value.try_into().map_err(|_| {
+            ConversionError::TryFromSliceError(format!(
+                "input has {} bytes, expected {}",
+                value.len(),
+                N
+            ))
+        })?))
     }
 }
 
@@ -301,10 +301,25 @@ mod test {
     }
 
     #[test]
-    fn try_from_slice() {
+    fn from_slice_and_array() {
+        let data = vec![1_u8, 2, 3, 4, 5, 6, 233, 124];
+        let eth = EthereumType::<8, false>::try_from(data.as_slice()).unwrap();
+        assert_eq!(eth.as_bytes(), data.as_slice());
+
+        let data = [0_u8; 16];
+        let eth = EthereumType::<16, false>::from(data);
+        assert_eq!(eth, EthereumType::<16, false>::zero());
+
+        let data = [0_u8; 16];
+        let eth = EthereumType::<16, false>::from(&data);
+        assert_eq!(eth, EthereumType::<16, false>::zero());
+    }
+
+    #[test]
+    fn try_from_invalid_slice() {
         let eth = EthereumType::<16, false>::try_from(vec![1_u8, 2, 3, 4, 5, 6].as_slice());
         if let Err(ConversionError::TryFromSliceError(err_msg)) = eth {
-            assert_eq!(err_msg, "input length was 6, expected 16");
+            assert_eq!(err_msg, "input has 6 bytes, expected 16");
         } else {
             panic!("should be a TryFromSliceError");
         }
