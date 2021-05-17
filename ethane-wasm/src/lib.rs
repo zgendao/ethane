@@ -47,19 +47,18 @@ pub struct RequestArguments {
 
 #[wasm_bindgen]
 impl RequestArguments {
-    #[wasm_bindgen(constructor)]
     pub fn new(method: String, params: js_sys::Array) -> Self {
         Self { method, params }
     }
-    #[wasm_bindgen(getter)]
-    pub fn method(&self) -> String {
-        self.method.clone()
-    }
+    //#[wasm_bindgen(getter)]
+    //pub fn method(&self) -> String {
+    //    self.method.clone()
+    //}
 
-    #[wasm_bindgen(getter)]
-    pub fn params(&self) -> js_sys::Array {
-        self.params.clone()
-    }
+    //#[wasm_bindgen(getter)]
+    //pub fn params(&self) -> js_sys::Array {
+    //    self.params.clone()
+    //}
 
     pub fn as_json_string(&self) -> String {
         let id = 64; // TODO how to assign id
