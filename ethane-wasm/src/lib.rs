@@ -86,6 +86,12 @@ pub struct Web3 {
 
 #[wasm_bindgen]
 impl Web3 {
+    pub fn new(address: String) -> Self {
+        Self {
+            client: ethane::AsyncHttp::new(&address, None),
+        }
+    }
+
     // NOTE Async calls in `wasm` take `self` by value, not reference!
     pub async fn call(mut self, args: RequestArguments) -> String {
         let result = self.client.request(args.as_json_string()).await;
