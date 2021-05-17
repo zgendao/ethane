@@ -1,11 +1,9 @@
-//! Implementation of http transport
+use crate::connection::{ConnectionError, Credentials};
 
-use super::super::{ConnectionError, Credentials, Request as EthaneRequest};
-
-use reqwest::blocking::Client;
 use reqwest::header::HeaderMap;
+use reqwest::Client;
 
-/// Wraps a http client
+/// Wraps a blocking http client
 pub struct Http {
     /// The domain where requests are sent
     address: String,
@@ -34,17 +32,17 @@ impl Http {
         headers.insert("Accept", "application/json".parse().unwrap());
         headers
     }
-}
 
-impl EthaneRequest for Http {
-    fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
+    pub async fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
         self.client
             .post(&self.address)
             .headers(self.json_request_headers())
             .body(cmd)
             .send()
+            .await
             .map_err(|e| ConnectionError::HttpError(e.to_string()))?
             .text()
+            .await
             .map_err(|e| ConnectionError::HttpError(e.to_string()))
     }
 }

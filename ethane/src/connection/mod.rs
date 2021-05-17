@@ -4,6 +4,8 @@ mod transport;
 
 pub use credentials::Credentials;
 pub use subscription::Subscription;
+pub use transport::http::AsyncHttp;
+#[cfg(feature = "blocking")]
 pub use transport::http::Http;
 #[cfg(target_family = "unix")]
 pub use transport::uds::Uds;

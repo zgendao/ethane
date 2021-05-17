@@ -1,4 +1,3 @@
-use ethane::Request;
 use wasm_bindgen::prelude::*;
 
 /*
@@ -82,13 +81,14 @@ impl RequestArguments {
 
 #[wasm_bindgen]
 pub struct Web3 {
-    client: ethane::Http,
+    client: ethane::AsyncHttp,
 }
 
 #[wasm_bindgen]
 impl Web3 {
-    pub fn call(&mut self, args: RequestArguments) -> String {
-        let result = self.client.request(args.as_json_string());
+    // NOTE Async calls in `wasm` take `self` by value, not reference!
+    pub async fn call(mut self, args: RequestArguments) -> String {
+        let result = self.client.request(args.as_json_string()).await;
         if let Ok(response) = result {
             response
         } else {
