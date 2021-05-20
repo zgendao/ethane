@@ -1,19 +1,22 @@
+use js_sys::{Array, Promise};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::future_to_promise;
+
+use std::collections::VecDeque;
 
 #[wasm_bindgen]
 pub struct RequestArguments {
     method: String,
-    params: js_sys::Array, // NOTE Serialize is not implemented for js_sys::Array
+    params: Array, // NOTE Serialize is not implemented for js_sys::Array
 }
 
 #[wasm_bindgen]
 impl RequestArguments {
-    pub fn new(method: String, params: js_sys::Array) -> Self {
+    pub fn new(method: String, params: Array) -> Self {
         Self { method, params }
     }
 
-    pub fn as_json_string(&self) -> String {
-        let id = 64; // TODO how to assign id
+    pub fn as_json_string(&self, id: usize) -> String {
         let param_vec = self
             .params
             .iter()
@@ -32,6 +35,7 @@ impl RequestArguments {
 
 #[wasm_bindgen]
 pub struct Web3 {
+    id_pool: VecDeque<usize>,
     client: ethane::AsyncHttp,
 }
 
@@ -39,17 +43,30 @@ pub struct Web3 {
 impl Web3 {
     pub fn new(address: String) -> Self {
         Self {
+            id_pool: (0..1000).collect(),
             client: ethane::AsyncHttp::new(&address, None),
         }
     }
 
     // NOTE Async calls in `wasm` take `self` by value, not reference!
-    pub async fn call(mut self, args: RequestArguments) -> String {
-        let result = self.client.request(args.as_json_string()).await;
-        if let Ok(response) = result {
-            response
+    pub fn call(&mut self, args: RequestArguments) -> Promise {
+        let id = if let Some(id) = self.id_pool.pop_front() {
+            self.id_pool.push_back(id);
+            id
         } else {
-            format!("Error: {:?}", result.err().unwrap())
-        }
+            1001
+        };
+
+        let client = self.client.clone();
+
+        future_to_promise(async move {
+            let result = client.request(args.as_json_string(id)).await;
+            let response = if let Ok(response) = result {
+                response
+            } else {
+                format!("Error: {:?}", result.err().unwrap())
+            };
+            Ok(JsValue::from(response))
+        })
     }
 }

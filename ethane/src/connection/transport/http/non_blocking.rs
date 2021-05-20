@@ -4,6 +4,7 @@ use reqwest::header::HeaderMap;
 use reqwest::Client;
 
 /// Wraps a blocking http client
+#[derive(Clone)]
 pub struct Http {
     /// The domain where requests are sent
     address: String,
@@ -33,7 +34,7 @@ impl Http {
         headers
     }
 
-    pub async fn request(&mut self, cmd: String) -> Result<String, ConnectionError> {
+    pub async fn request(&self, cmd: String) -> Result<String, ConnectionError> {
         self.client
             .post(&self.address)
             .headers(self.json_request_headers())
