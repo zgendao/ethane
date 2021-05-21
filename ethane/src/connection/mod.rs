@@ -1,6 +1,7 @@
 #[cfg(feature = "blocking")]
 mod blocking;
 mod credentials;
+#[cfg(feature = "non-blocking")]
 mod non_blocking;
 mod subscription;
 mod transport;
@@ -8,7 +9,9 @@ mod transport;
 #[cfg(feature = "blocking")]
 pub use blocking::Connection;
 pub use credentials::Credentials;
+#[cfg(feature = "non-blocking")]
 pub use non_blocking::Connection as AsyncConnection;
+#[cfg(feature = "blocking")]
 pub use subscription::Subscription;
 #[cfg(feature = "blocking")]
 pub use transport::http::Http;

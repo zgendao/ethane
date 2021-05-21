@@ -12,6 +12,7 @@ readme = "../README.md"
 
 [features]
 blocking = []
+non-blocking = []
 
 [dependencies]
 ethane-abi = { path = "../ethane-abi", version = "1.0.1" }
