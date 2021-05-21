@@ -3,6 +3,7 @@ mod blocking;
 mod credentials;
 #[cfg(feature = "non-blocking")]
 mod non_blocking;
+#[cfg(feature = "blocking")]
 mod subscription;
 mod transport;
 
