@@ -1,38 +1,22 @@
-use crate::types::{Address, Bytes, Call, TransactionRequest, H256};
-use crate::{rpc, Connection, Request};
+use crate::types::{Address, Bytes, Call, TransactionRequest};
+use crate::{rpc, AsyncConnection};
 use ethane_abi::{Abi, Parameter, StateMutability};
 use std::path::Path;
 
-pub struct Caller<T: Request> {
+use super::{CallOpts, CallResult, CallType};
+
+pub struct Caller {
     abi: Abi,
     contract_address: Address,
-    connection: Connection<T>,
+    connection: AsyncConnection,
 }
 
-pub struct CallOpts {
-    pub force_call_type: Option<CallType>,
-    pub from: Option<Address>,
-}
-
-pub enum CallType {
-    Transaction,
-    Call,
-}
-
-pub enum CallResult {
-    Transaction(H256),
-    Call(Vec<Parameter>),
-}
-
-impl<T> Caller<T>
-where
-    T: Request,
-{
+impl Caller {
     pub fn new(
-        connection: Connection<T>,
+        connection: AsyncConnection,
         abi_json: serde_json::Value,
         contract_address: Address,
-    ) -> Caller<T> {
+    ) -> Caller {
         let mut abi = Abi::new();
         abi.parse_json(abi_json).expect("unable to parse abi");
         Caller {
@@ -43,10 +27,10 @@ where
     }
 
     pub fn new_from_path(
-        connection: Connection<T>,
+        connection: AsyncConnection,
         path: &str,
         contract_address: Address,
-    ) -> Caller<T> {
+    ) -> Caller {
         let mut abi = Abi::new();
         abi.parse_file(Path::new(path))
             .expect("unable to parse abi");
@@ -57,7 +41,7 @@ where
         }
     }
 
-    pub fn call(
+    pub async fn call(
         &mut self,
         function_name: &str,
         params: Vec<Parameter>,
@@ -85,19 +69,23 @@ where
         let data = self.abi.encode(function_name, params).unwrap();
 
         match call_type {
-            CallType::Transaction => self.eth_send_transaction(data, from_address),
-            CallType::Call => self.eth_call(function_name, data),
+            CallType::Transaction => self.eth_send_transaction(data, from_address).await,
+            CallType::Call => self.eth_call(function_name, data).await,
         }
     }
 
-    fn eth_call(&mut self, function_name: &str, data: Vec<u8>) -> CallResult {
+    async fn eth_call(&mut self, function_name: &str, data: Vec<u8>) -> CallResult {
         let payload = Call {
             to: self.contract_address,
             data: Some(Bytes::from_slice(&data)),
             ..Default::default()
         };
 
-        let call_result = self.connection.call(rpc::eth_call(payload, None)).unwrap();
+        let call_result = self
+            .connection
+            .call(rpc::eth_call(payload, None))
+            .await
+            .unwrap();
         CallResult::Call(
             self.abi
                 .decode(function_name, call_result.0.as_slice())
@@ -105,7 +93,7 @@ where
         )
     }
 
-    fn eth_send_transaction(&mut self, data: Vec<u8>, from_address: Address) -> CallResult {
+    async fn eth_send_transaction(&mut self, data: Vec<u8>, from_address: Address) -> CallResult {
         let payload = TransactionRequest {
             from: from_address,
             to: Some(self.contract_address),
@@ -116,6 +104,7 @@ where
         CallResult::Transaction(
             self.connection
                 .call(rpc::eth_send_transaction(payload))
+                .await
                 .unwrap(),
         )
     }

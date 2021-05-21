@@ -33,6 +33,7 @@ impl RequestArguments {
     }
 }
 
+/*
 #[wasm_bindgen]
 pub struct Web3 {
     id_pool: VecDeque<usize>,
@@ -70,3 +71,4 @@ impl Web3 {
         })
     }
 }
+*/
