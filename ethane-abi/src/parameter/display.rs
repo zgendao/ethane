@@ -1,6 +1,6 @@
 use super::Parameter;
 
-use ethane_types::{Address, U256};
+use ethane_types::Address;
 use std::convert::TryFrom;
 use std::fmt;
 use std::str;
@@ -16,34 +16,7 @@ impl fmt::Display for Parameter {
                 write!(formatter, "{}", address)
             }
             Self::Bool(data) => write!(formatter, "{}", data.as_bytes()[31] != 0),
-            Self::Uint(data, len) => match len {
-                8 => write!(formatter, "{}", data.as_bytes()[31]),
-                16 => {
-                    let mut bytes = [0u8; 2];
-                    bytes.copy_from_slice(&data.as_bytes()[30..]);
-                    write!(formatter, "{}", u16::from_be_bytes(bytes))
-                }
-                32 => {
-                    let mut bytes = [0u8; 4];
-                    bytes.copy_from_slice(&data.as_bytes()[28..]);
-                    write!(formatter, "{}", u32::from_be_bytes(bytes))
-                }
-                64 => {
-                    let mut bytes = [0u8; 8];
-                    bytes.copy_from_slice(&data.as_bytes()[24..]);
-                    write!(formatter, "{}", u64::from_be_bytes(bytes))
-                }
-                128 => {
-                    let mut bytes = [0u8; 16];
-                    bytes.copy_from_slice(&data.as_bytes()[16..]);
-                    write!(formatter, "{}", u128::from_be_bytes(bytes))
-                }
-                256 => {
-                    // unwrap is fine, because we know that data has length 256
-                    //U256::try_from(data.as_bytes()).unwrap().to_string()
-                }
-                _ => panic!("Invalid number!"),
-            },
+            Self::Uint(data, _) => write!(formatter, "{}", data.to_dec_string()),
             Self::Int(data, len) => match len {
                 8 => write!(formatter, "{}", data.as_bytes()[31] as i8),
                 16 => {
@@ -156,7 +129,10 @@ mod test {
             "{}",
             Parameter::from(U256::try_from("1234567890123456789012345678901234567890").unwrap())
         );
-        assert_eq!(&expected, "0x1234567890123456789012345678901234567890");
+        assert_eq!(
+            &expected,
+            "103929005307130220006098923584552504982110632080"
+        );
 
         let expected = format!("{}", Parameter::from(-89i8));
         assert_eq!(&expected, "-89");
