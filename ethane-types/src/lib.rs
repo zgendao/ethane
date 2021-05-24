@@ -1,6 +1,8 @@
 mod be_bytes;
 mod bytes;
 mod ethereum_type;
+mod utils;
+
 use ethereum_type::EthereumType;
 
 pub use bytes::Bytes;

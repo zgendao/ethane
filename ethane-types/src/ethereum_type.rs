@@ -96,6 +96,14 @@ impl<const N: usize, const H: bool> EthereumType<N, H> {
         data[N - L..].copy_from_slice(&value.be_bytes()[..]);
         Self(data)
     }
+
+    /// Returns the internal data bytes formatted as a decimal string.
+    ///
+    /// Implementation taken shamelessly from
+    /// [here](https://stackoverflow.com/questions/2423902/convert-an-array-of-bytes-into-one-decimal-number-as-a-string)
+    pub fn to_dec_string(&self) -> String {
+        super::utils::bytes_to_dec_string(&self.0[..])
+    }
 }
 
 impl<const N: usize, const H: bool> std::fmt::Display for EthereumType<N, H> {

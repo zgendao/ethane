@@ -38,12 +38,10 @@ impl fmt::Display for Parameter {
                     bytes.copy_from_slice(&data.as_bytes()[16..]);
                     write!(formatter, "{}", u128::from_be_bytes(bytes))
                 }
-                256 => write!(
-                    formatter,
-                    "{}",
+                256 => {
                     // unwrap is fine, because we know that data has length 256
-                    U256::try_from(data.as_bytes()).unwrap().to_string()
-                ),
+                    //U256::try_from(data.as_bytes()).unwrap().to_string()
+                }
                 _ => panic!("Invalid number!"),
             },
             Self::Int(data, len) => match len {
