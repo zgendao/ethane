@@ -1,6 +1,6 @@
 use super::Parameter;
 
-use ethane_types::U256;
+use ethane_types::{Address, U256};
 use std::convert::TryFrom;
 use std::fmt;
 use std::str;
@@ -8,7 +8,13 @@ use std::str;
 impl fmt::Display for Parameter {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Address(data) => write!(formatter, "{}", data),
+            // data is stored in a H256 type on 32 bytes, so right padded 20
+            // bytes have to be extracted
+            Self::Address(data) => {
+                // unwrap is fine because we know that data is H256
+                let address = Address::try_from(&data.into_bytes()[12..]).unwrap();
+                write!(formatter, "{}", address)
+            }
             Self::Bool(data) => write!(formatter, "{}", data.as_bytes()[31] != 0),
             Self::Uint(data, len) => match len {
                 8 => write!(formatter, "{}", data.as_bytes()[31]),
@@ -110,10 +116,7 @@ mod test {
                 Address::try_from("0x99429f64cf4d5837620dcc293c1a537d58729b68").unwrap()
             )
         );
-        assert_eq!(
-            &expected,
-            "0x00000000000000000000000099429f64cf4d5837620dcc293c1a537d58729b68"
-        );
+        assert_eq!(&expected, "0x99429f64cf4d5837620dcc293c1a537d58729b68");
 
         let expected = format!("{}", Parameter::from(true));
         assert_eq!(&expected, "true");
