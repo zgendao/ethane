@@ -60,7 +60,7 @@ fn test_abi_encode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0c, 0xff,
     ]).unwrap();
 
-    assert_eq!(returned_parameters[0].to_string(), String::from("0xaff"));
-    assert_eq!(returned_parameters[1].to_string(), String::from("0xbff"));
-    assert_eq!(returned_parameters[2].to_string(), String::from("0xcff"));
+    assert_eq!(returned_parameters[0].to_string(), String::from("2815"));
+    assert_eq!(returned_parameters[1].to_string(), String::from("3071"));
+    assert_eq!(returned_parameters[2].to_string(), String::from("3327"));
 }
