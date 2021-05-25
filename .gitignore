@@ -3,6 +3,7 @@ Cargo.lock
 .idea/
 /test-helper/target
 /test-helper/Cargo.lock
+www/
 .env
 
 node_modules
