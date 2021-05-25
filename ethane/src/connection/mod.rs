@@ -14,6 +14,8 @@ pub use credentials::Credentials;
 pub use non_blocking::Connection as AsyncConnection;
 #[cfg(feature = "blocking")]
 pub use subscription::Subscription;
+#[cfg(feature = "non-blocking")]
+pub use transport::http::AsyncHttp;
 #[cfg(feature = "blocking")]
 pub use transport::http::Http;
 #[cfg(target_family = "unix")]

@@ -1,5 +1,5 @@
 use super::{ConnectionError, Request, Subscribe, Subscription};
-use crate::rpc::{sub::SubscriptionRequest, Rpc, RpcResponse};
+use crate::rpc::{Rpc, RpcResponse, SubscriptionRequest};
 
 use serde::de::DeserializeOwned;
 

@@ -1,4 +1,4 @@
-use ethane::rpc::{sub::SubscriptionRequest, Rpc};
+use ethane::rpc::{Rpc, SubscriptionRequest};
 use ethane::{Connection, ConnectionError, Http, Request, Subscribe, Subscription, WebSocket};
 use regex::{Regex, RegexBuilder};
 use serde::de::DeserializeOwned;

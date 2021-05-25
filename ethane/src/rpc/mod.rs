@@ -22,14 +22,15 @@ use std::marker::PhantomData;
 pub use eth::*;
 pub use net::*;
 pub use personal::*;
-pub(crate) use sub::eth_unsubscribe;
+pub use sub::*;
+//pub(crate) use sub::eth_unsubscribe;
 pub use txpool::*;
 pub use web3::*;
 
 mod eth;
 mod net;
 mod personal;
-pub mod sub;
+mod sub;
 mod txpool;
 mod web3;
 

@@ -33,7 +33,6 @@ impl RequestArguments {
     }
 }
 
-/*
 #[wasm_bindgen]
 pub struct Web3 {
     id_pool: VecDeque<usize>,
@@ -49,7 +48,6 @@ impl Web3 {
         }
     }
 
-    // NOTE Async calls in `wasm` take `self` by value, not reference!
     pub fn call(&mut self, args: RequestArguments) -> Promise {
         let id = if let Some(id) = self.id_pool.pop_front() {
             self.id_pool.push_back(id);
@@ -71,4 +69,3 @@ impl Web3 {
         })
     }
 }
-*/

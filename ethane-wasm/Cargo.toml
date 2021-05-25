@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-ethane = { path = "../ethane" }
+ethane = { path = "../ethane", features = ["non-blocking"] }
 futures = "0.3"
 getrandom = { version = "0.2.2", features = ["js"] }
 js-sys = "0.3.45"
