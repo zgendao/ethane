@@ -1,6 +1,6 @@
 use ethane::rpc;
 use ethane::types::{Bytes, H256};
-use std::str::FromStr;
+use std::convert::TryFrom;
 
 use test_helper::*;
 
@@ -18,6 +18,6 @@ fn test_web3_client_version() {
 fn test_web3_sha3() {
     let mut client = ConnectionWrapper::new_from_env(None);
     let empty = Bytes::from_slice("".as_bytes());
-    let expected = H256::from_str(KECCAK_HASH_OF_EMPTY_STRING).unwrap();
+    let expected = H256::try_from(KECCAK_HASH_OF_EMPTY_STRING).unwrap();
     rpc_call_test_expected(&mut client, rpc::web3_sha3(empty), expected);
 }

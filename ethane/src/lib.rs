@@ -36,7 +36,7 @@
 //! ## Starting a subscription over websocket
 //! ```no_run
 //! use ethane::{Connection, WebSocket};
-//! use ethane::rpc::sub::eth_subscribe_new_pending_transactions;
+//! use ethane::rpc::eth_subscribe_new_pending_transactions;
 //! # use test_helper::NodeProcess;
 //! # use ethane::rpc::{eth_send_transaction, eth_coinbase};
 //! # use ethane::types::{TransactionRequest, Address, U256};

@@ -1,0 +1,16 @@
+[package]
+name = "ethane-wasm"
+version = "0.1.0"
+authors = ["ZGEN <info@zgen.hu>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ethane = { path = "../ethane", features = ["non-blocking"] }
+futures = "0.3"
+getrandom = { version = "0.2.2", features = ["js"] }
+js-sys = "0.3.45"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4"

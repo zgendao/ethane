@@ -8,7 +8,7 @@ pub use encode_into::encode_into;
 pub use parameter_type::ParameterType;
 use utils::*;
 
-use ethereum_types::{Address, H256};
+use ethane_types::{Address, H256};
 
 /// An ABI function parameter type enclosing the underlying
 /// numeric data bytes.
@@ -128,9 +128,9 @@ mod test {
             0, 0, 0, 0, 0, 0, 0, 0,
         ]); 
         assert_eq!(Parameter::FixedArray(vec![
-                Parameter::Uint(H256::from_low_u64_be(0x4a), 8),
-                Parameter::Uint(H256::from_low_u64_be(0xff), 8),
-                Parameter::Uint(H256::from_low_u64_be(0xde), 8),
+                Parameter::Uint(H256::from_int_unchecked(0x4a_u8), 8),
+                Parameter::Uint(H256::from_int_unchecked(0xff_u8), 8),
+                Parameter::Uint(H256::from_int_unchecked(0xde_u8), 8),
         ]).static_encode(),
         vec![
             0, 0, 0, 0, 0, 0, 0, 0,

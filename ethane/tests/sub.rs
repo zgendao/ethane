@@ -1,11 +1,12 @@
 use ethane::rpc::eth_send_transaction;
-use ethane::rpc::sub::{
+use ethane::rpc::{
     eth_subscribe_logs, eth_subscribe_new_heads, eth_subscribe_new_pending_transactions,
     eth_subscribe_syncing,
 };
 use ethane::types::{
     BlockHeader, Bytes, FilterSubscription, Log, TransactionRequest, ValueOrVec, H256, U256,
 };
+use std::convert::TryFrom;
 use std::path::Path;
 
 use test_helper::*;
@@ -71,7 +72,9 @@ fn test_eth_subscribe_logs() {
     let topic = keccak(b"Solution(uint256)");
     let filter = FilterSubscription {
         address: Some(ValueOrVec::Value(contract_address)),
-        topics: Some(vec![Some(ValueOrVec::Value(H256::from_slice(&topic)))]),
+        topics: Some(vec![Some(ValueOrVec::Value(
+            H256::try_from(&topic).unwrap(),
+        ))]),
     };
     let mut logs = Vec::<Log>::new();
     let mut subscription = client.subscribe(eth_subscribe_logs(filter)).unwrap();

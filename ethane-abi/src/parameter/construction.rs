@@ -1,6 +1,6 @@
 use super::utils::*;
 use super::Parameter;
-use ethereum_types::{Address, H256, U128, U256, U64};
+use ethane_types::{Address, H256, U128, U256, U64};
 
 use std::convert::From;
 
@@ -31,47 +31,35 @@ impl Parameter {
 impl From<u8> for Parameter {
     #[inline]
     fn from(input: u8) -> Self {
-        Self::Uint(H256::from_slice(&left_pad_to_32_bytes(&[input])), 8)
+        Self::Uint(H256::from_int_unchecked(input), 8)
     }
 }
 
 impl From<u16> for Parameter {
     #[inline]
     fn from(input: u16) -> Self {
-        Self::Uint(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            16,
-        )
+        Self::Uint(H256::from_int_unchecked(input), 16)
     }
 }
 
 impl From<u32> for Parameter {
     #[inline]
     fn from(input: u32) -> Self {
-        Self::Uint(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            32,
-        )
+        Self::Uint(H256::from_int_unchecked(input), 32)
     }
 }
 
 impl From<u64> for Parameter {
     #[inline]
     fn from(input: u64) -> Self {
-        Self::Uint(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            64,
-        )
+        Self::Uint(H256::from_int_unchecked(input), 64)
     }
 }
 
 impl From<u128> for Parameter {
     #[inline]
     fn from(input: u128) -> Self {
-        Self::Uint(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            128,
-        )
+        Self::Uint(H256::from_int_unchecked(input), 128)
     }
 }
 
@@ -79,47 +67,35 @@ impl From<u128> for Parameter {
 impl From<i8> for Parameter {
     #[inline]
     fn from(input: i8) -> Self {
-        Self::Int(H256::from_slice(&left_pad_to_32_bytes(&[input as u8])), 8)
+        Self::Int(H256::from_int_unchecked(input), 8)
     }
 }
 
 impl From<i16> for Parameter {
     #[inline]
     fn from(input: i16) -> Self {
-        Self::Int(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            16,
-        )
+        Self::Int(H256::from_int_unchecked(input), 16)
     }
 }
 
 impl From<i32> for Parameter {
     #[inline]
     fn from(input: i32) -> Self {
-        Self::Int(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            32,
-        )
+        Self::Int(H256::from_int_unchecked(input), 32)
     }
 }
 
 impl From<i64> for Parameter {
     #[inline]
     fn from(input: i64) -> Self {
-        Self::Int(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            64,
-        )
+        Self::Int(H256::from_int_unchecked(input), 64)
     }
 }
 
 impl From<i128> for Parameter {
     #[inline]
     fn from(input: i128) -> Self {
-        Self::Int(
-            H256::from_slice(&left_pad_to_32_bytes(&input.to_be_bytes())),
-            128,
-        )
+        Self::Int(H256::from_int_unchecked(input), 128)
     }
 }
 
@@ -127,7 +103,7 @@ impl From<i128> for Parameter {
 impl From<bool> for Parameter {
     #[inline]
     fn from(input: bool) -> Self {
-        Self::Bool(H256::from_slice(&left_pad_to_32_bytes(&[u8::from(input)])))
+        Self::Bool(H256::from_int_unchecked(u8::from(input)))
     }
 }
 
@@ -143,34 +119,28 @@ impl From<&str> for Parameter {
 impl From<Address> for Parameter {
     #[inline]
     fn from(input: Address) -> Self {
-        Self::Address(H256::from_slice(&left_pad_to_32_bytes(&input.as_bytes())))
+        Self::Address(H256::from(&left_pad_to_32_bytes(input.as_bytes())))
     }
 }
 
 impl From<U64> for Parameter {
     #[inline]
     fn from(input: U64) -> Self {
-        let mut bytes = [0u8; 8];
-        input.to_big_endian(&mut bytes);
-        Self::Uint(H256::from_slice(&left_pad_to_32_bytes(&bytes)), 64)
+        Self::Uint(H256::from(&left_pad_to_32_bytes(input.as_bytes())), 64)
     }
 }
 
 impl From<U128> for Parameter {
     #[inline]
     fn from(input: U128) -> Self {
-        let mut bytes = [0u8; 16];
-        input.to_big_endian(&mut bytes);
-        Self::Uint(H256::from_slice(&left_pad_to_32_bytes(&bytes)), 128)
+        Self::Uint(H256::from(&left_pad_to_32_bytes(input.as_bytes())), 128)
     }
 }
 
 impl From<U256> for Parameter {
     #[inline]
     fn from(input: U256) -> Self {
-        let mut padded = [0u8; 32];
-        input.to_big_endian(&mut padded);
-        Self::Uint(H256::from_slice(&padded), 256)
+        Self::Uint(H256::from(input.into_bytes()), 256)
     }
 }
 
@@ -178,7 +148,7 @@ impl From<U256> for Parameter {
 mod test {
     use super::*;
     use hex_literal::hex;
-    use std::str::FromStr;
+    use std::convert::TryFrom;
 
     #[test]
     fn parameter_from_elementary_numeric_type() {
@@ -306,40 +276,40 @@ mod test {
         let param = Parameter::from(U64::zero());
         if let Parameter::Uint(value, len) = param {
             assert_eq!(len, 64);
-            assert_eq!(value.to_fixed_bytes(), [0u8; 32]);
+            assert_eq!(value.into_bytes(), [0u8; 32]);
         } else {
             panic!("From U64 test failed")
         }
 
         // from U128
-        let param = Parameter::from(U128::from_str("12345").unwrap());
+        let param = Parameter::from(U128::try_from("12345").unwrap());
         if let Parameter::Uint(value, len) = param {
             let mut expected = [0u8; 32];
             expected[28..].copy_from_slice(&0x12345u32.to_be_bytes());
             assert_eq!(len, 128);
-            assert_eq!(value.to_fixed_bytes(), expected);
+            assert_eq!(value.into_bytes(), expected);
         } else {
             panic!("From U128 test failed")
         }
 
         // from U256
-        let param = Parameter::from(U256::from_str("123456789").unwrap());
+        let param = Parameter::from(U256::try_from("123456789").unwrap());
         if let Parameter::Uint(value, len) = param {
             let mut expected = [0u8; 32];
             expected[24..].copy_from_slice(&0x123456789u64.to_be_bytes());
             assert_eq!(len, 256);
-            assert_eq!(value.to_fixed_bytes(), expected);
+            assert_eq!(value.into_bytes(), expected);
         } else {
             panic!("From U256 test failed")
         }
 
         // from Address
         let param = Parameter::from(
-            Address::from_str("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
+            Address::try_from("0x95eDA452256C1190947f9ba1fD19422f0120858a").unwrap(),
         );
         if let Parameter::Address(value) = param {
             let expected = hex!("00000000000000000000000095eDA452256C1190947f9ba1fD19422f0120858a");
-            assert_eq!(value.to_fixed_bytes(), expected);
+            assert_eq!(value.into_bytes(), expected);
         } else {
             panic!("From U256 test failed")
         }
@@ -389,7 +359,7 @@ mod test {
         let param = Parameter::new_int([14; 32], true); // signed = true
         if let Parameter::Int(value, len) = param {
             assert_eq!(len, 256);
-            assert_eq!(value.to_fixed_bytes(), [14u8; 32]);
+            assert_eq!(value.into_bytes(), [14u8; 32]);
         } else {
             panic!("Signed integer from fixed slice test failed");
         }
@@ -398,7 +368,7 @@ mod test {
         let param = Parameter::new_int([12; 32], false); // signed = false
         if let Parameter::Uint(value, len) = param {
             assert_eq!(len, 256);
-            assert_eq!(value.to_fixed_bytes(), [12u8; 32]);
+            assert_eq!(value.into_bytes(), [12u8; 32]);
         } else {
             panic!("Unsigned integer from fixed slice test failed");
         }

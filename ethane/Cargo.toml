@@ -10,18 +10,17 @@ keywords = ["web3", "ethereum", "jsonrpc", "rpc", "simple"]
 categories = ["cryptography::cryptocurrencies", "web-programming"]
 readme = "../README.md"
 
+[features]
+blocking = []
+non-blocking = []
+
 [dependencies]
-ethane-abi = { path = "../ethane-abi", version = "1.0.1" }
-ethereum-types = "0.11"
-funty = "~1.1.0"
-http = "0.2"
-log = "0.4"
+ethane-abi = { path = "../ethane-abi" }
+ethane-types = { path = "../ethane-types" }
+reqwest = { version = "0.11.3", features = ["blocking"] }
 serde = {version = "1", features = ["derive"]}
 serde_json = "1"
-thiserror = "1"
 tungstenite = {version = "0.13", features = ["rustls-tls"], default-features = false}
-hex = "0.4"
-ureq = "2"
 
 [dev-dependencies]
 test-helper = { path = "./test-helper"}

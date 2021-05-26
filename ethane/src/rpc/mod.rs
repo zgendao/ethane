@@ -13,7 +13,6 @@
 //! Use these functions to generate [Rpc](Rpc) objects and pass them to the
 //! [call](crate::Connection::call) function of a [connection](crate::Connection).
 
-use log::error;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -23,14 +22,15 @@ use std::marker::PhantomData;
 pub use eth::*;
 pub use net::*;
 pub use personal::*;
-pub(crate) use sub::eth_unsubscribe;
+pub use sub::*;
+//pub(crate) use sub::eth_unsubscribe;
 pub use txpool::*;
 pub use web3::*;
 
 mod eth;
 mod net;
 mod personal;
-pub mod sub;
+mod sub;
 mod txpool;
 mod web3;
 
@@ -38,6 +38,7 @@ mod web3;
 ///
 /// This is usually not directly needed and returned by the [functions](crate::rpc) which
 /// wrap the different namespaces. However, it is also possible to create custom Rpc structs.
+#[repr(C)]
 #[derive(Serialize, Debug)]
 pub struct Rpc<T: DeserializeOwned + Debug> {
     #[serde(rename = "jsonrpc")]
@@ -75,9 +76,8 @@ impl<T: DeserializeOwned + Debug> Rpc<T> {
     }
 
     pub(crate) fn add_param<U: Serialize + Debug>(&mut self, parameter: U) {
-        match serde_json::to_value(&parameter) {
-            Ok(serialized_param) => self.params.push(serialized_param),
-            Err(err) => error!("Error during serialization: {}", err),
+        if let Ok(serialized_param) = serde_json::to_value(&parameter) {
+            self.params.push(serialized_param);
         }
     }
 }

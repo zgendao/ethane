@@ -1,67 +1,42 @@
 use super::Parameter;
 
-use ethereum_types::U256;
+use ethane_types::Address;
+use std::convert::TryFrom;
 use std::fmt;
 use std::str;
 
 impl fmt::Display for Parameter {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Address(data) => write!(
-                formatter,
-                "0x{}",
-                data.as_bytes()[12..]
-                    .iter()
-                    .map(|c| format!("{:02x}", c))
-                    .collect::<Vec<String>>()
-                    .join("")
-            ),
+            // data is stored in a H256 type on 32 bytes, so right padded 20
+            // bytes have to be extracted
+            Self::Address(data) => {
+                // unwrap is fine because we know that data is H256
+                let address = Address::try_from(&data.into_bytes()[12..]).unwrap();
+                write!(formatter, "{}", address)
+            }
             Self::Bool(data) => write!(formatter, "{}", data.as_bytes()[31] != 0),
-            Self::Uint(data, len) => match len {
-                8 => write!(formatter, "{}", data[31]),
-                16 => {
-                    let mut bytes = [0u8; 2];
-                    bytes.copy_from_slice(&data[30..]);
-                    write!(formatter, "{}", u16::from_be_bytes(bytes))
-                }
-                32 => {
-                    let mut bytes = [0u8; 4];
-                    bytes.copy_from_slice(&data[28..]);
-                    write!(formatter, "{}", u32::from_be_bytes(bytes))
-                }
-                64 => {
-                    let mut bytes = [0u8; 8];
-                    bytes.copy_from_slice(&data[24..]);
-                    write!(formatter, "{}", u64::from_be_bytes(bytes))
-                }
-                128 => {
-                    let mut bytes = [0u8; 16];
-                    bytes.copy_from_slice(&data[16..]);
-                    write!(formatter, "{}", u128::from_be_bytes(bytes))
-                }
-                256 => write!(formatter, "{}", U256::from(data.as_bytes())),
-                _ => panic!("Invalid number!"),
-            },
+            Self::Uint(data, _) => write!(formatter, "{}", data.to_dec_string()),
             Self::Int(data, len) => match len {
-                8 => write!(formatter, "{}", data[31] as i8),
+                8 => write!(formatter, "{}", data.as_bytes()[31] as i8),
                 16 => {
                     let mut bytes = [0u8; 2];
-                    bytes.copy_from_slice(&data[30..]);
+                    bytes.copy_from_slice(&data.as_bytes()[30..]);
                     write!(formatter, "{}", i16::from_be_bytes(bytes))
                 }
                 32 => {
                     let mut bytes = [0u8; 4];
-                    bytes.copy_from_slice(&data[28..]);
+                    bytes.copy_from_slice(&data.as_bytes()[28..]);
                     write!(formatter, "{}", i32::from_be_bytes(bytes))
                 }
                 64 => {
                     let mut bytes = [0u8; 8];
-                    bytes.copy_from_slice(&data[24..]);
+                    bytes.copy_from_slice(&data.as_bytes()[24..]);
                     write!(formatter, "{}", i64::from_be_bytes(bytes))
                 }
                 128 => {
                     let mut bytes = [0u8; 16];
-                    bytes.copy_from_slice(&data[16..]);
+                    bytes.copy_from_slice(&data.as_bytes()[16..]);
                     write!(formatter, "{}", i128::from_be_bytes(bytes))
                 }
                 // TODO do some conversion based on 2's complement?
@@ -102,14 +77,14 @@ impl fmt::Display for Parameter {
 #[cfg(test)]
 mod test {
     use super::Parameter;
-    use ethereum_types::{Address, U256};
-    use std::str::FromStr;
+    use ethane_types::{Address, U256};
+    use std::convert::TryFrom;
     #[test]
     fn display() {
         let expected = format!(
             "{}",
             Parameter::from(
-                Address::from_str("0x99429f64cf4d5837620dcc293c1a537d58729b68").unwrap()
+                Address::try_from("0x99429f64cf4d5837620dcc293c1a537d58729b68").unwrap()
             )
         );
         assert_eq!(&expected, "0x99429f64cf4d5837620dcc293c1a537d58729b68");
@@ -152,11 +127,12 @@ mod test {
 
         let expected = format!(
             "{}",
-            Parameter::from(
-                U256::from_str_radix("1234567890123456789012345678901234567890", 10).unwrap()
-            )
+            Parameter::from(U256::try_from("1234567890123456789012345678901234567890").unwrap())
         );
-        assert_eq!(&expected, "1234567890123456789012345678901234567890");
+        assert_eq!(
+            &expected,
+            "103929005307130220006098923584552504982110632080"
+        );
 
         let expected = format!("{}", Parameter::from(-89i8));
         assert_eq!(&expected, "-89");

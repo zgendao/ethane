@@ -13,7 +13,7 @@ fn test_net_version() {
 #[ignore]
 fn test_net_peer_count() {
     let mut client = ConnectionWrapper::new_from_env(None);
-    rpc_call_test_expected(&mut client, rpc::net_peer_count(), U64::from(0));
+    rpc_call_test_expected(&mut client, rpc::net_peer_count(), U64::zero());
 }
 
 #[test]

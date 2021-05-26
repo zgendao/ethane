@@ -47,7 +47,7 @@ pub fn eth_subscribe_logs(filter: FilterSubscription) -> SubscriptionRequest<Log
     }
 }
 
-pub(crate) fn eth_unsubscribe(sub_id: U128) -> Rpc<bool> {
+pub fn eth_unsubscribe(sub_id: U128) -> Rpc<bool> {
     let mut rpc = Rpc::new("eth_unsubscribe");
     rpc.add_param(sub_id);
     rpc

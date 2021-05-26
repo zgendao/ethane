@@ -2,12 +2,9 @@
 //!
 //! This module provides custom types, but also re-exports some types from [ethereum_types].
 
-pub use ethereum_types::{Address, Bloom, H256, H64, U128, U256, U64};
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+pub use ethane_types::*;
+use serde::{Deserialize, Serialize, Serializer};
 use std::collections::HashMap;
-use std::fmt::Debug;
-use std::str::FromStr;
 
 /// Information about block number, defaults to `BlockParameter::Latest`
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
@@ -24,7 +21,7 @@ impl Serialize for BlockParameter {
             BlockParameter::Latest => serializer.serialize_str("latest"),
             BlockParameter::Earliest => serializer.serialize_str("earliest"),
             BlockParameter::Pending => serializer.serialize_str("pending"),
-            BlockParameter::Custom(num) => serializer.serialize_str(&format!("{:#x}", num)),
+            BlockParameter::Custom(num) => serializer.serialize_str(&num.to_string()), // TODO non-prefixed string?
         }
     }
 }
@@ -123,65 +120,6 @@ pub struct Log {
     pub removed: bool,
 }
 
-/// A type for hex values of arbitrary length
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct Bytes(pub Vec<u8>);
-
-impl Bytes {
-    pub fn from_slice(slice: &[u8]) -> Self {
-        Bytes(slice.to_vec())
-    }
-}
-
-impl Serialize for Bytes {
-    fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
-        serializer.serialize_str(&(String::from("0x") + &hex::encode(&self.0)))
-    }
-}
-
-impl FromStr for Bytes {
-    type Err = hex::FromHexError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let inner = if value.len() >= 2 && &value[0..2] == "0x" {
-            hex::decode(&value[2..])
-        } else {
-            hex::decode(value)
-        }?;
-
-        Ok(Bytes(inner))
-    }
-}
-
-impl<'de> Deserialize<'de> for Bytes {
-    fn deserialize<T>(deserializer: T) -> Result<Bytes, T::Error>
-    where
-        T: Deserializer<'de>,
-    {
-        deserializer.deserialize_identifier(BytesVisitor)
-    }
-}
-
-struct BytesVisitor;
-
-impl<'de> Visitor<'de> for BytesVisitor {
-    type Value = Bytes;
-
-    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "a hex string")
-    }
-
-    fn visit_str<T: serde::de::Error>(self, value: &str) -> Result<Self::Value, T> {
-        let result = Self::Value::from_str(value)
-            .map_err(|err| serde::de::Error::custom(format!("Invalid hex string: {}", err)))?;
-        Ok(result)
-    }
-
-    fn visit_string<T: serde::de::Error>(self, value: String) -> Result<Self::Value, T> {
-        self.visit_str(&value)
-    }
-}
-
 /// Wrapper for private keys to allow for 0x-prefixed and plain serialization
 #[derive(Clone, Debug, PartialEq)]
 pub enum PrivateKey {
@@ -193,7 +131,9 @@ impl Serialize for PrivateKey {
     fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
         match *self {
             PrivateKey::ZeroXPrefixed(pk) => pk.serialize(serializer),
-            PrivateKey::NonPrefixed(pk) => serializer.serialize_str(&hex::encode(pk.0)),
+            PrivateKey::NonPrefixed(pk) => {
+                serializer.serialize_str(&pk.to_string().trim_start_matches("0x"))
+            }
         }
     }
 }
@@ -407,35 +347,12 @@ pub struct SignedTransaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_types_bytes() {
-        let bytes_0 = Bytes::from_slice(&[]);
-        let bytes_1 = Bytes::from_slice(&[0, 0]);
-        let bytes_2 = Bytes::from_slice(&[17, 234]);
-        let bytes_3 = Bytes::from_str("0x").unwrap();
-        let bytes_4 = Bytes::from_str("0x00").unwrap();
-        let bytes_5 = Bytes::from_str("00421100").unwrap();
-
-        let expected_0 = "\"0x\"";
-        let expected_1 = "\"0x0000\"";
-        let expected_2 = "\"0x11ea\"";
-        let expected_3 = Bytes(vec![]);
-        let expected_4 = Bytes(vec![0]);
-        let expected_5 = Bytes(vec![0, 66, 17, 0]);
-
-        assert_eq!(serde_json::to_string(&bytes_0).unwrap(), expected_0);
-        assert_eq!(serde_json::to_string(&bytes_1).unwrap(), expected_1);
-        assert_eq!(serde_json::to_string(&bytes_2).unwrap(), expected_2);
-        assert_eq!(bytes_3, expected_3);
-        assert_eq!(bytes_4, expected_4);
-        assert_eq!(bytes_5, expected_5);
-    }
+    use std::convert::TryFrom;
 
     #[test]
     fn test_types_block_parameter() {
         let block_param_default = BlockParameter::default();
-        let block_param_custom = BlockParameter::Custom(U64::from(11827902));
+        let block_param_custom = BlockParameter::Custom(U64::from_int_unchecked(11827902_u64));
 
         assert_eq!(
             serde_json::to_string(&block_param_default).unwrap(),
@@ -450,9 +367,9 @@ mod tests {
     #[test]
     fn test_types_private_key() {
         let raw_hex_key = "0xe4745d1287b67412ce806746e83d49efe5cec53f5a27aa666fb9e8092a8dbd43";
-        let private_key_prefixed = PrivateKey::ZeroXPrefixed(H256::from_str(raw_hex_key).unwrap());
+        let private_key_prefixed = PrivateKey::ZeroXPrefixed(H256::try_from(raw_hex_key).unwrap());
         let private_key_non_prefixed =
-            PrivateKey::NonPrefixed(H256::from_str(raw_hex_key).unwrap());
+            PrivateKey::NonPrefixed(H256::try_from(raw_hex_key).unwrap());
 
         assert_eq!(
             serde_json::to_string(&private_key_prefixed).unwrap(),

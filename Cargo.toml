@@ -2,13 +2,15 @@
 members = [
 	"ethane",
 	"ethane-abi",
+	"ethane-types",
+	"ethane-wasm",
 ]
 
 [profile.dev]
 opt-level = 3
 
 [profile.release]
-opt-level = 3
+opt-level = 3 
 
 [profile.test]
 opt-level = 3
