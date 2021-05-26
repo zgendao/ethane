@@ -2,8 +2,6 @@ use js_sys::{Array, Promise};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
-use std::collections::VecDeque;
-
 #[wasm_bindgen]
 pub struct RequestArguments {
     method: String,
@@ -35,7 +33,7 @@ impl RequestArguments {
 
 #[wasm_bindgen]
 pub struct Web3 {
-    id_pool: VecDeque<usize>,
+    id: usize,
     client: ethane::AsyncHttp,
 }
 
@@ -43,19 +41,14 @@ pub struct Web3 {
 impl Web3 {
     pub fn new(address: String) -> Self {
         Self {
-            id_pool: (0..1000).collect(),
+            id: 0,
             client: ethane::AsyncHttp::new(&address, None),
         }
     }
 
     pub fn call(&mut self, args: RequestArguments) -> Promise {
-        let id = if let Some(id) = self.id_pool.pop_front() {
-            self.id_pool.push_back(id);
-            id
-        } else {
-            1001
-        };
-
+        let id = if self.id > 10000 { 1 } else { self.id + 1 };
+        self.id = id;
         let client = self.client.clone();
 
         future_to_promise(async move {
