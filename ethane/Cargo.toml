@@ -1,6 +1,6 @@
 [package]
 name = "ethane"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["thojest <thojest@gmail.com>", "PumpkinSeed <ferenc@ngen.ai>"]
 edition = "2018"
 description = "An alternative web3 implementation with the aim of being slim and simple"
