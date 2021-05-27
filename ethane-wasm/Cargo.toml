@@ -6,7 +6,7 @@ edition = "2018"
 description = "An alternative web3 implementation with the aim of being slim and simple compiled to WebAssembly"
 repository = "https://github.com/zgendao/ethane"
 license = "MIT"
-keywords = ["web3", "ethereum", "jsonrpc", "rpc", "simple", "wasm"]
+keywords = ["web3", "ethereum", "jsonrpc", "rpc", "wasm"]
 categories = ["cryptography::cryptocurrencies", "web-programming"]
 readme = "../README.md"
 
