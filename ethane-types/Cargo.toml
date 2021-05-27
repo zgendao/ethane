@@ -1,8 +1,14 @@
 [package]
 name = "ethane-types"
-version = "0.1.0"
+version = "1.0.2"
 authors = ["ZGEN <info@zgen.hu>"]
 edition = "2018"
+description = "The type system of ethane with minimal dependencies"
+repository = "https://github.com/zgendao/ethane"
+license = "MIT"
+keywords = ["web3", "ethereum", "simple", "type-system"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
+readme = "../README.md"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
