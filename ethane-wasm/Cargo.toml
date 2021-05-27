@@ -1,14 +1,20 @@
 [package]
 name = "ethane-wasm"
-version = "0.1.0"
+version = "1.0.2"
 authors = ["ZGEN <info@zgen.hu>"]
 edition = "2018"
+description = "An alternative web3 implementation with the aim of being slim and simple compiled to WebAssembly"
+repository = "https://github.com/zgendao/ethane"
+license = "MIT"
+keywords = ["web3", "ethereum", "jsonrpc", "rpc", "simple", "wasm"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
+readme = "../README.md"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-ethane = { path = "../ethane", features = ["non-blocking"] }
+ethane = { version = "1.0.2", features = ["non-blocking"] }
 futures = "0.3"
 getrandom = { version = "0.2.2", features = ["js"] }
 js-sys = "0.3.45"
